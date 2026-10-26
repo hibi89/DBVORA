@@ -32,6 +32,7 @@ _REQUIRED = {
     'pyproject.toml', 'README_PORTABLE.txt', 'run_dbvora_windows.cmd',
     'run_dbvora_unix.sh', 'dbvora/export_html.py',
     'export_dbvora_map_windows.cmd', 'export_dbvora_map_unix.sh',
+    'dbvora/offline_selftest.py',
 }
 
 
@@ -95,6 +96,9 @@ def _contents(root: Path) -> dict[str, bytes]:
         'DBVORA LOCAL DEVELOPER PREVIEW (unsigned / no customer readiness)\n'
         'This is a source ZIP, NOT a standalone installer or bundled Python.\n'
         'NO-PIP OFFLINE MAP: use installed Python 3.11+ without FastAPI.\n'
+        'SYNTHETIC-ONLY SELF-CHECK (no customer file, no pip):\n'
+        '  py -3.11 -m dbvora.offline_selftest\n'
+        '  This does NOT certify NTFS durability or native browser opening.\n'
         '  py -3 -m dbvora.export_html --db \"C:\\absolute\\synthetic.sqlite\" --out \"C:\\existing\\folder\"\n'
         '  Then open the generated dbvora-map-*.html in your browser.\n'
         '  Or run export_dbvora_map_windows.cmd with TWO quoted arguments.\n'
