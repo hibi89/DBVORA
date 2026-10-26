@@ -119,6 +119,39 @@ class PortableTests(unittest.TestCase):
         self.assertEqual(len(json.loads(done.stdout)['tables']), 3)
         self.assertEqual(hashlib.sha256(fixture.read_bytes()).hexdigest(), before)
 
+    def test_packaged_offline_export_zero_ui_dependencies(self):
+        archive = pack.build(self.folder)
+        destination = self.folder / 'unpacked_offline'
+        destination.mkdir()
+        with zipfile.ZipFile(archive) as z:
+            z.extractall(destination)
+            self.assertIn('dbvora/export_html.py', z.namelist())
+            self.assertIn('export_dbvora_map_windows.cmd', z.namelist())
+            self.assertIn('export_dbvora_map_unix.sh', z.namelist())
+        out = self.folder / 'offline_reports'
+        out.mkdir()
+        src = create_fixture(self.folder / 'synthetic_export.sqlite')
+        before = hashlib.sha256(src.read_bytes()).hexdigest()
+        env = dict(os.environ, PYTHONPATH='')
+        process = subprocess.run(
+            [sys.executable, '-m', 'dbvora.export_html', '--db', str(src), '--out', str(out)],
+            cwd=destination, env=env, text=True, capture_output=True, timeout=12, check=False)
+        self.assertEqual(process.returncode, 0, process.stderr)
+        response = json.loads(process.stdout)
+        self.assertEqual(response['status'], 'CREATED_OFFLINE_SCHEMA_HTML')
+        self.assertIn('Content-Security-Policy', (out / response['filename']).read_text())
+        self.assertEqual(hashlib.sha256(src.read_bytes()).hexdigest(), before)
+
+    def test_launcher_has_no_network_downloads(self):
+        archive = pack.build(self.folder)
+        with zipfile.ZipFile(archive) as z:
+            for path in ('export_dbvora_map_windows.cmd', 'export_dbvora_map_unix.sh'):
+                content = z.read(path).decode('utf-8').lower()
+                self.assertIn('dbvora.export_html', content)
+                self.assertNotIn('pip install', content)
+                self.assertNotIn('curl', content)
+                self.assertNotIn('wget', content)
+
     def test_version_matches_module(self):
         import dbvora
         self.assertEqual(pack._version(pack.ROOT), dbvora.__version__)

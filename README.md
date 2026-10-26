@@ -57,3 +57,10 @@ python -m scripts.build_portable --output /absolute/existing/output
 python -m scripts.build_portable --verify /absolute/existing/output/dbvora-dev-preview-0.2.0.zip
 ```
 The ZIP is a source bundle, not a Windows installer or bundled Python. The extracted `README_PORTABLE.txt` documents prerequisite Python3.11 and optional UI dependency installation. The SHA-256 manifest is unsigned and does **not** authenticate origin. Only synthetic/approved test DBs until native Windows/NTFS validations pass. Browser Chromium-only DOM probe (not HTTP E2E): `python -m scripts.browser_visual_probe --chromium /usr/bin/chromium` with optional Playwright installed.
+
+### No-dependency local schema HTML (2026-10-26)
+From the developer ZIP or source checkout, Python 3.11+ can generate an **offline one-file HTML topology report** without installing FastAPI/Uvicorn:
+```sh
+python -m dbvora.export_html --db /absolute/synthetic.sqlite --out /absolute/existing/folder
+```
+On Windows, use `py -3 -m dbvora.export_html --db "C:\absolute\synthetic.sqlite" --out "C:\existing\folder"` or `export_dbvora_map_windows.cmd` with those two arguments. Open generated HTML offline. It includes schema metadata names, so **never share a confidential schema without authorization**; no rows or customer DB paths are inserted. [Detailed usage and evidence](docs/OFFLINE_HTML_PREVIEW_20261026.md). This is unsigned, not a standalone installer or customer-ready Windows backup solution.

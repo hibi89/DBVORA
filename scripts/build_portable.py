@@ -30,7 +30,8 @@ _REQUIRED = {
     'dbvora/web/index.html', 'dbvora/web/app.js',
     'dbvora/web/style.css', 'scripts/build_portable.py',
     'pyproject.toml', 'README_PORTABLE.txt', 'run_dbvora_windows.cmd',
-    'run_dbvora_unix.sh',
+    'run_dbvora_unix.sh', 'dbvora/export_html.py',
+    'export_dbvora_map_windows.cmd', 'export_dbvora_map_unix.sh',
 }
 
 
@@ -93,6 +94,11 @@ def _contents(root: Path) -> dict[str, bytes]:
     files['README_PORTABLE.txt'] = (
         'DBVORA LOCAL DEVELOPER PREVIEW (unsigned / no customer readiness)\n'
         'This is a source ZIP, NOT a standalone installer or bundled Python.\n'
+        'NO-PIP OFFLINE MAP: use installed Python 3.11+ without FastAPI.\n'
+        '  py -3 -m dbvora.export_html --db \"C:\\absolute\\synthetic.sqlite\" --out \"C:\\existing\\folder\"\n'
+        '  Then open the generated dbvora-map-*.html in your browser.\n'
+        '  Or run export_dbvora_map_windows.cmd with TWO quoted arguments.\n'
+        '  Linux/macOS: python3 -m dbvora.export_html --db /abs/test.sqlite --out /abs/dir\n'
         'Requirements: Python 3.11+ installed; FastAPI and Uvicorn for viewer.\n'
         'Unzip to a local folder. In that folder, run:\n'
         '  py -3.11 -m pip install ".[ui]"  (may require package network download)\n'
@@ -116,6 +122,21 @@ def _contents(root: Path) -> dict[str, bytes]:
         '#!/bin/sh\nset -eu\n'
         'if [ "$#" -ne 1 ]; then echo "Provide one absolute synthetic SQLite path" >&2; exit 2; fi\n'
         'cd "$(dirname "$0")"\nexec python3 -m dbvora.serve --db "$1"\n'
+    ).encode('utf-8')
+    files['export_dbvora_map_windows.cmd'] = (
+        '@echo off\r\nsetlocal\r\ncd /d "%~dp0"\r\n'
+        'if "%~1"=="" goto usage\r\n'
+        'if "%~2"=="" goto usage\r\n'
+        'py -3 -m dbvora.export_html --db "%~1" --out "%~2"\r\n'
+        'exit /b %ERRORLEVEL%\r\n'
+        ':usage\r\necho Provide an absolute synthetic SQLite file and existing output folder. 1>&2\r\n'
+        'exit /b 2\r\n'
+    ).encode('ascii')
+    files['export_dbvora_map_unix.sh'] = (
+        '#!/bin/sh\nset -eu\n'
+        'if [ "$#" -ne 2 ]; then echo "Provide a synthetic SQLite file and existing output folder" >&2; exit 2; fi\n'
+        'cd "$(dirname "$0")"\n'
+        'exec python3 -m dbvora.export_html --db "$1" --out "$2"\n'
     ).encode('utf-8')
     if not _REQUIRED.issubset(files):
         raise PortableError('INCOMPLETE_SOURCE')

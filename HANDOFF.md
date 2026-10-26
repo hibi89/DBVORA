@@ -122,3 +122,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. Data/safety: OS temporary synthetic only, no customer file/cloud transfer, automatic restore, retention deletion, secret, installer or paid CI; unsigned archives and unsigned source preview clearly labeled.
 9. Next: native authorized Windows3.11 NTFS `scripts.windows_ntfs_gate` including persistence, Windows browser via local HTTP, Python dependency/wheelhouse/installer packaging. No user data/publish before approval.
 10. Evidence: 2026-10-26 KST, `docs/PORTABLE_BROWSER_PREVIEW_20261026.md`, archive SHA-256 aeaeb43d4c6ce59d2a65849f253e3528fe94d8e7624bec20e13924bf13057f2f, 7 exact Git object match, 180 full Python cases and 5 Chromium DOM checks.
+
+## 2026-10-26 KST — 10-point handoff: zero-pip offline HTML
+1. Goal: local-first DBVORA schema map + optional tested SQLite archives; minimize Windows end-user setup while preserving synthetic-only safety.
+2. Change: new `dbvora/export_html.py`, `tests/test_export_html.py`, optional `scripts/offline_html_browser_probe.py`, updated `scripts/build_portable.py` and tests/threshold; source ZIP ships offline HTML Windows/Unix launchers and no UI pip requirements.
+3. Evidence: **194/194 Linux Python regression PASS** (0 fails/skips); six-step synthetic release gate PASS; real Chromium `set_content` on generated HTML **7/7 PASS** with zero external requests and safe XSS identifiers; 26 bundled payloads + SHA manifest verify and extract CLI PASS.
+4. Status: offline schema HTML **developer-preview verified on Linux**; actual Windows system, file:// navigation, HTTP e2e, installer, customer release not verified.
+5. Blockers: real Windows Python3.11/NTFS backup durability (`_sync_directory` POSIX semantics) still fail-closed; cannot test native Windows in this runtime.
+6. Repo: private `hibi89/DBVORA`, branch `feature/p0-db-map`, parent `7e2c5b93b372ea3f87c31a78793a7c2e2fb6df31`. Re-fetch final head SHA after push; preserve `main`/`develop`.
+7. Runtime: Linux Python3.13.5, Node22, Chromium headless for optional test; offline HTML command `python -m dbvora.export_html --db /abs/test.sqlite --out /abs/existing`. Windows command `py -3 -m dbvora.export_html...` needs native test.
+8. Data/safety: generated OS-temp synthetic SQLite only; exported schema metadata may itself be sensitive; no table rows, external uploads, remote telemetry, signing, encryption, real customer files or original mutations. Source ZIP SHA unsigned.
+9. Next: run offline HTML ZIP and launcher on authorized native Windows; validate file:// browser opening, then Windows durability/packaging; test installer/HTTP only after evidence. No paid CI, Public, production, customer DB without approval.
+10. 2026-10-26 KST evidence: `docs/OFFLINE_HTML_PREVIEW_20261026.md`, bundle SHA `7845f5f0e2780e22daa9ad27232879b51c78b97a9935847a75c30c8e9ac093b9`, demo SHA `618b7d9f7141d16e6445075f99f2d4666a9e1b60a1146b4770856c4d763c76c1`, exact seven source Git blobs match local tested files.
