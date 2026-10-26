@@ -1,4 +1,4 @@
-# DBVORA HANDOFF — offline HTML CSP anchor checkpoint (2026-10-26 KST)
+# DBVORA HANDOFF — focused offline Python integration checkpoint (2026-10-26 KST)
 
 > **READ THE FINAL 10-FIELD CHECKPOINT FIRST.** Earlier handoff entries are chronological history; previously verified 194-case Linux results are not current 195-case HEAD proof.
 
@@ -160,3 +160,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. **Sources/backup/secrets:** Only OS-temp synthetic database and HTML when command runs; no customer DB, credentials, external uploads, source overwrites, destructive retention, or paid jobs. Prior Git history is rollback basis; source ZIP remains unsigned.
 9. **Next/approvals:** Execute **real** self-check on full checkout, full **>=199** suite, Chromium generated/offline HTML probe; independent native Windows3.11 NTFS + `file://` check. Owner input only for native Windows operation when necessary; public/package/customer/paid deployment need explicit approval.
 10. **Timestamp/provenance/verification:** 2026-10-26 KST. Detailed narrow test claims, methods and security caveats in `docs/OFFLINE_SELFTEST_20261026.md`; confirm final GitHub head and linked author/committer. No CI, production or real client E2E verified.
+
+## 2026-10-26 KST — real SQLite/HTML focused integration checkpoint (10 fields)
+1. **Goal/tech/requirements:** Private local-first DBVORA SQLite map + safe ZIP/ZSTD archival, Python>=3.11, currently synthetic-only. This step verifies self-check against real exporter and SQLite inspection code instead of prior simulated export.
+2. **Implemented/decision:** No production behavior change; one test leak corrected in `tests/test_export_html.py` with `closing(sqlite3.connect(...))` replacing unclosed `with sqlite3.connect(...)`. Authenticated GitHub Python modules/HTML skeleton byte-verified and executed locally. Mock CSS/JS explicitly retained as test boundary.
+3. **Tests and scope:** Linux Python3.13.5, actual authentic exporter/inventory/read-only connector with synthetic DB: **17/17 focused checked-in tests PASS**, 0 FAIL/SKIP/ResourceWarning, actual standalone selfcheck **9/9 PASS**. This is **NOT** full 199 suite, current JavaScript/real browser/Windows/NTFS/ZIP/ZSTD regression. Earlier 194/194 belongs to older SHA.
+4. **Done/pending/blocked:** Focused offline Python integration and test cleanup DONE; authenticated complete checkout 199-case unified gate, real HTML JS/CSS/browser, native Windows3.11/NTFS publication and power-loss validation PENDING. No customer readiness, no production.
+5. **Failure/recovery/pivot:** Detected ResourceWarning from a test-held sqlite3 connection; explicitly closed and reran 17/17 with zero warnings. Private clone unavailable; source was reconstructed from authenticated per-file reads with matching Git blobs, without public mirror or paid CI. Do not count substituted CSS/JS as production UI.
+6. **Repo/branch/SHA:** `hibi89/DBVORA` Private, active `feature/p0-db-map`; input HEAD `42e69d963ea9894a211fb31cfb26b13f3b035193`, test-only fix commit `d4eb0a0217eed5cce5df893e5932de2cd07f7513`. Exact final feature HEAD re-fetch after docs; `main`/`develop` remain `890f842e3ba0e13c901e785633bdd06eadc76cce`.
+7. **Runtime/Vercel:** `python -W error::ResourceWarning -m unittest discover -s tests -v` for focused staging workspace and `python -m dbvora.offline_selftest`; full checkout command `python -m scripts.verify_release_gate`. No Vercel/Production (N/A). Windows smoke still native PC only.
+8. **Source/backup/secrets:** OS temporary synthetic databases only; Git history preserves originals. No customer DB, credentials, source deletion, overwrite, public distribution, network/paid job, or real archive modification.
+9. **Next priority/approval:** Verify full GitHub CSS/JS and real Chromium, rebuild full authorized private checkout to run 199+ regression; then native Windows3.11/NTFS fail-closed gate. Any customer file access, paid CI, public release or installer requires prior approval. `main`/`develop` preserved.
+10. **Timestamp/checkpoint:** 2026-10-26 KST, evidence `docs/OFFLINE_SELFTEST_REAL_CORE_20261026.md`, complete checked Git SHA list and explicit substituted assets. This only certifies targeted Linux synthetic Python behavior, not full product or release.
