@@ -1,0 +1,40 @@
+# secrets & identities
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/
+# original/customer data and bulk archives
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+*.parquet
+*.zip
+*.zst
+*.7z
+*.bak
+data/raw/
+data/customer/
+archives/
+backups/
+# python and frontend
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+node_modules/
+dist/
+build/
+coverage/
+# OS and IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
