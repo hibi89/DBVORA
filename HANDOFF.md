@@ -38,3 +38,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. **Data/backups**: no customer data, credentials, backup artifacts, hosted systems or prior published archives touched; tests generated only OS temp files. Git preserved branch history.
 9. **Next**: run full source gate, resolve actual failures, verify ZIP and ZSTD when installed, then Windows/Python3.11/NTFS synthetic smoke and roadmap review. Do not promote to develop/main or distribute a commercial installer without evidence and permission.
 10. **KST scope**: 2026-10-26, latest confirmed parent `4c0d6ecd1f5df504502fe7acbfcac9ff39cec413` before this change; evidence restricted to committed source SHA, 7 runner unit tests and negative guard test; final GitHub HEAD/committer verified after write.
+
+## 2026-10-26 KST — P1-C5 gate hardening, 10-field continuation
+1. Goal: sovereign local DB map plus safe, verifiable SQLite archives; Python >=3.11, synthetic-only before customer approval.
+2. Code: `scripts/verify_release_gate.py` rejects silently skipped Python tests and Node zero-test false passes; `tests/test_verify_release_gate.py` expanded from 7 to 11 tests.
+3. Tests: exact tested Git blob SHA matched GitHub; local Linux Python3.13.5 unittest focused 11/11 PASS, py_compile PASS. Full 145-test regression, ZIP/ZSTD CLI integration, Windows and browser NOT RUN.
+4. State: gate hardening done; P1-C5 actual integrated acceptance BLOCKED_ENV; no commercial readiness.
+5. Failure and pivot: full checkout missing archive sources; git remote github.com DNS unavailable. Partial checkout correctly FAIL_CLOSED with 4 missing source files. Do not treat missing checkout as application failure or retry identical clone.
+6. Repository: private `hibi89/DBVORA`, branch `feature/p0-db-map`; code commit `ed382b4f80d5bc894558ba31d7cb06dd9f3d940a`; verify latest documentation HEAD on next resume. `main/develop` remain at `890f842e3ba0e13c901e785633bdd06eadc76cce`.
+7. Run: `python -m scripts.verify_release_gate` only from a complete repo checkout. Localhost P0 viewer unchanged; Vercel/Production N/A.
+8. Originals and secrets: no customer DB, credential, binary archive, backup or real service modified. Old Git commit history preserved.
+9. Next: run full 145 tests + real synthetic archive gate from authorized checkout, then investigate failing tests and Windows3.11/NTFS; source changes only after backed-up review. Customer DB, external transfer, permissions, paid CI or release require approval.
+10. Timestamp and scope: 2026-10-26 KST; confirmed local 11-pass focused gate, file hash match and GitHub source/commit. Full integration still unverified; receipts unsigned, hardware power durability unproven.
