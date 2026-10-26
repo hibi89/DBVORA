@@ -1,14 +1,14 @@
 # DBVORA STATUS — 초기 설정
 
-- 기록 시점: 2026-10-26 KST. 현재 GitHub HEAD는 새 채팅 시작 시 반드시 재조회. 이 문서 작성 시 코드 개발 착수 없음.
-- 저장소: hibi89/DBVORA, Private. 기본 main, 개발용 develop, 초기 코드 feature/p0-db-map을 목표로 신규 생성하며 실존 여부는 종료 검증 보고를 따른다.
+- 기록 시점: 2026-10-26 KST. 원격 문서 12개(README 제외) fetch 및 main 기능/문서 기준 커밋 1b2d4275f47774befa17f1c0fbeb292930042db7 확인. 새로운 문서 갱신 커밋과 새 채팅 HEAD는 반드시 재조회. 코드 개발 착수 없음.
+- 저장소: hibi89/DBVORA, Private. main / develop / feature/p0-db-map **세 브랜치 모두 GitHub 원격 검색으로 실존 확인**. 문서 업데이트 뒤 최종 SHA 동기화 재검증 예정.
 - 진도 표현: **기획·개발환경 구성 진행 / 제품 기능 구현 0% / 상용제품 미완료**. 일정은 3일 MVP, 이후 10~14일 후보 *목표*, 보장 아님.
 
 | 항목 | 상태 | 검증 |
 | --- | --- | --- |
 | 저장소 생성 및 읽기/쓰기 접근 | VERIFIED | GitHub repo metadata 및 첫 README commit |
-| 채팅 재개·설계·요구사항 문서 | SETUP_IN_PROGRESS | 최종 파일 재조회 필요 |
-| 코드 브랜치 | PENDING | 브랜치 원격 검증 예정 |
+| 채팅 재개·설계·요구사항 문서 | VERIFIED_DOCS_ONLY | 원격 fetch로 12개 경로 확인, 제품 기능 아님 |
+| 코드 브랜치 | VERIFIED_EMPTY_OF_PRODUCT_CODE | main·develop·feature/p0-db-map 확인, P0 코드 미작성 |
 | SQLite 스키마 메타데이터 읽기 | NOT_STARTED | 코드/테스트 0 |
 | 구조맵 UI 및 클릭 탐색 | NOT_STARTED | 브라우저 검증 0 |
 | PostgreSQL read-only 연결 | NOT_STARTED | 외부 호출 0 |
