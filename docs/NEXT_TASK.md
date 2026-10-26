@@ -55,3 +55,8 @@ Real customer DB access, deletion/retention/overwrite, network/third-party uploa
 - Linux **167/167** Python suite PASS and full six-step synthetic gate PASS; 11 Windows preflight decision tests PASS (mocked OS facts). Windows diagnostic code complete but **not executed on native Windows**; Linux run correctly refused.
 - On authorized private Windows Python3.11 NTFS machine: run `py -3.11 -B -m scripts.windows_ntfs_gate`. On `DURABILITY_NOT_PROVEN_FAIL_CLOSED`, preserve strict failure, investigate native Windows file+directory persistence and rollback, only then adapt writer with Windows-proven tests. See `docs/WINDOWS_NTFS_VALIDATION_20261026.md`.
 - Next after Windows: actual GUI browser and packaging. No customer data, Public mirror, paid Actions, destructive cleanup or Production without approval.
+
+## 2026-10-26 — developer preview + Chromium DOM completed
+- **180/180** Python full source regression PASS (0 fail/skip), 6/6 synthetic Linux release gate PASS, optional real Chromium injected synthetic browser DOM 5/5 PASS; tested original source version alignment and deterministic 23-file unsigned portable developer ZIP. See `docs/PORTABLE_BROWSER_PREVIEW_20261026.md`.
+- **First unresolved**: genuine Windows Python3.11/NTFS synthetic durability and independent restore (`py -3.11 -B -m scripts.windows_ntfs_gate`); current archive fsync may fail closed as designed. Then Windows actual localhost HTTP browser and standalone installer/offline UI dependency packaging.
+- Browser local URL navigation blocked by current sandbox. Do not confuse Chromium `set_content` + fetch stub with HTTP browser E2E, though actual render and user interaction verified. No customer data, paid CI, main/develop promotion or public release.

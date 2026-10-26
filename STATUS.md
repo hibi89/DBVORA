@@ -72,3 +72,11 @@ New commands do not encrypt source/artifacts, do not schedule/delete or overwrit
 - Real **Linux** Python3.13.5 entire unittest suite **167/167 PASS**, 0 failure/skip; six-step Linux synthetic gate PASS, real CLI ZIP/ZSTD 8/8; Node DOM/compileall/temp preflight PASS. Tested Git SHA of four changed source files matched remote staged Git blobs.
 - Executing Windows gate on Linux returned **BLOCKED_UNVERIFIED / WINDOWS_HOST_REQUIRED**, exit1 as designed. **Windows/NTFS not actually executed.** Existing Windows directory metadata fsync not proven; do not bypass the durability check.
 - Evidence/commands: `docs/WINDOWS_NTFS_VALIDATION_20261026.md`. main/develop unchanged, no Actions/Production/customer data.
+
+## 2026-10-26 KST — Portable source developer preview & real Chromium DOM
+- Linux Python3.13.5 regression **180/180 PASS**, 0 failures/skips, including **13 new portable builder tests**; all 6 real synthetic release-gate stages PASS, ready_for_customer_data=false.
+- Actual headless Chromium real HTML/CSS/JS DOM against injected synthetic SQLite inventory: **5/5 browser checks PASS**, desktop 1440px and mobile 390px, no horizontal overflow, XSS identifier safe, no JS console page errors. Local HTTP and file:// Chrome navigation BLOCKED_BY_ADMINISTRATOR; HTTP browser E2E remains NOT_TESTED.
+- Added offline deterministic **unsigned source ZIP builder** `scripts/build_portable.py` (23 files + manifest) and optional real Chromium probe `scripts/browser_visual_probe.py`; package is Python-source preview, NOT executable installer or customer-ready build. Actual extracted read-only CLI works with synthetic DB.
+- Built `dbvora-dev-preview-0.2.0.zip` with SHA-256 `aeaeb43d4c6ce59d2a65849f253e3528fe94d8e7624bec20e13924bf13057f2f`; no customer DB/keys included; ZIP manifest detects accidental corruption but no cryptographic signature.
+- Aligned `dbvora.__version__` and UI header to pyproject 0.2.0. Seven Git blobs matched local tested source SHA. Evidence: `docs/PORTABLE_BROWSER_PREVIEW_20261026.md`.
+- Windows Python3.11/NTFS, power-cut, actual localhost browser HTTP, offline dependency installers, security signatures, Production and customer data remain NOT_TESTED. main/develop unchanged.

@@ -49,3 +49,11 @@
 - [docs/INTEGRATION_BOUNDARIES.md](docs/INTEGRATION_BOUNDARIES.md) — 다른 AX 제품과 경계
 
 본 저장소는 Private. 라이선스·상표 사용권은 미확정이며 외부 공개/배포/실고객 연결은 별도 승인 사항이다.
+
+### Local developer source preview (v0.2.0, unsigned)
+From private source root, build a non-overwriting ZIP containing only DBVORA code and offline launcher templates:
+```bash
+python -m scripts.build_portable --output /absolute/existing/output
+python -m scripts.build_portable --verify /absolute/existing/output/dbvora-dev-preview-0.2.0.zip
+```
+The ZIP is a source bundle, not a Windows installer or bundled Python. The extracted `README_PORTABLE.txt` documents prerequisite Python3.11 and optional UI dependency installation. The SHA-256 manifest is unsigned and does **not** authenticate origin. Only synthetic/approved test DBs until native Windows/NTFS validations pass. Browser Chromium-only DOM probe (not HTTP E2E): `python -m scripts.browser_visual_probe --chromium /usr/bin/chromium` with optional Playwright installed.

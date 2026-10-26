@@ -110,3 +110,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. Data/security: OS-temp synthetic only, no client credentials/files, no uploads/paid services/automatic cleanup; unsigned plaintext archives unchanged.
 9. Next: actual authorized Windows/NTFS run; investigate any strict durability block with real Windows semantics; real browser and portable packaging next. No customer write/paid CI without approval.
 10. Evidence date: 2026-10-26 KST; `docs/WINDOWS_NTFS_VALIDATION_20261026.md`, four exact blob SHA matches, 167 Linux suite and 11 new decision tests. Do not claim Windows PASS without native host.
+
+## 2026-10-26 KST — 10-field handoff: source packaging & Chromium render
+1. Goal: DBVORA safe local schema viewer + optional archives; finish developer-preview packaging and real DOM tests without touching customer DB.
+2. Work: Added `scripts/build_portable.py`, `tests/test_portable_build.py`, optional `scripts/browser_visual_probe.py`; synchronized version 0.2.0 in module + UI; moved unified test minimum to 180 and corresponding fixtures.
+3. Tests: **180/180 Python PASS**, 0 fail/skip; 6/6 Linux synthetic release stages PASS incl actual SQLite CLI ZIP/ZSTD + Node DOM; real Chromium injected synthetic DOM 5/5 PASS (desktop/mobile), generated unsigned 23-file+manifest ZIP verified and extracted synthetic read-only CLI pass.
+4. State: Python-source preview distributable for owner-controlled development only, not standalone installer/customer release; Windows durability still unverified.
+5. Blockers: Chromium blocked file:// and HTTP localhost navigation (`ERR_BLOCKED_BY_ADMINISTRATOR`); instead rendered actual HTML/CSS/JS in Chromium with injected inventory data. This tests real DOM, NOT HTTP E2E. Windows3.11 NTFS still requires native machine.
+6. Repo: private hibi89/DBVORA, feature/p0-db-map, input head 11128c0c25af3a5bf70e66b524fd6a264fd6f8d9; verify final head after commit; main/develop unchanged.
+7. Runtime: Linux Python3.13.5, SQLite3.46.1, Node22.16.0, ZSTD1.5.7, Chromium headless+Playwright available in dev environment only. Source builder `python -m scripts.build_portable --output /abs/dir`.
+8. Data/safety: OS temporary synthetic only, no customer file/cloud transfer, automatic restore, retention deletion, secret, installer or paid CI; unsigned archives and unsigned source preview clearly labeled.
+9. Next: native authorized Windows3.11 NTFS `scripts.windows_ntfs_gate` including persistence, Windows browser via local HTTP, Python dependency/wheelhouse/installer packaging. No user data/publish before approval.
+10. Evidence: 2026-10-26 KST, `docs/PORTABLE_BROWSER_PREVIEW_20261026.md`, archive SHA-256 aeaeb43d4c6ce59d2a65849f253e3528fe94d8e7624bec20e13924bf13057f2f, 7 exact Git object match, 180 full Python cases and 5 Chromium DOM checks.
