@@ -1,4 +1,6 @@
-# NEXT_TASK — P1-C5 integration gate before further features
+# NEXT_TASK — active 195-case CSP guard regression + native Windows/NTFS gate
+
+> **Latest active work is the final section of this document.** Older first-unfinished headings below are preserved as historical checkpoints and must not be repeated.
 
 Trigger: ㄱ / [디비보라 깃헙보고 작업해]. Read feature/p0-db-map latest remote SHA, HANDOFF, STATUS, AGENTS, REQUIREMENTS and docs/P1_C5_CLI.md before acting. Do not repeat P0/C0/C1/C2/C3/C4.
 
