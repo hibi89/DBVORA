@@ -118,3 +118,11 @@ New commands do not encrypt source/artifacts, do not schedule/delete or overwrit
 - **Browser navigation LIMIT:** attempted real Chromium `file://` on generated synthetic HTML, sandbox policy returns `net::ERR_BLOCKED_BY_ADMINISTRATOR`; did **not** bypass policy. Only `page.set_content()` executed successfully. `browser_file_navigation=false`, `browser_http_e2e=false`.
 - **NOT RUN:** full **199+** Python + 6-stage archive release gate, native Windows3.11/NTFS and real Windows file browser, customer data, installer/Production. Earlier 194 full regression remains prior SHA only. `main`/`develop` unchanged, no paid CI/public access.
 - Evidence details `docs/FRONTEND_REAL_ASSETS_CHROMIUM_20261026.md`.
+
+## 2026-10-26 KST — portable synthetic self-check launchers, 201-case source inventory (latest)
+- Added zero-argument Windows `check_dbvora_windows.cmd` and Unix `check_dbvora_unix.sh` to the **unsigned** developer source ZIP, each launching the existing synthetic-only `dbvora.offline_selftest` with no pip/customer DB. Both required in package manifest; README includes commands.
+- Added two ZIP-focused checked-in Python tests: extracted source self-check (9 checks) and safe launcher contents; minimum release gate updated **199 → 201** and mock fixtures corrected (200 now insufficient). Actual new ZIP integration cases **NOT RUN** at current SHA, and native Windows batch execution **NOT RUN**.
+- Fetched 14 complete private GitHub Python test files, verified every Git blob ID against tree, counted **201** test methods. This is test *definition presence*, not 201 PASS.
+- Prior authentic-staged focused Linux rerun: **17/17** Python offline viewer tests PASS; **9/9** synthetic selfcheck PASS; real CSS+JS Chromium `set_content` **13/13** PASS. Unix launcher *template* run: no-argument 9/9 PASS, unexpected argument exit code 2. No complete source ZIP extraction test or full 201 unified release gate yet.
+- Still pending: full 201 test run, package integration, Windows Python3.11/NTFS/failsafe archive proof, Windows cmd invocation, real `file://` browser, signed installer or customer release. No paid Actions, external upload, Public, Production or main/develop promotion.
+- Detailed evidence `docs/PORTABLE_SYNTHETIC_LAUNCHERS_20261026.md`; latest branch SHA recheck after status and handoff updates.
