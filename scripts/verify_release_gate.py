@@ -11,9 +11,13 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 141
+EXPECTED_PYTHON_TESTS = 145
 EXPECTED_GATE_CHECKS = 7
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
+SKIPPED_COUNT = re.compile(r"OK\s*\(skipped=(\d+)\)", re.IGNORECASE)
+NODE_TEST_COUNT = re.compile(r"(?m)^#\s+tests\s+(\d+)\s*$")
+NODE_PASS_COUNT = re.compile(r"(?m)^#\s+pass\s+(\d+)\s*$")
+NODE_FAIL_COUNT = re.compile(r"(?m)^#\s+fail\s+(\d+)\s*$")
 ROOT = Path(__file__).resolve().parents[1]
 REQUIRED = (
     "pyproject.toml", "dbvora/archive_cli.py", "dbvora/archive/safe_zip.py",
@@ -46,9 +50,14 @@ def verify():
                            "discover", "-s", "tests", "-q"], timeout=240)
     count_match = TEST_COUNT.search(out + "\n" + err)
     count = int(count_match.group(1)) if count_match else 0
-    unit_pass = code == 0 and count >= EXPECTED_PYTHON_TESTS
+    skipped_match = SKIPPED_COUNT.search(out + "\n" + err)
+    skipped = int(skipped_match.group(1)) if skipped_match else 0
+    zstd_available = shutil.which("zstd") is not None
+    allowed_skips = 0 if zstd_available else 1
+    unit_pass = code == 0 and count >= EXPECTED_PYTHON_TESTS and skipped <= allowed_skips
     report["steps"].append({"step": "python_unittest", "status": "PASS" if unit_pass else "FAIL",
-                            "discovered_tests": count, "minimum_required": EXPECTED_PYTHON_TESTS})
+                            "discovered_tests": count, "minimum_required": EXPECTED_PYTHON_TESTS,
+                            "skipped_tests": skipped, "maximum_allowed_skips": allowed_skips})
 
     code, out, _ = _run([sys.executable, "-m", "scripts.synthetic_cli_gate"], timeout=240)
     try:
@@ -57,11 +66,10 @@ def verify():
         gate = {}
     checks = gate.get("check_count", 0)
     zstd_status = gate.get("optional_zstd", "missing")
-    available = shutil.which("zstd") is not None
     gate_pass = (code == 0 and gate.get("status") == "PASS_SYNTHETIC_ONLY"
                  and type(checks) is int and checks >= EXPECTED_GATE_CHECKS
                  and gate.get("ready_for_customer_data") is False
-                 and (zstd_status == "passed" if available else zstd_status == "skipped_no_local_codec"))
+                 and (zstd_status == "passed" if zstd_available else zstd_status == "skipped_no_local_codec"))
     report["steps"].append({"step": "real_cli_roundtrip", "status": "PASS" if gate_pass else "FAIL",
                             "checks": checks if type(checks) is int else 0,
                             "zstd": zstd_status if zstd_status in ("passed", "skipped_no_local_codec") else "failed"})
@@ -70,8 +78,14 @@ def verify():
     report["steps"].append({"step": "compileall", "status": "PASS" if code == 0 else "FAIL"})
 
     if shutil.which("node"):
-        code, _, _ = _run(["node", "--test", "tests/test_ui_dom.cjs"])
-        node_pass = code == 0
+        code, node_out, node_err = _run(["node", "--test", "tests/test_ui_dom.cjs"])
+        tap = node_out + "\n" + node_err
+        tests = NODE_TEST_COUNT.search(tap)
+        passed = NODE_PASS_COUNT.search(tap)
+        failed = NODE_FAIL_COUNT.search(tap)
+        node_pass = (code == 0 and tests is not None and passed is not None and failed is not None
+                     and int(tests.group(1)) == 1 and int(passed.group(1)) == 1
+                     and int(failed.group(1)) == 0)
     else:
         node_pass = False
     report["steps"].append({"step": "node_dom", "status": "PASS" if node_pass else "FAIL"})
