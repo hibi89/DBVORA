@@ -21,7 +21,7 @@ class VerificationGateTests(unittest.TestCase):
         self.root_patch.start()
         self.addCleanup(self.root_patch.stop)
 
-    def responses(self, *, tests=156, checks=8, zstd='passed', customer_ready=False):
+    def responses(self, *, tests=167, checks=8, zstd='passed', customer_ready=False):
         return [
             (0, '', f'Ran {tests} tests in 1.000s\nOK'),
             (0, json.dumps({'status': 'PASS_SYNTHETIC_ONLY',
@@ -48,11 +48,11 @@ class VerificationGateTests(unittest.TestCase):
         self.assertEqual(report['status'], 'FAIL_CLOSED')
         self.assertEqual(report['steps'][0]['error'], 'INCOMPLETE_SOURCE_CHECKOUT')
 
-    def test_155_tests_is_not_enough(self):
-        with patch.object(gate, '_run', side_effect=self.responses(tests=155)), patch.object(gate.shutil, 'which', return_value='tool'):
+    def test_166_tests_is_not_enough(self):
+        with patch.object(gate, '_run', side_effect=self.responses(tests=166)), patch.object(gate.shutil, 'which', return_value='tool'):
             report = gate.verify()
         self.assertEqual(report['status'], 'FAIL_CLOSED')
-        self.assertEqual(report['steps'][1]['discovered_tests'], 155)
+        self.assertEqual(report['steps'][1]['discovered_tests'], 166)
 
     def test_unsigned_customer_ready_claim_causes_failure(self):
         with patch.object(gate, '_run', side_effect=self.responses(customer_ready=True)), patch.object(gate.shutil, 'which', return_value='tool'):
@@ -71,7 +71,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_one_optional_zstd_skip_is_allowed_only_without_binary(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=7)
-        mocked[0] = (0, '', 'test_zstd_roundtrip_when_optional_codec_exists (test_archive_cli.ArchiveCliTests.test_zstd_roundtrip_when_optional_codec_exists) ... skipped \'optional external zstd executable unavailable\'\nRan 156 tests in 1.000s\nOK (skipped=1)')
+        mocked[0] = (0, '', 'test_zstd_roundtrip_when_optional_codec_exists (test_archive_cli.ArchiveCliTests.test_zstd_roundtrip_when_optional_codec_exists) ... skipped \'optional external zstd executable unavailable\'\nRan 167 tests in 1.000s\nOK (skipped=1)')
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -79,7 +79,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_any_skip_with_zstd_installed_fails_closed(self):
         mocked = self.responses()
-        mocked[0] = (0, '', 'Ran 156 tests in 1.000s\nOK (skipped=1)')
+        mocked[0] = (0, '', 'Ran 167 tests in 1.000s\nOK (skipped=1)')
         with patch.object(gate, '_run', side_effect=mocked), patch.object(gate.shutil, 'which', return_value='tool'):
             result = gate.verify()
         self.assertEqual(result['status'], 'FAIL_CLOSED')
@@ -87,7 +87,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_more_than_one_skip_without_zstd_fails_closed(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=7)
-        mocked[0] = (0, '', 'Ran 156 tests in 1.000s\nOK (skipped=2)')
+        mocked[0] = (0, '', 'Ran 167 tests in 1.000s\nOK (skipped=2)')
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -104,7 +104,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_unrelated_skip_rejected_even_without_zstd(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=7)
-        mocked[0] = (0, '', "test_backup (test_safety.Safety.test_backup) ... skipped 'bad reason'\nRan 156 tests in 1.000s\nOK (skipped=1)")
+        mocked[0] = (0, '', "test_backup (test_safety.Safety.test_backup) ... skipped 'bad reason'\nRan 167 tests in 1.000s\nOK (skipped=1)")
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -112,7 +112,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_skip_summary_without_identity_line_rejected(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=7)
-        mocked[0] = (0, '', 'Ran 156 tests in 1.000s\nOK (skipped=1)')
+        mocked[0] = (0, '', 'Ran 167 tests in 1.000s\nOK (skipped=1)')
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -120,7 +120,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_skip_identity_from_named_case_only(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=7)
-        mocked[0] = (0, '', "test_zstd_roundtrip_when_optional_codec_exists (test_archive_cli.ArchiveCliTests.test_zstd_roundtrip_when_optional_codec_exists) ... skipped 'wrong reason'\nRan 156 tests in 1.000s\nOK (skipped=1)")
+        mocked[0] = (0, '', "test_zstd_roundtrip_when_optional_codec_exists (test_archive_cli.ArchiveCliTests.test_zstd_roundtrip_when_optional_codec_exists) ... skipped 'wrong reason'\nRan 167 tests in 1.000s\nOK (skipped=1)")
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):

@@ -98,3 +98,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. Safety: generated OS-temp synthetic SQLite only; no credentials/customer data, no source deletion or overwrite, receipts unsigned and plaintext, no battery/powercut proof.
 9. Next: non-destructive Windows Python3.11/NTFS CLI+publish verification; actual GUI browser and packaging; then roadmap prioritization. No paid CI, user customer data or public source migration without explicit approval.
 10. Date and provenance: 2026-10-26 KST. Detailed matrix, command output and all gate decisions: docs/P1_C5_FULL_SYNTHETIC_GATE_20261026.md.
+
+## 2026-10-26 KST — 10-item handoff: native Windows gate pending
+1. Goal: DBVORA local read-only map plus verifiably lossless SQLite snapshots/archives; avoid customer data until approved.
+2. Change: added `scripts/windows_ntfs_gate.py` and 11 decision tests; updated Python integrated coverage threshold to 167.
+3. Evidence: Linux 167/167 Python PASS, 0 FAIL/SKIP; six-step release gate PASS, actual synthetic ZIP/ZSTD CLI 8/8, Node DOM, preflight/compileall PASS; new Windows decision logic 11/11 PASS; Linux Windows probe BLOCKED_UNVERIFIED expected.
+4. Status: Linux synthetic P1-C5 still PASS; Windows Python3.11/NTFS, real GUI, power loss, customer readiness NOT TESTED.
+5. Blocker: POSIX-style directory fsync may be unsupported on Windows; must fail closed, never label unsupported publish success.
+6. Repo: private hibi89/DBVORA, feature/p0-db-map, pre-change head `71036856caabbe338281db82dd00535f3d5462a7`; retrieve latest SHA after push; main/develop unchanged.
+7. Runtime: local Linux Python3.13.5, Node22.16.0, ZSTD1.5.7. Windows command `py -3.11 -B -m scripts.windows_ntfs_gate` from source root; Production/Vercel N/A.
+8. Data/security: OS-temp synthetic only, no client credentials/files, no uploads/paid services/automatic cleanup; unsigned plaintext archives unchanged.
+9. Next: actual authorized Windows/NTFS run; investigate any strict durability block with real Windows semantics; real browser and portable packaging next. No customer write/paid CI without approval.
+10. Evidence date: 2026-10-26 KST; `docs/WINDOWS_NTFS_VALIDATION_20261026.md`, four exact blob SHA matches, 167 Linux suite and 11 new decision tests. Do not claim Windows PASS without native host.

@@ -65,3 +65,10 @@ New commands do not encrypt source/artifacts, do not schedule/delete or overwrit
 - Unified python -m scripts.verify_release_gate returned status PASS_SYNTHETIC_ENVIRONMENT_ONLY exit 0: checkout, unittest, 8-check actual ZIP/ZSTD CLI roundtrip, Python compile, Node DOM TAP 1/1, and temp-FS preflight ALL PASS.
 - Evidence: docs/P1_C5_FULL_SYNTHETIC_GATE_20261026.md. Node v22.16.0, ZSTD v1.5.7, SQLite 3.46.1. NOT customer-ready, no Actions/Vercel.
 - Windows Python3.11/NTFS, real browser, packaging, hardware power loss and customer file safety NOT TESTED. Do not promote main/develop or claim commercial release.
+
+## 2026-10-26 KST — Windows/NTFS diagnostic added; Linux synthetic suite 167 PASS
+- Created `scripts/windows_ntfs_gate.py` with strict Windows, Python3.11, OS-temp NTFS, genuine temp-file durable publication and full six-step synthetic release gate; sanitized fail-closed JSON, no customer path, never marks power-loss/customer-safe.
+- Added `tests/test_windows_ntfs_gate.py`: **11/11 PASS** isolated decision tests (not actual Windows). Updated `scripts/verify_release_gate.py` and its 14 tests to enforce **167** discovered Python cases.
+- Real **Linux** Python3.13.5 entire unittest suite **167/167 PASS**, 0 failure/skip; six-step Linux synthetic gate PASS, real CLI ZIP/ZSTD 8/8; Node DOM/compileall/temp preflight PASS. Tested Git SHA of four changed source files matched remote staged Git blobs.
+- Executing Windows gate on Linux returned **BLOCKED_UNVERIFIED / WINDOWS_HOST_REQUIRED**, exit1 as designed. **Windows/NTFS not actually executed.** Existing Windows directory metadata fsync not proven; do not bypass the durability check.
+- Evidence/commands: `docs/WINDOWS_NTFS_VALIDATION_20261026.md`. main/develop unchanged, no Actions/Production/customer data.

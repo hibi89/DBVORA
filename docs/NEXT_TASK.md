@@ -50,3 +50,8 @@ Real customer DB access, deletion/retention/overwrite, network/third-party uploa
 - Supersedes all above old 31/156 and missing-source notices: Git-SHA-matched source workspace 36/36, actual checked-in Python regression 156/156 PASS (0 FAIL, 0 SKIP), unified six-step synthetic gate PASS, CLI ZIP/ZSTD+receipt/audit 8 checks, Node DOM 1/1, compileall and filesystem preflight.
 - New first blocker: Windows Python3.11/NTFS fail-closed durability/hardlink/restore compatibility on an authorized actual Windows host, plus real-browser GUI, packaging and hardware power-loss evidence. No client files or paid Actions without approval.
 - Full evidence at docs/P1_C5_FULL_SYNTHETIC_GATE_20261026.md. Linux synthetic PASS is not customer data readiness. Main/develop not promoted.
+
+## First unfinished task after 2026-10-26 Windows diagnostic implementation
+- Linux **167/167** Python suite PASS and full six-step synthetic gate PASS; 11 Windows preflight decision tests PASS (mocked OS facts). Windows diagnostic code complete but **not executed on native Windows**; Linux run correctly refused.
+- On authorized private Windows Python3.11 NTFS machine: run `py -3.11 -B -m scripts.windows_ntfs_gate`. On `DURABILITY_NOT_PROVEN_FAIL_CLOSED`, preserve strict failure, investigate native Windows file+directory persistence and rollback, only then adapt writer with Windows-proven tests. See `docs/WINDOWS_NTFS_VALIDATION_20261026.md`.
+- Next after Windows: actual GUI browser and packaging. No customer data, Public mirror, paid Actions, destructive cleanup or Production without approval.
