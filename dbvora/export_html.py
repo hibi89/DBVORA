@@ -62,6 +62,8 @@ def render_html(schema: dict, *, web: Path = _WEB) -> bytes:
     except (OSError, UnicodeError):
         raise HtmlExportError('MISSING_WEB_ASSET') from None
     if (document.count(_STYLE_LINK) != 1 or document.count(_SCRIPT_LINK) != 1
+            or document.count('<meta charset="utf-8">') != 1
+            or document.count('</body>') != 1
             or re.search(r'</\s*style\b', stylesheet, re.IGNORECASE)
             or re.search(r'</\s*script\b', script, re.IGNORECASE)):
         raise HtmlExportError('UNSAFE_WEB_ASSET')
