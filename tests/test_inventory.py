@@ -1,6 +1,7 @@
 """Run with: python -m unittest discover -s tests -v"""
 
 import hashlib
+from contextlib import closing
 import json
 from pathlib import Path
 import sqlite3
@@ -124,8 +125,9 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(before, self.fingerprint())
 
     def test_metadata_only_even_with_expression_indexes(self):
-        with sqlite3.connect(self.path) as con:
+        with closing(sqlite3.connect(self.path)) as con:
             con.execute("CREATE INDEX idx_event_lower ON events(lower(category))")
+            con.commit()
         report = inspect_sqlite(self.path)
         event = next(t for t in report["tables"] if t["name"] == "events")
         expression_index = next(i for i in event["indexes"] if i["name"] == "idx_event_lower")

@@ -4,10 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dbvora"
-version = "0.1.0"
-description = "Local-first read-only database inventory"
+version = "0.2.0"
+description = "Local-first read-only database inventory and structure map"
 requires-python = ">=3.11"
 dependencies = []
 
+[project.optional-dependencies]
+ui = ["fastapi>=0.110,<1", "uvicorn>=0.27,<1"]
+
 [tool.setuptools.packages.find]
 include = ["dbvora*"]
+
+[tool.setuptools.package-data]
+"dbvora" = ["web/*.html", "web/*.js", "web/*.css"]

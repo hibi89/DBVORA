@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>DBVORA — Database Observatory</title>
+  <link rel="stylesheet" href="/assets/style.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="mark">DB<span>V</span></span><span class="brand-divider"></span><span class="brand-name">DBVORA</span><span class="brand-subtitle">DATABASE OBSERVATORY</span></div>
+    <div class="top-right"><span class="local-tag"><i></i> LOCAL · READ ONLY</span><span class="version">v0.1 / P0</span></div>
+  </header>
+  <main class="layout">
+    <section class="intro">
+      <div><p class="eyebrow">SCHEMA INTELLIGENCE <span> / </span> WORKSPACE 01</p><h1>Database <em>Overview.</em></h1><p class="lede">데이터 구조와 관계를 한눈에 탐색합니다. 실제 데이터 행은 표시하지 않습니다.</p></div>
+      <button id="refresh" class="refresh" type="button" aria-label="새로고침">↻ <span>Refresh</span></button>
+    </section>
+    <div id="error" class="error" role="alert" hidden></div>
+    <section class="stats" aria-label="데이터베이스 요약">
+      <div class="stat"><span class="stat-label">DATABASE SIZE <span class="subdot"></span> MEASURED</span><strong id="size">—</strong><small>메인 파일 기준 · WAL/SHM 제외</small></div>
+      <div class="stat"><span class="stat-label">TABLES</span><strong id="tables-count">—</strong><small>확인된 테이블</small></div>
+      <div class="stat"><span class="stat-label">RELATIONSHIPS</span><strong id="links-count">—</strong><small>선언된 Foreign Keys</small></div>
+      <div class="stat"><span class="stat-label">CPU / RAM</span><strong class="muted-value">N/A</strong><small>DB 단위 측정 미지원</small></div>
+    </section>
+    <section class="workspace">
+      <div class="panel map-panel">
+        <div class="panel-title"><div><p class="eyebrow">01 / TOPOLOGY</p><h2>Structure map</h2></div><span class="legend"><i></i> DECLARED RELATIONSHIP</span></div>
+        <div class="diagram" id="diagram" aria-label="DB 테이블과 외래키 연결 구조도">
+          <svg id="edges" class="edges" aria-hidden="true"></svg>
+          <div class="database-node" id="database-node"><span class="node-hex">◈</span><div><b>SQLite Database</b><span id="db-short">Locally connected</span></div></div>
+          <div id="tables" class="table-grid"><p class="placeholder">스키마를 불러오는 중…</p></div>
+        </div>
+        <div class="map-footer"><span><b class="status-light"></b> 구조 인벤토리</span><span id="observed">OBSERVED —</span></div>
+      </div>
+      <aside class="panel detail-panel">
+        <div class="panel-title"><div><p class="eyebrow">02 / INSPECTOR</p><h2>Table inspector</h2></div><span class="inspect-symbol">⌘</span></div>
+        <div id="detail" class="detail"><div class="unselected"><span>◎</span><strong>Inspect a table</strong><p>왼쪽 테이블을 선택하면 컬럼과 인덱스, 외래키 정보를 확인할 수 있습니다.</p></div></div>
+        <div class="detail-foot">READ-ONLY METADATA <span>↗</span></div>
+      </aside>
+    </section>
+    <footer class="footer"><span>DBVORA / LOCAL SOVEREIGN DATA INTELLIGENCE</span><span>NO CLOUD SYNC · NO DATA ROW EXPORT</span></footer>
+  </main>
+</body>
+</html>

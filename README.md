@@ -2,7 +2,7 @@
 
 **Database Visibility · Optimization · Recovery · Archiving**
 
-로컬 우선, 사용자 소유 데이터 기반의 **통합 DB 관제·무손실 아카이빙·저장 최적화** 제품 (P0-01 읽기 전용 인벤토리 구현, UI MVP 미완료).
+로컬 우선, 사용자 소유 데이터 기반의 **통합 DB 관제·무손실 아카이빙·저장 최적화** 제품 (P0-01/02 구현, 로컬 HTTP 검증 완료, 실제 브라우저·Windows 검증 대기).
 
 > **새 ChatGPT 채팅방 재개 문장:** `[디비보라 깃헙보고 작업해]`
 >
@@ -19,9 +19,9 @@
 ## 현재 실제 상태 (브랜치별로 구분)
 
 - main / develop: 원래 초기 설계·문서 기준, 아직 제품 기능 코드 미반영.
-- feature/p0-db-map: P0-01 합성 SQLite 읽기 전용 스키마 인벤토리 코드 및 unittest 16/16 로컬 통과. 실제 원격 HEAD는 GitHub에서 재조회.
-- 아직 구현되지 않음: 클릭형 UI, localhost API, 압축·무손실 복원, 예약 작업, Windows 설치기. 브라우저·Windows·고객 DB 미검증.
-- P0-01 사용/제약은 [docs/P0_01_USAGE.md](docs/P0_01_USAGE.md), 다음 작업은 [docs/NEXT_TASK.md](docs/NEXT_TASK.md).
+- feature/p0-db-map: P0-01 read-only 인벤토리 + P0-02 FastAPI localhost 구조맵 UI, 합성 Python unittest 28/28, Node DOM 시뮬레이션 1/1, 실제 localhost HTTP 200/403 확인. 브라우저 E2E는 정책 차단으로 미검증. 최신 SHA는 원격 직접 조회.
+- 아직 구현되지 않음: 압축·무손실 복원, 예약 작업, Windows 설치기. 브라우저 실제 렌더링, Windows 및 고객 DB 미검증. UI 코드 존재와 실브라우저 검증 완료를 혼동하지 않는다.
+- 실행 방법: [docs/P0_02_USAGE.md](docs/P0_02_USAGE.md); P0-01 계약: [docs/P0_01_USAGE.md](docs/P0_01_USAGE.md); 다음 작업: [docs/NEXT_TASK.md](docs/NEXT_TASK.md).
 - 외부 유료 API·서버·데이터 전송·Vercel 배포 없음.
 
 ## 문서 및 작업 구조
@@ -31,6 +31,7 @@
 - [STATUS.md](STATUS.md) — 진행·차단·검증 현황
 - [AGENTS.md](AGENTS.md) — 개발·보안·Git 운영 원칙
 - [REQUIREMENTS.md](REQUIREMENTS.md) — 사용자 요구와 범위
+- [docs/P0_02_USAGE.md](docs/P0_02_USAGE.md) — 로컬 웹 실행·검증·제약
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — 설계 대안·선정안·데이터 흐름
 - [docs/COMPRESSION_PLAN.md](docs/COMPRESSION_PLAN.md) — 압축·복원·벤치마크 계약
 - [docs/ROADMAP.md](docs/ROADMAP.md) — MVP 이후 단계
