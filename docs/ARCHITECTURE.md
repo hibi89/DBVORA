@@ -1,4 +1,4 @@
-# DBVORA 기술 설계 — 첫 구현 전
+# DBVORA 기술 설계 — ADR 및 구현 현황
 
 ## A/B 비교
 | 속성 | A: Python 로컬 제어면 + 경량 웹 UI | B: Electron + PostgreSQL 통합 서비스 |
@@ -16,7 +16,7 @@
 
 압축은 **완전히 별개 흐름**: 사용자 선택+스케줄 → DB별 일관된 스냅샷 → 데이터/파일 유형별 전략 선택 → 압축·체크섬·아카이브 manifest → 별도 임시경로 복원 → 해시/DB 무결성 검사 → 검증 후 보관. 실행 이력/중복 실행 idempotency ledger 유지. 어떤 경우에도 원본에 압축 결과를 덮어쓰지 않는다.
 
-## 초기 모듈 경계 (실제 파일 미생성)
+## 초기 모듈 경계 (P0-01 일부 구현; 나머지는 계획)
 - dbvora/connectors/sqlite_reader.py: URI read-only 또는 동등한 명시적 읽기 방어, metadata only.
 - dbvora/inventory.py: 정형 SQLite schema 추출 + normalized contract.
 - dbvora/metrics.py: 파일 크기, 관측 시점, 측정 범위/출처를 함께 반환. 파일 스캔 중 CPU 과점유 금지.
@@ -34,3 +34,6 @@ db_id(절대 원본 경로를 화면/로그에 노출하지 않는 안정 ID), e
 - 메트릭: SQLite DB별 CPU를 측정했다고 표시 불가. 연결 프로세스/RAM의 측정 대상 표시, 불가하면 '미지원'.
 - 데이터 크기 변동은 스냅샷 2회 이상 비교해야 표시하고 이전값 없으면 '자료 없음'.
 - 고급 권한·암호화·다중 사용자/원격 제어·Supabase 호스팅 호환은 MVP 범위 제외.
+
+## 2026-10-26 P0-01 구현 노트
+SQLite connector, inventory, metrics, CLI 및 합성 unittest가 feature/p0-db-map에 구현되었다(로컬 16 PASS). FastAPI 및 web/ 클릭 UI와 archive/는 여전히 미구현. Python 3.11/Windows 및 라이브 WAL 검증은 후속 단계. 구현 실상은 STATUS.md와 소스 우선.
