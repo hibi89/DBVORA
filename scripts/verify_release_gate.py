@@ -11,10 +11,14 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 145
+EXPECTED_PYTHON_TESTS = 156
 EXPECTED_GATE_CHECKS = 7
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"OK\s*\(skipped=(\d+)\)", re.IGNORECASE)
+# Verbose unittest output identifies the one permitted optional ZSTD skip.
+OPTIONAL_ZSTD_TEST = "test_zstd_roundtrip_when_optional_codec_exists"
+OPTIONAL_ZSTD_SKIP_REASON = "optional external zstd executable unavailable"
+
 NODE_TEST_COUNT = re.compile(r"(?m)^#\s+tests\s+(\d+)\s*$")
 NODE_PASS_COUNT = re.compile(r"(?m)^#\s+pass\s+(\d+)\s*$")
 NODE_FAIL_COUNT = re.compile(r"(?m)^#\s+fail\s+(\d+)\s*$")
@@ -23,7 +27,7 @@ REQUIRED = (
     "pyproject.toml", "dbvora/archive_cli.py", "dbvora/archive/safe_zip.py",
     "dbvora/archive/receipts.py", "tests/test_archive_cli.py",
     "scripts/synthetic_cli_gate.py", "tests/test_ui_dom.cjs",
-    "tests/test_verify_release_gate.py",
+    "tests/test_verify_release_gate.py", "tests/test_synthetic_cli_gate.py",
 )
 
 
@@ -47,17 +51,30 @@ def verify():
     report["steps"].append({"step": "checkout", "status": "PASS"})
 
     code, out, err = _run([sys.executable, "-W", "error::ResourceWarning", "-m", "unittest",
-                           "discover", "-s", "tests", "-q"], timeout=240)
+                           "discover", "-s", "tests", "-v"], timeout=240)
     count_match = TEST_COUNT.search(out + "\n" + err)
     count = int(count_match.group(1)) if count_match else 0
     skipped_match = SKIPPED_COUNT.search(out + "\n" + err)
     skipped = int(skipped_match.group(1)) if skipped_match else 0
     zstd_available = shutil.which("zstd") is not None
     allowed_skips = 0 if zstd_available else 1
-    unit_pass = code == 0 and count >= EXPECTED_PYTHON_TESTS and skipped <= allowed_skips
+    skip_lines = [line for line in err.splitlines() if " ... skipped " in line]
+    # Never allow an unrelated test to be skipped under the optional ZSTD exception.
+    expected_optional_skip = (
+        len(skip_lines) == 1
+        and skip_lines[0].startswith(OPTIONAL_ZSTD_TEST + " (")
+        and OPTIONAL_ZSTD_SKIP_REASON in skip_lines[0]
+    )
+    skip_identity_ok = (
+        skipped == 0 and not skip_lines
+        or not zstd_available and skipped == 1 and expected_optional_skip
+    )
+    unit_pass = (code == 0 and count >= EXPECTED_PYTHON_TESTS
+                 and skipped <= allowed_skips and skip_identity_ok)
     report["steps"].append({"step": "python_unittest", "status": "PASS" if unit_pass else "FAIL",
                             "discovered_tests": count, "minimum_required": EXPECTED_PYTHON_TESTS,
-                            "skipped_tests": skipped, "maximum_allowed_skips": allowed_skips})
+                            "skipped_tests": skipped, "maximum_allowed_skips": allowed_skips,
+                            "skip_identity_verified": skip_identity_ok})
 
     code, out, _ = _run([sys.executable, "-m", "scripts.synthetic_cli_gate"], timeout=240)
     try:

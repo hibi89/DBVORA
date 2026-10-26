@@ -10,6 +10,7 @@ import hashlib
 import io
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import sqlite3
@@ -22,6 +23,28 @@ from tests.fixtures.make_sqlite import create_fixture
 
 class GateFailure(Exception):
     """Safe failure marker; no sensitive source paths are printed."""
+
+
+GENERATED = re.compile(r'^dbvora-[a-f0-9]{32}\.(sqlite|zip|dbvz)$')
+
+
+def _generated_file(directory: Path, name: str, suffix: str, *, expected_sha=None) -> Path:
+    """Inspect only exact generated basenames in the caller's temporary directory."""
+    if type(name) is not str or not (match := GENERATED.fullmatch(name)) or match.group(1) != suffix:
+        raise GateFailure('INVALID_GENERATED_FILENAME')
+    target = directory / name
+    if target.is_symlink() or not target.is_file():
+        raise GateFailure('EXPECTED_ARTIFACT_MISSING')
+    if expected_sha is not None:
+        if not isinstance(expected_sha, str) or not re.fullmatch(r'[0-9a-f]{64}', expected_sha):
+            raise GateFailure('BAD_EXPECTED_SHA')
+        try:
+            actual_sha = hashlib.sha256(target.read_bytes()).hexdigest()
+        except OSError:
+            raise GateFailure('ARTIFACT_UNREADABLE') from None
+        if actual_sha != expected_sha:
+            raise GateFailure('INDEPENDENT_FILE_SHA_MISMATCH')
+    return target
 
 
 def _invoke(*args):
@@ -72,15 +95,15 @@ def run_gate(*, include_zstd=True):
         snapshot = _invoke('snapshot', '--source', str(original),
                            '--output-dir', str(snap_dir), '--synthetic-only',
                            '--accept-plaintext')
-        snap_path = snap_dir / snapshot['snapshot_path']
-        _check(snap_path.is_file(), 'SNAPSHOT_ABSENT')
+        snap_path = _generated_file(snap_dir, snapshot['snapshot_path'], 'sqlite',
+                                    expected_sha=snapshot['snapshot_sha256'])
         result['checks'].append('sqlite_online_snapshot')
 
         archive = _invoke('archive', '--snapshot', str(snap_path),
                           '--output-dir', str(arc_dir), '--codec', 'zip',
                           '--synthetic-only', '--accept-plaintext')
-        zip_path = arc_dir / archive['archive_path']
-        _check(zip_path.is_file(), 'ZIP_ABSENT')
+        zip_path = _generated_file(arc_dir, archive['archive_path'], 'zip',
+                                   expected_sha=archive['archive_sha256'])
         _check(archive['snapshot_sha256'] == snapshot['snapshot_sha256'], 'ZIP_SHA_MISMATCH')
         result['checks'].append('zip_archive_verified')
 
@@ -92,9 +115,8 @@ def run_gate(*, include_zstd=True):
         restored = _invoke('restore', '--archive', str(zip_path),
                            '--output-dir', str(restore_dir), '--synthetic-only',
                            '--accept-plaintext')
-        restored_path = restore_dir / restored['restored_path']
-        restored_sha = hashlib.sha256(restored_path.read_bytes()).hexdigest()
-        _check(restored_sha == snapshot['snapshot_sha256'], 'RESTORE_SHA_MISMATCH')
+        _generated_file(restore_dir, restored['restored_path'], 'sqlite',
+                        expected_sha=snapshot['snapshot_sha256'])
         result['checks'].append('independent_zip_restore_sha256')
 
         catalog = _invoke('audit', '--output-dir', str(arc_dir))
@@ -110,12 +132,15 @@ def run_gate(*, include_zstd=True):
                 zstd_archive = _invoke('archive', '--snapshot', str(snap_path),
                                        '--output-dir', str(arc_dir), '--codec', 'zstd',
                                        '--level', '3', '--synthetic-only', '--accept-plaintext')
-                zstd_path = arc_dir / zstd_archive['archive_path']
+                zstd_path = _generated_file(arc_dir, zstd_archive['archive_path'], 'dbvz',
+                                            expected_sha=zstd_archive['archive_sha256'])
                 recovered = _invoke('restore', '--archive', str(zstd_path),
                                     '--output-dir', str(restore_dir), '--synthetic-only',
                                     '--accept-plaintext')
+                _generated_file(restore_dir, recovered['restored_path'], 'sqlite',
+                                expected_sha=snapshot['snapshot_sha256'])
                 _check(recovered['restored_sha256'] == snapshot['snapshot_sha256'],
-                       'ZSTD_RESTORE_SHA_MISMATCH')
+                       'ZSTD_REPORTED_SHA_MISMATCH')
                 result['optional_zstd'] = 'passed'
                 result['checks'].append('optional_zstd_restore_sha256')
 
