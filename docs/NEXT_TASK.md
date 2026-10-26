@@ -1,4 +1,4 @@
-# NEXT_TASK — active 195-case CSP guard regression + native Windows/NTFS gate
+# NEXT_TASK — authentic frontend assets and full 199-case integration gate
 
 > **Latest active work is the final section of this document.** Older first-unfinished headings below are preserved as historical checkpoints and must not be repeated.
 
@@ -78,3 +78,8 @@ Real customer DB access, deletion/retention/overwrite, network/third-party uploa
 - First action when full private checkout execution possible: run real `python -m dbvora.offline_selftest` (no test-double); then `python -m scripts.verify_release_gate` with >=199 tests and `python -m scripts.offline_html_browser_probe` if actual Chromium allowed. Fail-closed if incorrect.
 - Native Windows separate gate: on authorized owner PC `py -3.11 -m dbvora.offline_selftest` from developer preview and `py -3.11 -B -m scripts.windows_ntfs_gate` from complete checkout. A browser file navigation and Windows NTFS publication proof are still **NOT VERIFIED**; self-check success cannot substitute.
 - Do not ask user to operate local PC until this exact native-only blocker matters; do not use customer files, paid CI, public source, installer release, or disable durability fsync.
+
+## Active next gate after real offline Python focus (2026-10-26 KST)
+- The real GitHub `export_html.py`, `inventory.py`, `sqlite_reader.py`, `metrics.py`, `offline_selftest.py`, actual HTML skeleton and checked-in tests pass focused **17/17** with synthetic data; mock CSS/JS kept explicit. Old Python ResourceWarning from `tests/test_export_html.py` patched and revalidated. Full evidence: `docs/OFFLINE_SELFTEST_REAL_CORE_20261026.md`.
+- Next safely available tasks: recover exact production `dbvora/web/style.css` and `app.js` into authenticated verification environment, then Chromium generated HTML and offline navigation checks; assemble complete authenticated repo and run `python -m scripts.verify_release_gate` (>=199) without paid CI. Do not report the 17 focused tests as full 199 success.
+- Native Windows Python3.11 NTFS directory-fsync and Windows `file://` remain user-machine-only validation; run `py -3.11 -m dbvora.offline_selftest` from private preview and `py -3.11 -B -m scripts.windows_ntfs_gate` from complete checkout if/when owner at Windows PC. No customer DB access, source-publication, paid Actions, installer or forced promotion without prior approval.
