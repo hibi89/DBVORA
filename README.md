@@ -2,7 +2,7 @@
 
 **Database Visibility · Optimization · Recovery · Archiving**
 
-로컬 우선, 사용자 소유 데이터 기반의 **통합 DB 관제·무손실 아카이빙·저장 최적화** 제품 (P0-01/02 구현, 로컬 HTTP 검증 완료, 실제 브라우저·Windows 검증 대기).
+로컬 우선, 사용자 소유 데이터 기반의 **통합 DB 관제·무손실 아카이빙·저장 최적화** 제품 (P0 인벤토리·로컬 UI 및 P1-C0 합성 SQLite 백업/ZIP 복원 기능 구현; 상용 안정성 검증 전).
 
 > **새 ChatGPT 채팅방 재개 문장:** `[디비보라 깃헙보고 작업해]`
 >
@@ -20,7 +20,8 @@
 
 - main / develop: 원래 초기 설계·문서 기준, 아직 제품 기능 코드 미반영.
 - feature/p0-db-map: P0-01 read-only 인벤토리 + P0-02 FastAPI localhost 구조맵 UI, 합성 Python unittest 28/28, Node DOM 시뮬레이션 1/1, 실제 localhost HTTP 200/403 확인. 브라우저 E2E는 정책 차단으로 미검증. 최신 SHA는 원격 직접 조회.
-- 아직 구현되지 않음: 압축·무손실 복원, 예약 작업, Windows 설치기. 브라우저 실제 렌더링, Windows 및 고객 DB 미검증. UI 코드 존재와 실브라우저 검증 완료를 혼동하지 않는다.
+- feature/p0-db-map의 신규 P1-C0: SQLite online backup 기반 합성 snapshot, ZIP/manifest, 독립 새 경로 복원, SHA256+integrity_check 확인. 전체 Python 46/46 PASS 및 Node DOM 1 PASS. 실제 고객 DB/Windows/Power-cut 미검증.
+- 아직 구현되지 않음: ZSTD 비교, 증분·예약 보관, Windows 설치기. 브라우저 실제 렌더링, 고객 DB 미검증. 합성 ZIP 결과를 상용 압축률로 해석 금지.
 - 실행 방법: [docs/P0_02_USAGE.md](docs/P0_02_USAGE.md); P0-01 계약: [docs/P0_01_USAGE.md](docs/P0_01_USAGE.md); 다음 작업: [docs/NEXT_TASK.md](docs/NEXT_TASK.md).
 - 외부 유료 API·서버·데이터 전송·Vercel 배포 없음.
 
@@ -32,6 +33,7 @@
 - [AGENTS.md](AGENTS.md) — 개발·보안·Git 운영 원칙
 - [REQUIREMENTS.md](REQUIREMENTS.md) — 사용자 요구와 범위
 - [docs/P0_02_USAGE.md](docs/P0_02_USAGE.md) — 로컬 웹 실행·검증·제약
+- [docs/P1_C0_VERIFICATION.md](docs/P1_C0_VERIFICATION.md) — 합성 SQLite 백업·ZIP 무손실 복원 계약 및 검증
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — 설계 대안·선정안·데이터 흐름
 - [docs/COMPRESSION_PLAN.md](docs/COMPRESSION_PLAN.md) — 압축·복원·벤치마크 계약
 - [docs/ROADMAP.md](docs/ROADMAP.md) — MVP 이후 단계

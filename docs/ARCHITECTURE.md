@@ -40,3 +40,6 @@ SQLite connector, inventory, metrics, CLI 및 합성 unittest가 feature/p0-db-m
 
 ## 2026-10-26 P0-02 추가
 FastAPI 127.0.0.1 only, --db 명시 선택(HTTP DB 선택 파라미터 없음), Host/Origin/Sec-Fetch-Site 검사, GET only, no-store/CSP/no CORS, HTML DOM textContent 기반 identifier 처리. dbvora/web 패키지에 정적 리소스 포함. Linux Python 3.13.5 FastAPI 0.128.2 / Uvicorn 0.48.0 테스트 28 PASS, Node DOM 1 PASS, 실제 HTTP 요청은 PASS. Chromium 엔터프라이즈 URLBlocklist '*' 때문에 실브라우저 E2E/레이아웃은 미검증. 고객 실데이터 및 Python 3.11/Windows 미검증.
+
+## P1-C0 archive 경계 구현 (2026-10-26)
+dbvora/archive/safe_zip.py: HTTP와 연결되지 않은 직접 호출 offline functions (snapshot/zip/restore). sqlite3 backup API 사용. 고정 ZIP entry/manifest 검증과 독립 SHA+SQLite integrity 복원. 원본 경로 manifest 기록 없음, 고유 목적지 exclusive publish. 외부/고객 입력 미사용, 압축률·durability·Windows 검증은 후속. docs/P1_C0_VERIFICATION.md.

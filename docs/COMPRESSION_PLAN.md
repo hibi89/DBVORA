@@ -28,3 +28,6 @@ schema_version, archive_id, created_at_utc, source_type, source_snapshot_size_by
 
 ## 구현 의사결정
 ZSTD·ZIP 등 코덱은 검증된 라이브러리 활용. 데이터 분류·압축 정책·메타데이터·복원 체인·비용 분석은 DBVORA 고유 구현. 외부 기술 라이선스/패키징·Windows wheel 등 조사 후 확정.
+
+## P1-C0 첫 구현 결과 — 2026-10-26 KST
+합성 SQLite online backup API -> 완전한 새 경로 스냅샷 + SQLite integrity_check/SHA256 -> ZIP(deflate) 저장 + 고정 manifest -> 임시 독립 복원 검증 후 비덮어쓰기 게시 -> 새 경로 복원, 바이트 SHA 동일. Linux Python 3.13.5 자동화 전체 46 PASS. WAL 커밋 데이터 fixture·위조 manifest checksum·깨진 ZIP·중복·경로 순회·실패시 원본 보호 검증. 아주 작은 fixture 24,576 bytes -> ZIP 1,006 bytes 사례는 일반 압축률 주장 금지. ZIP은 암호화/서명 없음. 512MiB 크기 제한, os.link Windows 호환·전원 장애·live concurrency 미검증. 다음 C1에서 동일 synthetic snapshot ZSTD 대 ZIP 반복 측정. 상세 docs/P1_C0_VERIFICATION.md.
