@@ -142,6 +142,44 @@ class PortableTests(unittest.TestCase):
         self.assertIn('Content-Security-Policy', (out / response['filename']).read_text())
         self.assertEqual(hashlib.sha256(src.read_bytes()).hexdigest(), before)
 
+    def test_extracted_portable_offline_selfcheck_needs_no_pip_or_customer_db(self):
+        archive = pack.build(self.folder)
+        destination = self.folder / 'unpacked_selfcheck'
+        destination.mkdir()
+        with zipfile.ZipFile(archive) as z:
+            z.extractall(destination)
+            self.assertIn('dbvora/offline_selftest.py', z.namelist())
+            self.assertIn('check_dbvora_windows.cmd', z.namelist())
+            self.assertIn('check_dbvora_unix.sh', z.namelist())
+        env = dict(os.environ, PYTHONPATH='')
+        process = subprocess.run(
+            [sys.executable, '-m', 'dbvora.offline_selftest'],
+            cwd=destination, env=env, text=True, capture_output=True,
+            timeout=15, check=False,
+        )
+        self.assertEqual(process.returncode, 0, process.stderr)
+        response = json.loads(process.stdout)
+        self.assertEqual(response['status'], 'PASS_SYNTHETIC_OFFLINE_HTML_ONLY')
+        self.assertEqual(response['checks_passed'], 9)
+        self.assertEqual(response['expected_checks'], 9)
+        self.assertFalse(response['ready_for_customer_data'])
+        self.assertFalse(response['windows_ntfs_durability_verified'])
+        self.assertFalse(response['native_file_browser_verified'])
+
+    def test_synthetic_launchers_never_install_or_take_customer_arguments(self):
+        archive = pack.build(self.folder)
+        with zipfile.ZipFile(archive) as z:
+            for file, expected in (
+                ('check_dbvora_windows.cmd', 'py -3.11 -m dbvora.offline_selftest'),
+                ('check_dbvora_unix.sh', 'python3 -m dbvora.offline_selftest'),
+            ):
+                launcher = z.read(file).decode('utf-8').lower()
+                self.assertIn(expected, launcher)
+                self.assertIn('no arguments', launcher)
+                for forbidden in ('pip install', 'curl', 'wget', 'invoke-webrequest',
+                                  'dbvora.export_html --db', 'del ', 'rm -'):
+                    self.assertNotIn(forbidden, launcher)
+
     def test_launcher_has_no_network_downloads(self):
         archive = pack.build(self.folder)
         with zipfile.ZipFile(archive) as z:
