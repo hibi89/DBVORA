@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 199
+EXPECTED_PYTHON_TESTS = 201
 EXPECTED_GATE_CHECKS = 7
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"OK\s*\(skipped=(\d+)\)", re.IGNORECASE)
