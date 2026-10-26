@@ -1,4 +1,6 @@
-# DBVORA STATUS — P1-C5 CLI implemented, integration verification pending (2026-10-26 KST)
+# DBVORA STATUS — offline HTML CSP guard committed; full 195-case regression and Windows gate pending (2026-10-26 KST)
+
+> **Current authoritative checkpoint is the latest dated section at the bottom.** Historical table and earlier test totals below describe older commits, not current HEAD acceptance.
 
 Private hibi89/DBVORA, active feature/p0-db-map. Parent HEAD prior to this implementation: 0becc730722e218d79f8f294aeb8dfeeaaec78b6. Main/develop at 890f842e3ba0e13c901e785633bdd06eadc76cce. Confirm actual post-commit HEAD; no main/develop promotion.
 
