@@ -18,7 +18,7 @@ import tempfile
 
 from dbvora.archive.safe_zip import (
     ArchiveError, MAX_ARCHIVE_BYTES, MAX_SNAPSHOT_BYTES, CHUNK_SIZE,
-    _directory, _hash_file, _integrity_check, _publish_new, _staging_file,
+    _directory, _hash_file, _integrity_check, _publish_new, _staging_file, _staging_files,
 )
 from dbvora.connectors.sqlite_reader import validate_path
 from dbvora.errors import InventoryError
@@ -169,7 +169,7 @@ def create_zstd_archive(snapshot_path: str | Path, output_dir: str | Path, *, le
     output = _directory(output_dir)
     snapshot = _source(snapshot_path)
     sha, size = _hash_file(snapshot)
-    frame, envelope, extraction, dry_run = (_staging_file(output) for _ in range(4))
+    frame, envelope, extraction, dry_run = _staging_files(output, 4)
     try:
         compressed = _zstd_pipe(snapshot, frame, level=level)
         frame_sha, verified_length = _hash_file(frame, limit=MAX_ARCHIVE_BYTES)
@@ -211,7 +211,7 @@ def restore_zstd_archive(archive_path: str | Path, output_dir: str | Path) -> di
     """Validate frame, checksum and SQLite integrity, publish only NEW restore file."""
     output = _directory(output_dir)
     archive = _archive_path(archive_path)
-    extraction, restored = _staging_file(output), _staging_file(output)
+    extraction, restored = _staging_files(output, 2)
     try:
         result = _verify_to_temp(archive, extraction, restored)
         result["restored_path"] = str(_publish_new(restored, output, ".sqlite"))

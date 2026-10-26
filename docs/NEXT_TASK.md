@@ -1,23 +1,20 @@
-# NEXT_TASK — P1-C2 durability, recovery and Windows codec packaging (synthetic only)
+# NEXT_TASK — P1-C3 cross-platform safe archive recovery + Windows readiness
 
-Trigger [디비보라 깃헙보고 작업해] or ㄱ. Before coding verify GitHub branch SHA, HANDOFF, STATUS, AGENTS, REQUIREMENTS, source and tests. Do not repeat finished steps.
+Trigger [디비보라 깃헙보고 작업해] / ㄱ. Verify remote feature/p0-db-map SHA, HANDOFF, STATUS, AGENTS, REQUIREMENTS and executable tests. Preserve main/develop. No repeat of P0/P1-C0/C1/C2.
 
-## Verified so far on Linux (2026-10-26 KST)
-- P0-01 SQLite readonly schema inventory, P0-02 localhost API+clickable DOM/SVG source (HTTP+Node DOM verified, **real browser blocked** by managed Chromium URLBlocklist).
-- P1-C0 SQLite online standalone backup, ZIP baseline, strict verified independent restore; WAL fixture, failure injection.
-- P1-C1 official local ZSTD CLI levels 1/3/9 with bounded .dbvz envelope, frame+uncompressed SHA-256 and SQLite integrity, fail-closed missing codec, no-shell subprocess, new-file publish and failure cleanup. tests/test_zstd_archive.py + scripts/bench_codecs.py.
-- Combined Python 62/62 PASS, JS DOM 1/1 PASS, wheel packaging PASS (but does not bundle zstd binary). Same-source, same-machine three-run median benchmark for two 565248-byte synthetic SQLite snapshots, all restores match SHA; docs/P1_C1_BENCHMARK.md.
-- ZSTD GUI/Windows and customer DB are NOT_VERIFIED. Main/develop deliberately unchanged.
+## Completed through 2026-10-26 KST
+- P0 SQLite readonly schema inventory and localhost FastAPI/SVG UI; HTTP and simulated Node DOM PASS; actual Chromium browsing blocked by managed URLBlocklist '*'.
+- P1-C0: SQLite Connection.backup -> standalone integrity-checked snapshot; ZIP manifest, dry-run restore and SHA-256-verified independent restore.
+- P1-C1: ZSTD CLI levels 1/3/9 and comparison of repeated vs random synthetic SQLite with three-run identical-snapshot trials; 62 pre-C2 Python tests.
+- P1-C2: fsync verified staging file + parent directory around exclusive hardlink publication; best-effort rollback on post-link fsync failure; grouped allocation rollback; strictly opt-in POSIX old-temp cleanup and read-only listing; crash before publication subprocess os._exit(17) scenario; four-process eight-snapshot concurrency. Full Python 76 PASS/0 FAIL/0 SKIP, Node DOM 1 PASS, wheel PASS and two-fixture benchmark smoke SHA all PASS. See docs/P1_C2_DURABILITY.md.
+- Windows/Python3.11, physical power loss, customer DB, signed archives, real browser and GitHub CI still NOT_TESTED. Windows directory fsync may fail closed. No customer/user local device work required so far.
 
-## Next P1-C2 actual work (no real DB)
-1. Audit existing _staging_file and _publish_new and new .dbvz file lifecycle. Design crash-recovery/incomplete artifact handling and durable publish including fsync file and parent directory where supported. Compare Linux/Windows filesystem semantics, do not claim atomic/durable where not measured.
-2. Add synthetic fault injection around temp creation, content write, fsync, publish, cleanup and collisions; idempotent retries must not alter an existing archive or original. Validate no post-crash incomplete publication in supervised interruption test.
-3. Validate multi-process concurrency, temp artifact scavenger safety (only DBVORA temporary naming, never arbitrary file deletion) and publish ref check.
-4. Decide and document Windows codec distribution: bundle signed/verified native zstd executable in installer vs optional python zstandard wheel, compare license/maintenance/size/deployment compatibility. No unapproved external download/distribution.
-5. Build reproducible Windows/Python 3.11 test commands and permissions check. If no Windows environment, leave NOT_TESTED. Do not retry managed Chromium URLBlocklist unchanged.
-6. Run all prior 62 tests + extra fault tests, Node DOM, package and benchmark smoke. Update STATUS/HANDOFF/NEXT_TASK; commit and verify branch SHA/author. Develop PR only after review and executable confidence.
+## Next safe unit P1-C3, synthetic only
+1. Inspect code and test published artifact verification on restart. Distinguish independently verifiable complete archive from incomplete temp, especially post-link failure; establish a manifest/commit-record strategy, avoid modifying or deleting existing backups.
+2. Tighten failure injection across fsync/metadata publish/cleanup, archive symlink/directory races, orphan scanning under concurrent writers, permission-denied errors. Reconcile exceptional states without touching originals. Do not claim power loss proven by simulated os._exit.
+3. Build optional Windows-specific test harness/packaging plan: Python3.11 x64 + directory-sync/NTFS behavior, CLI zstd vs pinned Python zstandard wheel. Do not introduce a download or ship binaries without consent and verified licensing.
+4. Add report with security scope, provenance. Unsigned SHA manifests are not authenticated; controlled attacker could modify both payload+manifest. Restore must be to new path, never replace original.
+5. Run existing 76+ tests, wheel, Node DOM, representative benchmark; update STATUS/HANDOFF/NEXT_TASK and verify remote GitHub commit SHA + committer. CI/develop merge only after evaluation.
 
-## Safety boundaries / blockers
-Archive is unencrypted, manifests unsigned and not authenticated; SHA equality is NOT malicious tamper protection. The ZIP/ZSTD benchmark is two small synthetic fixtures, not a commercial promise. Continuous live WAL/locks, power loss, Windows, customer data and real browser remain unverified. External data transfer, real DB use, deletion or overwrite, paid or public deployment, permissions/security changes require owner approval.
-
-Use docs/P1_C1_BENCHMARK.md and docs/COMPRESSION_PLAN.md for current measurements and test scope.
+## Gate
+Real customer DB, account credentials, external sending, original deletion/overwrite, retention policy, destructive migrations, public app/installer distribution, paid services or permission changes require explicit owner approval. Browser policy should not be bypassed. Archiving requires testing on actual hardware before customer use. Current full commercial-product completion is NOT claimed.

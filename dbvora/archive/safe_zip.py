@@ -14,6 +14,7 @@ from pathlib import Path
 import re
 import sqlite3
 import stat
+import time
 import tempfile
 import uuid
 import zipfile
@@ -77,15 +78,138 @@ def _staging_file(directory: Path) -> Path:
     return Path(name)
 
 
+def _staging_files(directory: Path, count: int) -> tuple[Path, ...]:
+    """Allocate a group; failure on any later tempfile removes earlier ones."""
+    staged = []
+    try:
+        for _ in range(count):
+            staged.append(_staging_file(directory))
+        return tuple(staged)
+    except BaseException:
+        for path in staged:
+            path.unlink(missing_ok=True)
+        raise
+
+
+def _sync_directory(directory: Path) -> None:
+    """Sync parent metadata when OS/filesystem supports directory fsync.
+
+    Deliberately fail closed on unsupported systems; Windows not validated yet.
+    """
+    fd = None
+    try:
+        fd = os.open(directory, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+        if not stat.S_ISDIR(os.fstat(fd).st_mode):
+            raise OSError("not a directory")
+        os.fsync(fd)
+    except OSError:
+        raise ArchiveError("DURABILITY_UNAVAILABLE", "Directory sync was not confirmed on this filesystem.") from None
+    finally:
+        if fd is not None:
+            os.close(fd)
+
+
+def _sync_staged_file(staged: Path) -> None:
+    fd = None
+    try:
+        fd = os.open(staged, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        info = os.fstat(fd)
+        by_name = staged.lstat()
+        if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or
+                (info.st_dev, info.st_ino) != (by_name.st_dev, by_name.st_ino)):
+            raise OSError("unexpected staging file")
+        os.fsync(fd)
+    except OSError:
+        raise ArchiveError("PUBLISH_FAILED", "Staged artifact could not be flushed safely.") from None
+    finally:
+        if fd is not None:
+            os.close(fd)
+
+
 def _publish_new(staged: Path, directory: Path, suffix: str) -> Path:
-    # Same-directory hard link is atomic and refuses collisions (unlike os.replace).
-    # Both temp and final artifact are on the same filesystem.
+    """New-name hardlink publish, after file fsync and before directory fsync.
+
+    A failed directory sync removes only the new link. It cannot prove all
+    sudden-power-loss guarantees (hardware/filesystem dependent).
+    """
+    _sync_staged_file(staged)
     final = directory / ("dbvora-" + uuid.uuid4().hex + suffix)
+    linked = False
     try:
         os.link(staged, final, follow_symlinks=False)
-    except OSError:
-        raise ArchiveError("PUBLISH_FAILED", "Could not publish a new artifact safely.") from None
-    return final
+        linked = True
+        _sync_directory(directory)
+        return final
+    except (OSError, ArchiveError):
+        if linked:
+            try:
+                final.unlink(missing_ok=True)
+                _sync_directory(directory)
+            except (OSError, ArchiveError):
+                # Cleanup may be incomplete: never claim the new file is valid.
+                pass
+        raise ArchiveError("PUBLISH_FAILED", "Artifact publication could not be verified.") from None
+
+
+_TEMP_NAME = re.compile(r"^\.dbvora-incomplete-[a-z0-9_]{8}\.part$")
+
+
+def inspect_stale_temps(output_dir: str | Path, *, older_than_seconds: int = 86400) -> list[str]:
+    """Read-only inventory of probable orphan temp filenames; never auto-delete.
+
+    Caller must ensure no active writer before any explicit removal operation.
+    """
+    if type(older_than_seconds) is not int or older_than_seconds < 3600:
+        raise ArchiveError("INVALID_AGE", "Minimum orphan age is one hour.")
+    directory = _directory(output_dir)
+    cutoff = time.time() - older_than_seconds
+    candidates = []
+    for path in directory.iterdir():
+        if not _TEMP_NAME.fullmatch(path.name):
+            continue
+        try:
+            info = path.lstat()
+            if (stat.S_ISREG(info.st_mode) and info.st_nlink == 1 and
+                    info.st_mtime < cutoff and
+                    (not hasattr(os, "getuid") or info.st_uid == os.getuid())):
+                candidates.append(path.name)
+        except OSError:
+            continue
+    return sorted(candidates)
+
+
+def cleanup_stale_temps(output_dir: str | Path, *, older_than_seconds: int = 86400,
+                        confirm: bool = False) -> list[str]:
+    """Explicit-only orphan cleanup; never called automatically during backup.
+
+    This feature is limited to POSIX dirfd APIs. It is not a concurrency-proof
+    filesystem sandbox; caller must coordinate with all other active writers.
+    """
+    if confirm is not True:
+        raise ArchiveError("CONFIRM_REQUIRED", "Explicit cleanup confirmation is required.")
+    directory = _directory(output_dir)
+    if os.name != "posix" or os.unlink not in os.supports_dir_fd or os.stat not in os.supports_dir_fd:
+        raise ArchiveError("RECOVERY_UNSUPPORTED", "Safe scoped cleanup is not supported here.")
+    # dir_fd anchors name resolution to the inspected directory.
+    fd = os.open(directory, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+    removed = []
+    try:
+        for name in inspect_stale_temps(directory, older_than_seconds=older_than_seconds):
+            try:
+                info = os.stat(name, dir_fd=fd, follow_symlinks=False)
+                if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or
+                        info.st_mtime >= time.time() - older_than_seconds or
+                        (hasattr(os, "getuid") and info.st_uid != os.getuid())):
+                    continue
+                os.unlink(name, dir_fd=fd)
+                removed.append(name)
+            except (FileNotFoundError, PermissionError):
+                continue
+        if removed:
+            _sync_directory(directory)
+        return removed
+    finally:
+        os.close(fd)
 
 
 def _integrity_check(path: Path) -> None:
@@ -109,7 +233,6 @@ def create_snapshot(source_path: str | Path, output_dir: str | Path) -> dict:
     if size > MAX_SNAPSHOT_BYTES:
         raise ArchiveError("TOO_LARGE", "The source exceeds the prototype size limit.")
     staged = _staging_file(output)
-    published = None
     try:
         try:
             with read_only_connection(source) as src:
@@ -187,8 +310,7 @@ def make_zip_archive(snapshot_path: str | Path, output_dir: str | Path) -> dict:
     sha, length = _hash_file(snapshot)
     manifest = {"format": "dbvora-zip-v1", "codec": "zip-deflate", "snapshot_sha256": sha,
                 "snapshot_size_bytes": length, "created_at_utc": datetime.now(timezone.utc).isoformat()}
-    staged = _staging_file(output)
-    dry_run = _staging_file(output)
+    staged, dry_run = _staging_files(output, 2)
     try:
         with zipfile.ZipFile(staged, "w", allowZip64=False) as zf:
             zf.write(snapshot, arcname=PAYLOAD_NAME, compress_type=zipfile.ZIP_DEFLATED, compresslevel=6)
