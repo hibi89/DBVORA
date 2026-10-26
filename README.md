@@ -24,7 +24,8 @@
 - feature/p0-db-map P1-C1: ZSTD 레벨 1/3/9, 안전한 신규 경로 복원, 손상·변조 거부, 합성 동일 조건 3회 벤치마크. 전체 Python 62 PASS, Node DOM 1 PASS (P1-C2 이전 기준). 공식 zstd CLI가 로컬에 별도 필요하며 Windows 실행 파일은 패키징되지 않았다.
 - feature/p0-db-map P1-C2: 파일/디렉터리 fsync, 새 파일 독점 게시 및 게시 오류 롤백, 임시파일 판독/명시적 정리, 강제 프로세스 종료·다중 프로세스 실험. Python 76/76 PASS (Linux synthetic only). 실제 전원 차단 검증은 미완료.
 - feature/p0-db-map P1-C3: 재시작 후 SQLite/ZIP/ZSTD 파일을 별도 임시 폴더로 복사·검증하고 원본/이전 정본은 변경하지 않는 감사 기능, 임시파일/불완전 파일 분류, 합성 파일시스템 호환성 진단. Python 96/96 PASS. 콘텐츠 무결성과 실제 게시 내구성은 구별.
-- 아직 구현되지 않음: 검증된 완료 영수증/전원중단 복구·중복/증분·예약 보관, Windows 설치기. 브라우저 실제 렌더링, 고객 DB 미검증. 합성 ZIP 결과를 상용 압축률로 해석 금지.
+- feature/p0-db-map P1-C4: 백업별 독립 completion receipt와 이전 기록 SHA 계보, 완전 복원 검증, 기록 누락/변조/손상 거부, 중복 작성 안전 실패. Linux 합성 테스트 누적 Python 125/125 PASS. 영수증은 미서명·미암호화이며 전원 차단 보증 아님.
+- 아직 구현되지 않음: CLI·고객용 검증된 전원중단 복구·증분/예약 보관, Windows 설치기. 브라우저 실제 렌더링, 고객 DB 미검증. 합성 ZIP 결과를 상용 압축률로 해석 금지.
 - 실행 방법: [docs/P0_02_USAGE.md](docs/P0_02_USAGE.md); P0-01 계약: [docs/P0_01_USAGE.md](docs/P0_01_USAGE.md); 다음 작업: [docs/NEXT_TASK.md](docs/NEXT_TASK.md).
 - 외부 유료 API·서버·데이터 전송·Vercel 배포 없음.
 
@@ -40,6 +41,7 @@
 - [docs/P1_C1_BENCHMARK.md](docs/P1_C1_BENCHMARK.md) — ZIP/ZSTD 합성 데이터 3회 실측·한계
 - [docs/P1_C2_DURABILITY.md](docs/P1_C2_DURABILITY.md) — 중단·동시성·fsync 검증과 비보장 범위
 - [docs/P1_C3_RECOVERY.md](docs/P1_C3_RECOVERY.md) — 재시작 검증·파일 복구 상태/한계
+- [docs/P1_C4_RECEIPTS.md](docs/P1_C4_RECEIPTS.md) — 독립 완료 기록·미서명 계보·중단 검증
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — 설계 대안·선정안·데이터 흐름
 - [docs/COMPRESSION_PLAN.md](docs/COMPRESSION_PLAN.md) — 압축·복원·벤치마크 계약
 - [docs/ROADMAP.md](docs/ROADMAP.md) — MVP 이후 단계

@@ -40,3 +40,6 @@ Linux 합성 SQLite에서 스테이징 단일 링크 regular-file 검증→파�
 
 ## P1-C3 재시작 이후 검증 (2026-10-26 KST)
 새 recovery_catalog.py는 임의 고객 DB 스캔 없이 사용자가 명시한 아카이브 디렉터리의 DBVORA 패턴만 선별한다. 파일·시간/링크 정보 비교 후 별도 임시 위치로 동결 복사해 독립 SQLite integrity_check / ZIP manifest+복원 SHA / ZSTD frame+복원 SHA를 검사하고 보고한다. 최종 또는 오류 파일 어느 것도 자동 수정/삭제하지 않는다. 출력 상태 CONTENT_VERIFIED_PUBLISH_UNPROVEN은 콘텐츠가 현재 복원됨을 뜻하며 원본 게시의 물리적 내구성·출처 인증을 뜻하지 않는다. 96개 Linux 합성 Python 테스트 PASS, 실제 새 Python 프로세스 재시작 점검 PASS. `python -m scripts.preflight_archiving`은 운영체제 TEMP 파일시스템의 합성 파일만 사용하고 Windows 검증을 주장하지 않는다. 보완 사항: 독립적 commit receipt, crash recovery ledger, Windows/NTFS·물리 전원 차단 및 보안/암호화. 자세한 근거 docs/P1_C3_RECOVERY.md.
+
+## P1-C4 별도 완료 영수증/lineage — 2026-10-26 KST
+합성 데이터의 새로 게시된 스냅샷·ZIP·ZSTD에 대해 opt-in 방식으로 별도 dbvora-receipt-UUID.json을 배타적 신규 생성, 각각 독립 복원·SHA 검증 후 부모 기록명/부모 기록 SHA를 연결한다. 재시작시 독립 파일 복사·완전 복원·부모 체인 무결성 확인으로 기록 누락/손상/계보 불일치 분류. 동시 작성자는 단일 정본만 성공, 기존 아카이브/영수증 덮어쓰기 금지. Python 전체 125/125 PASS(신규 29), Node DOM 1 PASS. 영수증은 SHA 연결된 *미서명 자체 기록*일 뿐 신뢰할 수 있는 작성자·전원 장애 내구성·진본성 증명은 아니다. JSON에 원본 절대경로/레코드 내용/키 기록 없음. docs/P1_C4_RECEIPTS.md 참조.

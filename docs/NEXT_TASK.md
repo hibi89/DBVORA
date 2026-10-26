@@ -1,20 +1,19 @@
-# NEXT_TASK — P1-C4 durable completion receipt + lineage evidence
+# NEXT_TASK — P1-C5 local archive CLI + Windows capability gate
 
-Trigger: [디비보라 깃헙보고 작업해] or ㄱ. Verify actual GitHub feature/p0-db-map SHA and HANDOFF/STATUS/source. Never repeat already tested steps.
+User signal ㄱ or [디비보라 깃헙보고 작업해]. Verify private GitHub hibi89/DBVORA feature/p0-db-map actual head, STATUS/HANDOFF/AGENTS and relevant source/tests. Do not redo P0/C0/C1/C2/C3/C4.
 
-## Completed to P1-C3
-- P0-01 SQLite readonly schema inventory and P0-02 localhost FastAPI/SVG viewer; HTTP and Node virtual DOM tested, actual browser GUI blocked by managed Chrome policy.
-- P1-C0 online backup snapshot / ZIP new-path full restore; P1-C1 optional ZSTD CLI levels 1/3/9 with two controlled synthetic datasets; P1-C2 file/directory fsync, exclusive hardlink publish, failure rollback, explicit-only old temp cleanup and 8-process snapshot concurrency.
-- P1-C3: dbvora.archive.recovery_catalog.inspect_recovery_catalog reads explicitly selected DBVORA archive output directory without writing to it, freezes candidates into external temporary directory, verifies SQL/ZIP/ZSTD SHA and integrity, reports CONTENT_VERIFIED_PUBLISH_UNPROVEN / FAILED_REVIEW / UNPUBLISHED_OR_ACTIVE. Bounded 512MiB, 250 recognized entries, 5000 total. scripts.preflight_archiving reports synthetic temp-only capabilities; never says ready for customer DB.
-- Executed Python full 96/96 PASS /0 FAIL/0 SKIP, Linux Python3.13.5; Node DOM 1 PASS, wheel PASS, separate-process restart verified. Source details docs/P1_C3_RECOVERY.md.
-- Unverified: Windows/NTFS/Python3.11, full browser GUI, actual power cuts, real customer DB and stored signed provenance. No public/Vercel deployment.
+## Verified by 2026-10-26 KST
+- P0-01 read-only SQLite inventory, P0-02 localhost FastAPI/JS/SVG clickable map (HTTP/Node DOM pass; real Chromium navigation blocked by managed URLBlocklist '*').
+- P1-C0 SQLite online snapshot + lossless ZIP independent SHA/SQLite restore; C1 optional local ZSTD executable level 1/3/9 with repeated synthetic comparison; C2 fsync + exclusive new-file publication, simulated process exit and explicit-only incomplete-temp inventory; C3 read-only post-restart independent archive verification.
+- P1-C4 dbvora/archive/receipts.py: opt-in new-only local JSON completion evidence per archive, full independent restore and checksum validation, optional parent receipt name+SHA chain depth up to 12, restart read-only inspect_receipt + inspect_receipt_catalog. Missing receipts/unreadable originals never promoted to success. All metadata unsigned/untrusted, not trusted publication history or power-loss proof.
+- Python full 125 PASS/0 FAIL/0 SKIP (96 prior + 29 C4) Linux Python3.13.5, Node DOM 1 PASS, compileall/wheel PASS, ZIP/ZSTD synthetic benchmark smoke SHA PASS, temp-only Linux preflight PASS. New test and source blobs matched local Git hashes; docs/P1_C4_RECEIPTS.md has scope.
 
-## Next P1-C4 safe implementation (synthetic only)
-1. Design and implement an independently persisted *completion receipt* / catalog record for an existing verified artifact. Detect writer interrupted after publishing file but before receipt; state must be UNKNOWN/INCOMPLETE rather than SUCCESS. Store format version, artifact kind/basename/sha, standalone snapshot sha, completed verification UTC, chain anchor (if available) and provenance scope. No full source path or customer contents.
-2. Receipt publication must be new-only/atomic where possible, fsync'd and fault-injection tested; never destroy/overwrite valid archives/receipts. On restart verify receipt hash against actual artifact and actual independent restore. Distinguish self-consistent unsigned receipt from authenticated provenance; do not claim signing without key/chain.
-3. Test crash injection at each stage and concurrent writers; safe lookup/rebuild of missing receipt should be explicit, not automatic. No auto-delete, retention or source modification.
-4. Package Windows/Python3.11 synthetic preflight instructions, assess NTFS dir sync/CLI-vs-wheel; if no Windows runtime available leave NOT_TESTED. No unapproved installer binary or distribution.
-5. Rerun previous 96 tests and new tests, wheel/Node DOM and benchmark smoke. Update STATUS/HANDOFF/NEXT_TASK and verify actual GitHub HEAD + committer after commit; main/develop unchanged.
+## First unfinished safe work: P1-C5
+1. Prototype **explicit opt-in local CLI** against synthetic SQLite only: commands for online snapshot, ZIP or ZSTD archive (never raw live copy), independent new-path restore, create receipt with optional already-valid parent, inspect recovery/receipt catalog. Validation for absolute existing output folder and help text that archive contains unencrypted database records; do not enable browsing/selecting live/customer DB automatically or write to original. Prefer no silent deletion/GC.
+2. Add CLI argument parsing/fail-closed errors that do not log raw customer rows or source file path, no default automatic schedules, no secret transmission, idempotency and output collision tests. Keep web viewer read-only and separate.
+3. Prepare Windows/Python3.11 **synthetic** self-test instructions and run on actual Windows only if environment exists; currently none. Explore optional pinned Python zstandard wheel vs zstd CLI distribution in future, no binary installs/downloads without permission. Keep ZIP fallback.
+4. Run previous 125+ Python tests plus CLI E2E, wheel/Node DOM and benchmark smoke. Update docs/STATUS/HANDOFF/NEXT_TASK and commit feature/p0-db-map; verify actual remote HEAD, committer and that main/develop remain unchanged.
+5. Reassess broader MVP priority after CLI against initial roadmap: multi-DB map/metrics and end-user packaging vs optional experimental compression refinements.
 
-## Safety limits and approvals
-Archive current SHA-256 and receipt have no trusted digital signatures and are not proof against a capable adversary. Physical sudden power loss and filesystem race safety are not established. Live customer data, delete/overwrite/retention, external transfer, public/paid deployment, keys or permission changes all require explicit user approval. On Linux only synthetic data used. Do not retry Chromium URLBlocklist '*' unchanged.
+## Deferred / never claim completed
+Windows, Python3.11, actual browser E2E, physical sudden power loss, malicious signature/authentication, real customer DB, PostgreSQL connector, storage/resource metrics and long-lived incremental/scheduled backups. Customer data, overwrite/delete/retention, external transfer, paid services, public deploy or installer distribution require owner approval. ZIP/ZSTD and receipts are unencrypted and unsigned. Do not bypass Chromium managed policy.

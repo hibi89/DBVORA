@@ -1,29 +1,25 @@
-# DBVORA STATUS — P1-C3 read-only recovery audit (2026-10-26 KST)
+# DBVORA STATUS — P1-C4 receipt & unsigned lineage verified (2026-10-26 KST)
 
-Private hibi89/DBVORA, work branch feature/p0-db-map. Last verified parent SHA f49c8ac2225b096f8f4c55dab311a0db950e8d50; after commit, re-read actual remote SHA. main/develop unchanged 890f842e3ba0e13c901e785633bdd06eadc76cce.
+Private repo hibi89/DBVORA, work branch feature/p0-db-map. Previous remote HEAD 9649de10115e1204692ed7a870dc15153d309e2d. Confirm new HEAD from GitHub AFTER committing. main/develop stable at 890f842e3ba0e13c901e785633bdd06eadc76cce.
 
-| Feature | Actual state | Evidence |
+| Capability | State | Evidence |
 | --- | --- | --- |
-| P0 SQLite schema read-only inventory + localhost map | TESTED_LOCAL | HTTP and Node virtual DOM; real Chromium UI blocked by policy |
-| P1-C0 SQLite consistent snapshot, ZIP and independent byte-exact restore | TESTED_SYNTHETIC | prior regressions |
-| P1-C1 ZSTD CLI levels 1/3/9 + synthetic fair ZIP comparison | TESTED_SYNTHETIC_LINUX | previous 3-trial comparisons |
-| P1-C2 filesystem fsync/new-file publish and explicit temp detection | TESTED_SYNTHETIC_LINUX | POSIX failure injection, no actual power cut |
-| P1-C3 read-only post-restart archive catalog | TESTED_SYNTHETIC_LINUX | copy to separate temp + full sqlite/ZIP/ZSTD validation; incomplete/unsafe/invalid classified, never deletes |
-| P1-C3 synthetic temp-only Windows/codec preflight script | TESTED_LINUX_ONLY | Linux hardlink+sync passes, windows_package_verified=false |
-| Python unit tests | **96 PASS / 0 FAIL / 0 SKIP** | Python 3.13.5 SQLite 3.46.1, prior 76 + 20 new |
-| JavaScript DOM test | PASS | Node 1/1 and syntax PASS |
-| Python wheel packaging | PASS | recovery_catalog, ZIP, ZSTD and UI included; preflight script repo-only |
-| Real Windows/NTFS + Python3.11 | NOT_TESTED | no real Windows machine |
-| Power interruption / persistent commit record | NOT_IMPLEMENTED_OR_TESTED | content VERIFIED != durable publish |
-| Customer live DB / production / CI | NOT_TESTED | no user data, hosted deploy or GitHub Actions |
-| Real browser E2E | BLOCKED_ENV | managed Chromium URLBlocklist "*" |
+| P0 SQLite inventory + localhost map | SYNTHETIC_HTTP/DOM_PASS | Real browser E2E still BLOCKED_ENV |
+| P1-C0 online SQLite backup and ZIP byte-exact restore | PASS_LOCAL | Existing tests retained |
+| P1-C1 ZSTD CLI levels 1/3/9 + ZIP comparisons | PASS_LOCAL | ZSTD binary local Linux, not in wheel |
+| P1-C2 fsync/exclusive new publication/failure cleanup | PASS_LOCAL | No power-cut proof, Windows not tested |
+| P1-C3 independent read-only restart catalog | PASS_LOCAL | Verify original artifacts without modifying them |
+| **P1-C4 receipts: exact file + parent SHA chain** | **PASS_LOCAL_SYNTHETIC** | New-only sidecar, independent restore and lineage verification, no auto-heal |
+| P1-C4 receipt audit | **PASS_LOCAL_SYNTHETIC** | Missing receipt != success; corrupted parent/manifest/archive != success |
+| Full Python automated tests | **125 PASS / 0 FAIL / 0 SKIP** | Previous 96 + 29 new, Linux Python 3.13.5, SQLite 3.46.1 |
+| Node DOM, Python wheel, compileall | PASS_LOCAL | DOM 1/1, new receipt module packaged |
+| 3-trial synthetic codec smoke | PASS_LOCAL | 2 datasets; all raw/ZIP/ZSTD restore hashes identical |
+| Python 3.11/Windows/NTFS | NOT_TESTED | Local zstd not bundled |
+| Sudden hardware power loss / authenticated provenance | NOT_PROVEN | Sidecars self-reported and unsigned |
+| Customer DB/Production/GitHub Actions | NOT_TESTED | No customer files, no hosted deployment |
 
-Local commands:
-python -W error::ResourceWarning -m unittest discover -s tests -q
-python -m compileall -q dbvora tests scripts
-node --test tests/test_ui_dom.cjs
-python -m scripts.preflight_archiving
+Invocation: python -W error::ResourceWarning -m unittest discover -s tests -q; python -m compileall -q dbvora tests scripts; node --test tests/test_ui_dom.cjs; python -m scripts.preflight_archiving; python -m scripts.bench_codecs --trials 3 --rows 16.
 
-Security limits: audit never repairs/deletes source; snapshots and archives contain full data unencrypted; self-contained unsigned checksum is NOT malicious tamper authentication. A cleanly inspectable orphan archive after crash is marked CONTENT_VERIFIED_PUBLISH_UNPROVEN, never DURABLE. Temp identification is not permission for automatic cleanup. Filesystem race and disk consumption limits remain.
+New files dbvora/archive/receipts.py, tests/test_receipts.py and docs/P1_C4_RECEIPTS.md. Receipt is a separate SHA-connected record, NOT encryption, signature, durable external evidence or ownership attestation. Missing receipt leaves artifact CONTENT_VERIFIED_PUBLISH_UNPROVEN until opt-in re-verification. No original archives overwritten/deleted, no customer data committed.
 
-Details docs/P1_C3_RECOVERY.md. Next docs/NEXT_TASK.md P1-C4 evidence receipts/lineage and Windows runtime gates. No code was merged into main/develop or placed on public services.
+Next: docs/NEXT_TASK.md P1-C5 local CLI and Windows synthetic smoke / integration planning. Review and customer permission before any actual DB use, hosted deployment, deletion, payment or public distribution.
