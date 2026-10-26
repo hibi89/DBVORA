@@ -37,3 +37,6 @@ ZSTD·ZIP 등 코덱은 검증된 라이브러리 활용. 데이터 분류·압�
 
 ## P1-C2 장애 및 저장 내구성 실험 — 2026-10-26 KST
 Linux 합성 SQLite에서 스테이징 단일 링크 regular-file 검증→파일 fsync→배타적 새 하드링크 게시→상위 디렉터리 fsync 적용. 게시 직후 디렉터리 sync 실패 시 *새 링크만* 되돌리려고 시도하며, 기존 정본은 건드리지 않는다. 여러 임시파일 생성 중 오류 시 이미 생성한 임시파일 정리. 최소 1시간 경과 임시파일을 읽기 전용 검사하고, POSIX에서 실행자 명시 확인(`confirm=True`) 없이는 절대 정리하지 않음. 강제 종료(os._exit(17))·4개 프로세스 8개 동시 스냅샷 포함 Python 76개 테스트 통과. 실제 전원 차단·Windows NTFS·악성 파일 시스템 경합·한계 자원 상황의 내구성은 미검증. 실고객 자동 정리는 여전히 금지. docs/P1_C2_DURABILITY.md 참조.
+
+## P1-C3 재시작 이후 검증 (2026-10-26 KST)
+새 recovery_catalog.py는 임의 고객 DB 스캔 없이 사용자가 명시한 아카이브 디렉터리의 DBVORA 패턴만 선별한다. 파일·시간/링크 정보 비교 후 별도 임시 위치로 동결 복사해 독립 SQLite integrity_check / ZIP manifest+복원 SHA / ZSTD frame+복원 SHA를 검사하고 보고한다. 최종 또는 오류 파일 어느 것도 자동 수정/삭제하지 않는다. 출력 상태 CONTENT_VERIFIED_PUBLISH_UNPROVEN은 콘텐츠가 현재 복원됨을 뜻하며 원본 게시의 물리적 내구성·출처 인증을 뜻하지 않는다. 96개 Linux 합성 Python 테스트 PASS, 실제 새 Python 프로세스 재시작 점검 PASS. `python -m scripts.preflight_archiving`은 운영체제 TEMP 파일시스템의 합성 파일만 사용하고 Windows 검증을 주장하지 않는다. 보완 사항: 독립적 commit receipt, crash recovery ledger, Windows/NTFS·물리 전원 차단 및 보안/암호화. 자세한 근거 docs/P1_C3_RECOVERY.md.

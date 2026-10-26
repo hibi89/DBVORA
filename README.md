@@ -2,7 +2,7 @@
 
 **Database Visibility · Optimization · Recovery · Archiving**
 
-로컬 우선, 사용자 소유 데이터 기반의 **통합 DB 관제·무손실 아카이빙·저장 최적화** 제품 (P0 인벤토리·로컬 UI 및 P1-C0/C1 합성 SQLite 백업·ZIP/ZSTD 복원·비교 및 P1-C2 장애 처리 구현; 상용 안정성 검증 전).
+로컬 우선, 사용자 소유 데이터 기반의 **통합 DB 관제·무손실 아카이빙·저장 최적화** 제품 (P0 인벤토리·로컬 UI 및 P1-C0/C1 합성 SQLite 백업·ZIP/ZSTD 복원·비교 및 P1-C2 장애 처리 및 P1-C3 재시작 읽기 전용 검증 구현; 상용 안정성 검증 전).
 
 > **새 ChatGPT 채팅방 재개 문장:** `[디비보라 깃헙보고 작업해]`
 >
@@ -23,7 +23,8 @@
 - feature/p0-db-map의 신규 P1-C0: SQLite online backup 기반 합성 snapshot, ZIP/manifest, 독립 새 경로 복원, SHA256+integrity_check 확인. 전체 Python 46/46 PASS 및 Node DOM 1 PASS. 실제 고객 DB/Windows/Power-cut 미검증.
 - feature/p0-db-map P1-C1: ZSTD 레벨 1/3/9, 안전한 신규 경로 복원, 손상·변조 거부, 합성 동일 조건 3회 벤치마크. 전체 Python 62 PASS, Node DOM 1 PASS (P1-C2 이전 기준). 공식 zstd CLI가 로컬에 별도 필요하며 Windows 실행 파일은 패키징되지 않았다.
 - feature/p0-db-map P1-C2: 파일/디렉터리 fsync, 새 파일 독점 게시 및 게시 오류 롤백, 임시파일 판독/명시적 정리, 강제 프로세스 종료·다중 프로세스 실험. Python 76/76 PASS (Linux synthetic only). 실제 전원 차단 검증은 미완료.
-- 아직 구현되지 않음: 검증된 전원중단 복구·중복/증분·예약 보관, Windows 설치기. 브라우저 실제 렌더링, 고객 DB 미검증. 합성 ZIP 결과를 상용 압축률로 해석 금지.
+- feature/p0-db-map P1-C3: 재시작 후 SQLite/ZIP/ZSTD 파일을 별도 임시 폴더로 복사·검증하고 원본/이전 정본은 변경하지 않는 감사 기능, 임시파일/불완전 파일 분류, 합성 파일시스템 호환성 진단. Python 96/96 PASS. 콘텐츠 무결성과 실제 게시 내구성은 구별.
+- 아직 구현되지 않음: 검증된 완료 영수증/전원중단 복구·중복/증분·예약 보관, Windows 설치기. 브라우저 실제 렌더링, 고객 DB 미검증. 합성 ZIP 결과를 상용 압축률로 해석 금지.
 - 실행 방법: [docs/P0_02_USAGE.md](docs/P0_02_USAGE.md); P0-01 계약: [docs/P0_01_USAGE.md](docs/P0_01_USAGE.md); 다음 작업: [docs/NEXT_TASK.md](docs/NEXT_TASK.md).
 - 외부 유료 API·서버·데이터 전송·Vercel 배포 없음.
 
@@ -38,6 +39,7 @@
 - [docs/P1_C0_VERIFICATION.md](docs/P1_C0_VERIFICATION.md) — 합성 SQLite 백업·ZIP 무손실 복원 계약 및 검증
 - [docs/P1_C1_BENCHMARK.md](docs/P1_C1_BENCHMARK.md) — ZIP/ZSTD 합성 데이터 3회 실측·한계
 - [docs/P1_C2_DURABILITY.md](docs/P1_C2_DURABILITY.md) — 중단·동시성·fsync 검증과 비보장 범위
+- [docs/P1_C3_RECOVERY.md](docs/P1_C3_RECOVERY.md) — 재시작 검증·파일 복구 상태/한계
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — 설계 대안·선정안·데이터 흐름
 - [docs/COMPRESSION_PLAN.md](docs/COMPRESSION_PLAN.md) — 압축·복원·벤치마크 계약
 - [docs/ROADMAP.md](docs/ROADMAP.md) — MVP 이후 단계

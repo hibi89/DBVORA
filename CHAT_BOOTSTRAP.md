@@ -22,7 +22,7 @@
 
 ## 확인 시점에 따른 상태
 
-- feature/p0-db-map: P0-01 readonly inventory, P0-02 FastAPI localhost schema UI, P1-C0 합성 SQLite online snapshot/ZIP/self-tested restore. Python 76/76 PASS (P1-C2 장애 보호 포함), Node DOM 1/1, wheel assets and archive module included. HTTP testing is carried over from P0-02.
+- feature/p0-db-map: P0-01 readonly inventory, P0-02 FastAPI localhost schema UI, P1-C0 합성 SQLite online snapshot/ZIP/self-tested restore. Python 96/96 PASS (P1-C3 재시작 검증 포함), Node DOM 1/1, wheel assets and archive module included. HTTP testing is carried over from P0-02.
 - Chromium 탐색은 현 작업환경 managed policy URLBlocklist '*'로 차단돼 실브라우저 E2E 미검증. Chrome 제한을 우회하지 말고 Windows/승인된 브라우저 환경에서 추후 검증.
 - Python 3.11, Windows, 실고객 DB, 지속적 live WAL/잠금 및 실제 고객 복원/압축 미검증. 외부 배포·Vercel 미적용.
-- 코드/UI 안내 docs/P0_02_USAGE.md, archive 검증 docs/P1_C0_VERIFICATION.md. 다음 안전한 작업은 docs/NEXT_TASK.md P1-C3 더 강한 재시작 복원·Windows 실행 준비. 브라우저 검증 BLOCKED 별도 유지. P1-C1은 official zstd CLI로 합성 3회 ZIP/ZSTD 비교까지 완료; 라이브러리와 Windows 실행 파일 묶음은 미해결. P1-C2 합성 Linux 파일·디렉터리 fsync, 명시적 오래된 임시파일 정리, 강제 프로세스 종료·다중 프로세스 테스트까지 76/76 통과. 실제 전원 차단/Windows 검증은 여전히 미완료. 이미 완료한 P0-01/02/P1-C0/C1/C2를 반복하지 말 것.
+- 코드/UI 안내 docs/P0_02_USAGE.md, archive 검증 docs/P1_C0_VERIFICATION.md. 다음 안전한 작업은 docs/NEXT_TASK.md P1-C4 검증된 게시 영수증·lineage 증거. P1-C3 재시작 검증은 완료. 브라우저 검증 BLOCKED 별도 유지. P1-C1은 official zstd CLI로 합성 3회 ZIP/ZSTD 비교까지 완료; 라이브러리와 Windows 실행 파일 묶음은 미해결. P1-C2 합성 Linux 파일·디렉터리 fsync, 명시적 오래된 임시파일 정리, 강제 프로세스 종료·다중 프로세스 테스트까지 76/76 통과. 실제 전원 차단/Windows 검증은 여전히 미완료. P1-C3: read-only recovery catalog, 별도 프로세스 ZIP 복원 검증과 Linux 합성 fs preflight, 96 Python PASS. unsigned archive/current-content 증거를 실제 작성자 fsync 완료라고 주장하지 않는다. P0-01/02/P1-C0/C1/C2/C3 재구현 금지.

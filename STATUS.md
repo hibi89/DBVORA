@@ -1,25 +1,29 @@
-# DBVORA STATUS — P1-C2 synthetic durability hardening
+# DBVORA STATUS — P1-C3 read-only recovery audit (2026-10-26 KST)
 
-Updated 2026-10-26 KST. Private repo hibi89/DBVORA; active feature/p0-db-map. Parent verified head 855b10f94ae03e633b8437941d4cdc14a4c4f120; current final head MUST be re-read after commit. main/develop 890f842e3ba0e13c901e785633bdd06eadc76cce unchanged.
+Private hibi89/DBVORA, work branch feature/p0-db-map. Last verified parent SHA f49c8ac2225b096f8f4c55dab311a0db950e8d50; after commit, re-read actual remote SHA. main/develop unchanged 890f842e3ba0e13c901e785633bdd06eadc76cce.
 
-| Workstream | State | Evidence |
+| Feature | Actual state | Evidence |
 | --- | --- | --- |
-| P0-01 SQLite read-only schema inventory | LOCAL_PASS | previous tests |
-| P0-02 localhost API and clickable SVG map | HTTP_DOM_PASS_BROWSER_BLOCKED | managed Chromium URLBlocklist prevents GUI E2E |
-| P1-C0 SQLite online snapshot + ZIP independent lossless restore | LOCAL_PASS | previous tests |
-| P1-C1 ZSTD 1/3/9 ZIP comparative baseline | LOCAL_PASS | local official zstd executable and synthetic benchmarks |
-| P1-C2 file fsync + parent directory fsync / exclusive publish | LOCAL_PASS | POSIX ordering and fault injection; no power loss proof |
-| P1-C2 incomplete temp detection / opt-in recovery | LOCAL_PASS | 24h old file detection, manual confirm-only POSIX cleanup; NO automatic deletion |
-| P1-C2 8 concurrent snapshots / crash simulation | LOCAL_PASS | 4 processes, 8 unique output paths and SHA matches; subprocess os._exit(17) leaves no published partial file |
-| Entire Python regression | 76 PASS / 0 FAIL / 0 SKIP | Linux Python 3.13.5 SQLite 3.46.1 |
-| JS DOM + Python wheel | PASS | Node DOM 1 PASS, wheel includes archive modules/UI |
-| Synthetic benchmark smoke | PASS | two fixtures, 3 trials/raw/ZIP/ZSTD1/3/9, SHA equals original snapshot |
-| Windows / Python 3.11 / actual power cut | NOT_TESTED | no Windows runtime or hardware fault injection |
-| Live customer DB / high-concurrency WAL | NOT_TESTED | no authorization; synthetic only |
-| Chrome GUI E2E / GitHub Actions | BLOCKED / NOT_RUN | managed browser policy and no CI job |
-| Vercel and hosting | N/A | local-first software |
+| P0 SQLite schema read-only inventory + localhost map | TESTED_LOCAL | HTTP and Node virtual DOM; real Chromium UI blocked by policy |
+| P1-C0 SQLite consistent snapshot, ZIP and independent byte-exact restore | TESTED_SYNTHETIC | prior regressions |
+| P1-C1 ZSTD CLI levels 1/3/9 + synthetic fair ZIP comparison | TESTED_SYNTHETIC_LINUX | previous 3-trial comparisons |
+| P1-C2 filesystem fsync/new-file publish and explicit temp detection | TESTED_SYNTHETIC_LINUX | POSIX failure injection, no actual power cut |
+| P1-C3 read-only post-restart archive catalog | TESTED_SYNTHETIC_LINUX | copy to separate temp + full sqlite/ZIP/ZSTD validation; incomplete/unsafe/invalid classified, never deletes |
+| P1-C3 synthetic temp-only Windows/codec preflight script | TESTED_LINUX_ONLY | Linux hardlink+sync passes, windows_package_verified=false |
+| Python unit tests | **96 PASS / 0 FAIL / 0 SKIP** | Python 3.13.5 SQLite 3.46.1, prior 76 + 20 new |
+| JavaScript DOM test | PASS | Node 1/1 and syntax PASS |
+| Python wheel packaging | PASS | recovery_catalog, ZIP, ZSTD and UI included; preflight script repo-only |
+| Real Windows/NTFS + Python3.11 | NOT_TESTED | no real Windows machine |
+| Power interruption / persistent commit record | NOT_IMPLEMENTED_OR_TESTED | content VERIFIED != durable publish |
+| Customer live DB / production / CI | NOT_TESTED | no user data, hosted deploy or GitHub Actions |
+| Real browser E2E | BLOCKED_ENV | managed Chromium URLBlocklist "*" |
 
-Note: A post-publication directory fsync failure attempts rollback of the new link. If rollback itself fails, status is failure and manual inspection may be required; no durable recovery journal exists. Symlink/path race not fully addressed. Windows filesystems may not support directory fsync; code deliberately fails closed if not verified. The recovery cleanup can race an extremely long-running writer, so it is NEVER automatic and requires coordination and explicit confirm. Any ZIP/ZSTD manifest is unsigned and archive contents unencrypted.
+Local commands:
+python -W error::ResourceWarning -m unittest discover -s tests -q
+python -m compileall -q dbvora tests scripts
+node --test tests/test_ui_dom.cjs
+python -m scripts.preflight_archiving
 
-Commands: python -W error::ResourceWarning -m unittest discover -s tests -q; python -m compileall -q dbvora tests scripts/bench_codecs.py; node --test tests/test_ui_dom.cjs; python -m scripts.bench_codecs --trials 3 --rows 16.
-Evidence: docs/P1_C2_DURABILITY.md. Next: docs/NEXT_TASK.md P1-C3 cross-platform recovery/manifest safety and packaging. All GitHub commits must be verified by branch SHA and author after publication.
+Security limits: audit never repairs/deletes source; snapshots and archives contain full data unencrypted; self-contained unsigned checksum is NOT malicious tamper authentication. A cleanly inspectable orphan archive after crash is marked CONTENT_VERIFIED_PUBLISH_UNPROVEN, never DURABLE. Temp identification is not permission for automatic cleanup. Filesystem race and disk consumption limits remain.
+
+Details docs/P1_C3_RECOVERY.md. Next docs/NEXT_TASK.md P1-C4 evidence receipts/lineage and Windows runtime gates. No code was merged into main/develop or placed on public services.
