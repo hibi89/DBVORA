@@ -58,3 +58,10 @@ New commands do not encrypt source/artifacts, do not schedule/delete or overwrit
 - Actual `python -m scripts.synthetic_cli_gate`: **PASS_SYNTHETIC_ONLY, 8/8 checks, ZSTD passed, ready_for_customer_data=false**; real snapshot ZIP/ZSTD, unsigned Receipt, read-only catalog, source hash/mtime, no staging leftovers.
 - Checked-in `tests.test_synthetic_cli_gate` + `tests.test_verify_release_gate`: **22/22 PASS**; isolated additional real Receipt/corruption/audit assertions **12/12 PASS** (not checked-in). Total **31/156 checked-in Python test cases executed** in this turn; full 156 and Node/Windows/browser/physical-power tests still NOT RUN.
 - Full source evidence: `docs/P1_C5_REAL_CLI_RECEIPTS_20261026.md`. P1-C5 CLI integration on synthetic Linux now PASS, but broader release gate still NOT COMPLETE; do not promote to main/develop or claim customer readiness.
+
+## 2026-10-26 KST — All 156 checked-in Python tests + unified synthetic Linux gate PASS
+- Supersedes the older partial 31/156 checkpoint. Reconstructed 36 code/test/UI/config files from private GitHub, verifying git SHA 36/36, zero mismatches. Input source commit 1c2f2dae6779bd391ae5922b7094535a0b2323fc.
+- Real Python 3.13.5 unittest discover -v with ResourceWarnings elevated: **156 PASS, 0 FAIL, 0 SKIP**. All 10 test modules included; no stubs for actual archives, API, receipts or recovery.
+- Unified python -m scripts.verify_release_gate returned status PASS_SYNTHETIC_ENVIRONMENT_ONLY exit 0: checkout, unittest, 8-check actual ZIP/ZSTD CLI roundtrip, Python compile, Node DOM TAP 1/1, and temp-FS preflight ALL PASS.
+- Evidence: docs/P1_C5_FULL_SYNTHETIC_GATE_20261026.md. Node v22.16.0, ZSTD v1.5.7, SQLite 3.46.1. NOT customer-ready, no Actions/Vercel.
+- Windows Python3.11/NTFS, real browser, packaging, hardware power loss and customer file safety NOT TESTED. Do not promote main/develop or claim commercial release.

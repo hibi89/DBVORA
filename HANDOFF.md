@@ -86,3 +86,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. Safety: only OS-temp generated SQLite used, data and receipts unsigned/unencrypted; no originals, secrets, customer DB, data deletion or overwrite. Existing Git history preserved.
 9. Next: execute remaining 125 checked-in tests with full reconstructed source or authorized checkout, plus Node DOM/preflight. Fix real failures. Windows Python3.11/NTFS, browser and power-cut tests remain required before customer release. Never assume source is encrypted or receipts authenticated.
 10. Time/scope: 2026-10-26 KST. Full file SHAs and test commands/results in `docs/P1_C5_REAL_CLI_RECEIPTS_20261026.md`. No full-suite claims.
+
+## 2026-10-26 KST P1-C5 full synthetic Linux verification — 10-point handoff
+1. Product scope: local sovereign read-only DB map + SQLite snapshot, ZIP/ZSTD archive, unsigned receipts and safe restore.
+2. Code changes: no application code changed this turn; assembled exact GitHub source and checked-in tests locally for comprehensive real regression.
+3. Evidence: 36/36 git hash-object original source matches; 156/156 unittest PASS, 0 FAIL/SKIP; unified 6-step synthetic gate PASS incl 8 real CLI checks, Node DOM 1/1, compileall and filesystem preflight.
+4. State: Linux synthetic P1-C5 integration VERIFIED; Windows/NTFS, real browser, hardware power-loss, customer data, commercial release still BLOCKED.
+5. Blocker/pivot: no direct private Git clone (DNS). Rebuilt test-relevant sources via authenticated connector and byte-identical SHA verification; no public mirror, paid CI or client data transfer.
+6. Repo: private hibi89/DBVORA feature/p0-db-map input source commit 1c2f2dae6779bd391ae5922b7094535a0b2323fc; confirm latest head after evidence commit; main/develop unchanged.
+7. Environment: Linux Python3.13.5 SQLite3.46.1 Node22.16.0 official local zstd1.5.7; test command python -m scripts.verify_release_gate; Vercel/Production N/A.
+8. Safety: generated OS-temp synthetic SQLite only; no credentials/customer data, no source deletion or overwrite, receipts unsigned and plaintext, no battery/powercut proof.
+9. Next: non-destructive Windows Python3.11/NTFS CLI+publish verification; actual GUI browser and packaging; then roadmap prioritization. No paid CI, user customer data or public source migration without explicit approval.
+10. Date and provenance: 2026-10-26 KST. Detailed matrix, command output and all gate decisions: docs/P1_C5_FULL_SYNTHETIC_GATE_20261026.md.

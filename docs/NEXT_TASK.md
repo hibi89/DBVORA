@@ -45,3 +45,8 @@ Real customer DB access, deletion/retention/overwrite, network/third-party uploa
 ## 2026-10-26 KST — P1-C5 real CLI+Receipt Linux gate completed
 - Exact original modules: `tests.test_archive_cli` **9/9 PASS** with real Receipt and catalog, no stubs. `scripts.synthetic_cli_gate` **8 checks PASS** with ZSTD. `tests.test_synthetic_cli_gate` + `tests.test_verify_release_gate`: **22/22 PASS**. Extra actual Receipt/lineage/corrupt-audit synthetic checks **12/12 PASS**, not committed as tests. Details/source Git blobs in `docs/P1_C5_REAL_CLI_RECEIPTS_20261026.md`.
 - 31 of 156 checked-in Python tests exercised, full 156 not run. Next: acquire remaining 125 checked-in test code and P0/API dependencies, complete unified `python -m scripts.verify_release_gate` and Node DOM and preflight, then Windows3.11/NTFS. No commercial release or customer DB operations, no unapproved paid Actions or public source mirror.
+
+## 2026-10-26 — COMPLETED Linux synthetic 156-case release gate; NEW next step
+- Supersedes all above old 31/156 and missing-source notices: Git-SHA-matched source workspace 36/36, actual checked-in Python regression 156/156 PASS (0 FAIL, 0 SKIP), unified six-step synthetic gate PASS, CLI ZIP/ZSTD+receipt/audit 8 checks, Node DOM 1/1, compileall and filesystem preflight.
+- New first blocker: Windows Python3.11/NTFS fail-closed durability/hardlink/restore compatibility on an authorized actual Windows host, plus real-browser GUI, packaging and hardware power-loss evidence. No client files or paid Actions without approval.
+- Full evidence at docs/P1_C5_FULL_SYNTHETIC_GATE_20261026.md. Linux synthetic PASS is not customer data readiness. Main/develop not promoted.
