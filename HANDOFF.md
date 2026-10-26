@@ -1,4 +1,6 @@
-# DBVORA HANDOFF — P1-C5 CLI checkpoint (2026-10-26 KST)
+# DBVORA HANDOFF — offline HTML CSP anchor checkpoint (2026-10-26 KST)
+
+> **READ THE FINAL 10-FIELD CHECKPOINT FIRST.** Earlier handoff entries are chronological history; previously verified 194-case Linux results are not current 195-case HEAD proof.
 
 Resume: [DBVORA 깃헙 레포지토리 보고 작업이어가셈] or ㄱ. Verify actual remote feature/p0-db-map HEAD and read STATUS.md -> docs/NEXT_TASK.md -> docs/P1_C5_CLI.md -> AGENTS/REQUIREMENTS/source. Do not redo verified old work.
 
