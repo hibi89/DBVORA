@@ -21,3 +21,9 @@ Code: dbvora/archive_cli.py. Tests: tests/test_archive_cli.py. Usage/caveats: do
 New commands do not encrypt source/artifacts, do not schedule/delete or overwrite, and do not transmit data. --synthetic-only is an assertion, not an enforceable file-content proof.
 
 **Next gate**: full source checkout test >=134 Python cases + Node DOM + compileall + preflight, inspect failures, then Windows/Python3.11 synthetic smoke if available. Do not claim CLI customer-ready without those checks. Need request-ID crash-safe idempotency before automation. Existing main/develop remain unchanged.
+
+## P1-C5 synthetic CLI gate addendum (2026-10-26 KST)
+- Added `scripts/synthetic_cli_gate.py`: runs the real CLI against an OS-temporary synthetic SQLite fixture when executed from a full checkout. Snapshot → ZIP → unsigned receipt → independent restore → read-only catalog → source SHA/mtime/size unchanged; optional local ZSTD is separately classified as PASS or SKIP. No customer DB, external upload, schedule, overwrite, or source deletion.
+- This environment has **only the C5 CLI and isolated mock stubs**, not a full private checkout. `py_compile` of the new gate and CLI: PASS; 11 isolated CLI routing mocks + 3 isolated gate error-path mocks: PASS. These **do not prove actual ZIP/ZSTD integration**.
+- New 3-test gate error suite was executed only in the temporary local workspace and is **not in GitHub**: repository upload safety validation blocked it twice; no third identical retry. GitHub contains the gate script, not these 3 tests.
+- Previously committed 9 C5 integration tests and the earlier 125-regression test results are **NOT rerun**. No GitHub Actions run. Windows/NTFS/Python 3.11 and customer readiness remain NOT_TESTED. The gate deliberately reports `ready_for_customer_data: false` even if synthetic PASS.

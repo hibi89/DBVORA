@@ -16,3 +16,8 @@ Trigger: ㄱ / [디비보라 깃헙보고 작업해]. Read feature/p0-db-map lat
 
 ## Prohibited without approval
 Real customer DB access, deletion/retention/overwrite, network/third-party uploads, external paid service, public distribution, installed local credentials or Windows installer release. Signed provenance and physical power-loss guarantee are NOT provided.
+
+## P1-C5 synthetic gate added (2026-10-26 KST)
+- `python -m scripts.synthetic_cli_gate` on a **complete local checkout** is now the short one-shot offline acceptance smoke: it exercises *real* CLI snapshot, ZIP, unsigned receipt, restore, audit and source immutability using ONLY an OS-temp generated SQLite fixture. ZSTD is optional; output is JSON, always `ready_for_customer_data=false`.
+- **NOT yet executed end-to-end in this environment**: the container can only access separate CLI files and mocks; private GitHub clone cannot resolve, and paid/private Actions have not been authorized or run. New script py_compile PASS, CLI 11 mocks PASS, gate error handling 3 isolated local mocks PASS. The standalone gate mock test file could not be uploaded due to two security validation blocks; do not assume it is in GitHub.
+- Mandatory gate: real `python -m scripts.synthetic_cli_gate`, full `unittest` >=134, Node DOM, compileall, preflight. Inspect failures; preserve previous code/data and fix minimal problems. On any failure keep P1-C5 as PARTIAL and no customer release. Windows 3.11 filesystem semantics remain NOT_TESTED.
