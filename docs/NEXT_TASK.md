@@ -1,23 +1,23 @@
-# NEXT_TASK — P1-C1 ZSTD baseline and recovery hardening
+# NEXT_TASK — P1-C2 durability, recovery and Windows codec packaging (synthetic only)
 
-Recovery trigger [디비보라 깃헙보고 작업해] or ㄱ. Verify newest GitHub feature/p0-db-map SHA and code, read HANDOFF then STATUS, AGENTS, REQUIREMENTS before editing. Do not repeat P0/C0.
+Trigger [디비보라 깃헙보고 작업해] or ㄱ. Before coding verify GitHub branch SHA, HANDOFF, STATUS, AGENTS, REQUIREMENTS, source and tests. Do not repeat finished steps.
 
-## Completed through 2026-10-26 KST
-- P0-01: SQLite read-only schema inventory and metric provenance.
-- P0-02: localhost FastAPI inventory API and clickable SVG map. HTTP + virtual Node DOM verified; real browser E2E blocked by Chromium managed URLBlocklist '*'.
-- P1-C0: offline SQLite Connection.backup -> new standalone snapshot -> integrity/SHA -> ZIP(DEFLATE) with manifest -> independent restore dry-run -> strict validated new-file restore. No source overwrite and no web archive endpoint.
-- Tests: 46 Python PASS / 0 FAIL / 0 SKIP (including 18 new archive cases); Node DOM 1 PASS; Python wheel includes archive code and UI. Synthetic WAL committed row, corrupt ZIP and failed publication cleanup covered.
-- Not verified: Python 3.11, Windows, customer data, sustained WAL writer stress/locks, filesystem power-cut durability, browser E2E, GitHub Actions and actual market compression.
+## Verified so far on Linux (2026-10-26 KST)
+- P0-01 SQLite readonly schema inventory, P0-02 localhost API+clickable DOM/SVG source (HTTP+Node DOM verified, **real browser blocked** by managed Chromium URLBlocklist).
+- P1-C0 SQLite online standalone backup, ZIP baseline, strict verified independent restore; WAL fixture, failure injection.
+- P1-C1 official local ZSTD CLI levels 1/3/9 with bounded .dbvz envelope, frame+uncompressed SHA-256 and SQLite integrity, fail-closed missing codec, no-shell subprocess, new-file publish and failure cleanup. tests/test_zstd_archive.py + scripts/bench_codecs.py.
+- Combined Python 62/62 PASS, JS DOM 1/1 PASS, wheel packaging PASS (but does not bundle zstd binary). Same-source, same-machine three-run median benchmark for two 565248-byte synthetic SQLite snapshots, all restores match SHA; docs/P1_C1_BENCHMARK.md.
+- ZSTD GUI/Windows and customer DB are NOT_VERIFIED. Main/develop deliberately unchanged.
 
-## First unfinished safe unit P1-C1
-1. Compare design A (ZIP baseline + optional ZSTD library) and B (custom compression codec); keep A as adopted for lower risk/cost until real benchmarks indicate otherwise.
-2. Using one synthetic SQLite online snapshot per trial, add optional ZSTD codec and independent restored bytes+SQLite integrity check. Do not embed customer records in GitHub or upload data to any service.
-3. Run >=3 controlled trials each for raw snapshot, ZIP(deflate) and ZSTD several levels. Report all stored bytes including manifest, compression/restore wall time, any measured memory, full SHA matches. Distinguish incompressible data.
-4. Test truncated/corrupt ZSTD, wrong manifest SHA, dependency missing, interrupted publication, repeated restore and file-size caps; protect original and previous stable artifacts.
-5. Consider crash-safe fsync / rename strategy, symlink TOCTOU, Windows os.link support and malicious manifest provenance. Do not claim these solved without tests.
-6. Re-run prior 46 tests, Node DOM and wheel. Verify actual GitHub branch SHA, commit author and updated HANDOFF/STATUS/NEXT_TASK.
+## Next P1-C2 actual work (no real DB)
+1. Audit existing _staging_file and _publish_new and new .dbvz file lifecycle. Design crash-recovery/incomplete artifact handling and durable publish including fsync file and parent directory where supported. Compare Linux/Windows filesystem semantics, do not claim atomic/durable where not measured.
+2. Add synthetic fault injection around temp creation, content write, fsync, publish, cleanup and collisions; idempotent retries must not alter an existing archive or original. Validate no post-crash incomplete publication in supervised interruption test.
+3. Validate multi-process concurrency, temp artifact scavenger safety (only DBVORA temporary naming, never arbitrary file deletion) and publish ref check.
+4. Decide and document Windows codec distribution: bundle signed/verified native zstd executable in installer vs optional python zstandard wheel, compare license/maintenance/size/deployment compatibility. No unapproved external download/distribution.
+5. Build reproducible Windows/Python 3.11 test commands and permissions check. If no Windows environment, leave NOT_TESTED. Do not retry managed Chromium URLBlocklist unchanged.
+6. Run all prior 62 tests + extra fault tests, Node DOM, package and benchmark smoke. Update STATUS/HANDOFF/NEXT_TASK; commit and verify branch SHA/author. Develop PR only after review and executable confidence.
 
-## Deferred gates
-Windows and Python 3.11 execution, full browser real UI tests in permitted browser environment, live customer data/continuous writer tests, signed/encrypted archive and durable power-failure restart tests. User approval is required before real customer DB access, deletion/overwrite, public deployment or external paid data services.
+## Safety boundaries / blockers
+Archive is unencrypted, manifests unsigned and not authenticated; SHA equality is NOT malicious tamper protection. The ZIP/ZSTD benchmark is two small synthetic fixtures, not a commercial promise. Continuous live WAL/locks, power loss, Windows, customer data and real browser remain unverified. External data transfer, real DB use, deletion or overwrite, paid or public deployment, permissions/security changes require owner approval.
 
-See docs/P1_C0_VERIFICATION.md and docs/COMPRESSION_PLAN.md for baseline contract.
+Use docs/P1_C1_BENCHMARK.md and docs/COMPRESSION_PLAN.md for current measurements and test scope.

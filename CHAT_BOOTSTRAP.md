@@ -22,7 +22,7 @@
 
 ## 확인 시점에 따른 상태
 
-- feature/p0-db-map: P0-01 readonly inventory, P0-02 FastAPI localhost schema UI, P1-C0 합성 SQLite online snapshot/ZIP/self-tested restore. Python 46/46 PASS, Node DOM 1/1, wheel assets and archive module included. HTTP testing is carried over from P0-02.
+- feature/p0-db-map: P0-01 readonly inventory, P0-02 FastAPI localhost schema UI, P1-C0 합성 SQLite online snapshot/ZIP/self-tested restore. Python 62/62 PASS (P1-C1 ZSTD 포함), Node DOM 1/1, wheel assets and archive module included. HTTP testing is carried over from P0-02.
 - Chromium 탐색은 현 작업환경 managed policy URLBlocklist '*'로 차단돼 실브라우저 E2E 미검증. Chrome 제한을 우회하지 말고 Windows/승인된 브라우저 환경에서 추후 검증.
-- Python 3.11, Windows, 실고객 DB, live WAL 및 복원/압축 미검증. 외부 배포·Vercel 미적용.
-- 코드/UI 안내 docs/P0_02_USAGE.md, archive 검증 docs/P1_C0_VERIFICATION.md. 다음 안전한 작업은 docs/NEXT_TASK.md P1-C1 합성 ZSTD 공정 비교. 브라우저 검증 BLOCKED 별도 유지. 이미 완료한 P0-01/02/P1-C0을 반복하지 말 것.
+- Python 3.11, Windows, 실고객 DB, 지속적 live WAL/잠금 및 실제 고객 복원/압축 미검증. 외부 배포·Vercel 미적용.
+- 코드/UI 안내 docs/P0_02_USAGE.md, archive 검증 docs/P1_C0_VERIFICATION.md. 다음 안전한 작업은 docs/NEXT_TASK.md P1-C2 안전한 내구성·중단 복구 검증. 브라우저 검증 BLOCKED 별도 유지. P1-C1은 official zstd CLI로 합성 3회 ZIP/ZSTD 비교까지 완료; 라이브러리와 Windows 실행 파일 묶음은 미해결. 이미 완료한 P0-01/02/P1-C0/C1을 반복하지 말 것.

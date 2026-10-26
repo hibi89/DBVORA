@@ -30,4 +30,7 @@ schema_version, archive_id, created_at_utc, source_type, source_snapshot_size_by
 ZSTD·ZIP 등 코덱은 검증된 라이브러리 활용. 데이터 분류·압축 정책·메타데이터·복원 체인·비용 분석은 DBVORA 고유 구현. 외부 기술 라이선스/패키징·Windows wheel 등 조사 후 확정.
 
 ## P1-C0 첫 구현 결과 — 2026-10-26 KST
-합성 SQLite online backup API -> 완전한 새 경로 스냅샷 + SQLite integrity_check/SHA256 -> ZIP(deflate) 저장 + 고정 manifest -> 임시 독립 복원 검증 후 비덮어쓰기 게시 -> 새 경로 복원, 바이트 SHA 동일. Linux Python 3.13.5 자동화 전체 46 PASS. WAL 커밋 데이터 fixture·위조 manifest checksum·깨진 ZIP·중복·경로 순회·실패시 원본 보호 검증. 아주 작은 fixture 24,576 bytes -> ZIP 1,006 bytes 사례는 일반 압축률 주장 금지. ZIP은 암호화/서명 없음. 512MiB 크기 제한, os.link Windows 호환·전원 장애·live concurrency 미검증. 다음 C1에서 동일 synthetic snapshot ZSTD 대 ZIP 반복 측정. 상세 docs/P1_C0_VERIFICATION.md.
+합성 SQLite online backup API -> 완전한 새 경로 스냅샷 + SQLite integrity_check/SHA256 -> ZIP(deflate) 저장 + 고정 manifest -> 임시 독립 복원 검증 후 비덮어쓰기 게시 -> 새 경로 복원, 바이트 SHA 동일. Linux Python 3.13.5 자동화 전체 46 PASS. WAL 커밋 데이터 fixture·위조 manifest checksum·깨진 ZIP·중복·경로 순회·실패시 원본 보호 검증. 아주 작은 fixture 24,576 bytes -> ZIP 1,006 bytes 사례는 일반 압축률 주장 금지. ZIP은 암호화/서명 없음. 512MiB 크기 제한, os.link Windows 호환·전원 장애·live concurrency 미검증. C1 측정 결과는 docs/P1_C1_BENCHMARK.md 참조. 상세 docs/P1_C0_VERIFICATION.md.
+
+## P1-C1 구현·측정 — 2026-10-26 KST
+공식 zstd CLI 1.5.7을 로컬에서 호출하는 합성 SQLite ZSTD-1/3/9 엔진 구현. 단일 .dbvz 용기에 유효성 검증된 JSON 메타데이터와 ZSTD 프레임을 넣고, 원본/압축본 SHA 및 독립 SQLite 복원을 확인. 전체 Python 62/62 PASS, Node DOM 1 PASS, wheel 정적 자산과 Python 코드 포함(그러나 zstd 실행 파일은 미포함). 565248바이트 동일 스냅샷의 세 번씩 반복 측정에서 반복 데이터 ZIP 3799B / ZSTD-3 1373B, 랜덤 BLOB 데이터 ZIP 528037B / ZSTD-3 526749B. 용량만 유리했을 뿐 CLI 호출/복원 시간이 더 길 수 있음; 메모리·CPU 전체 사용량 미측정. 파괴/손실 없는 합성 실험만으로 사용 고객 압축 이익/우월성을 주장하지 않는다. 서명·암호화·fsync 디렉터리·Windows 바이너리 번들·전원 중단 복구는 미완료. 상세 docs/P1_C1_BENCHMARK.md.
