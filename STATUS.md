@@ -1,25 +1,23 @@
-# DBVORA STATUS — P1-C4 receipt & unsigned lineage verified (2026-10-26 KST)
+# DBVORA STATUS — P1-C5 CLI implemented, integration verification pending (2026-10-26 KST)
 
-Private repo hibi89/DBVORA, work branch feature/p0-db-map. Previous remote HEAD 9649de10115e1204692ed7a870dc15153d309e2d. Confirm new HEAD from GitHub AFTER committing. main/develop stable at 890f842e3ba0e13c901e785633bdd06eadc76cce.
+Private hibi89/DBVORA, active feature/p0-db-map. Parent HEAD prior to this implementation: 0becc730722e218d79f8f294aeb8dfeeaaec78b6. Main/develop at 890f842e3ba0e13c901e785633bdd06eadc76cce. Confirm actual post-commit HEAD; no main/develop promotion.
 
 | Capability | State | Evidence |
 | --- | --- | --- |
-| P0 SQLite inventory + localhost map | SYNTHETIC_HTTP/DOM_PASS | Real browser E2E still BLOCKED_ENV |
-| P1-C0 online SQLite backup and ZIP byte-exact restore | PASS_LOCAL | Existing tests retained |
-| P1-C1 ZSTD CLI levels 1/3/9 + ZIP comparisons | PASS_LOCAL | ZSTD binary local Linux, not in wheel |
-| P1-C2 fsync/exclusive new publication/failure cleanup | PASS_LOCAL | No power-cut proof, Windows not tested |
-| P1-C3 independent read-only restart catalog | PASS_LOCAL | Verify original artifacts without modifying them |
-| **P1-C4 receipts: exact file + parent SHA chain** | **PASS_LOCAL_SYNTHETIC** | New-only sidecar, independent restore and lineage verification, no auto-heal |
-| P1-C4 receipt audit | **PASS_LOCAL_SYNTHETIC** | Missing receipt != success; corrupted parent/manifest/archive != success |
-| Full Python automated tests | **125 PASS / 0 FAIL / 0 SKIP** | Previous 96 + 29 new, Linux Python 3.13.5, SQLite 3.46.1 |
-| Node DOM, Python wheel, compileall | PASS_LOCAL | DOM 1/1, new receipt module packaged |
-| 3-trial synthetic codec smoke | PASS_LOCAL | 2 datasets; all raw/ZIP/ZSTD restore hashes identical |
-| Python 3.11/Windows/NTFS | NOT_TESTED | Local zstd not bundled |
-| Sudden hardware power loss / authenticated provenance | NOT_PROVEN | Sidecars self-reported and unsigned |
-| Customer DB/Production/GitHub Actions | NOT_TESTED | No customer files, no hosted deployment |
+| P0-01 schema inventory + P0-02 localhost map | SYNTHETIC_HTTP/DOM_PASS_PREVIOUS | Real browser blocked/unverified |
+| P1-C0 online SQLite snapshot + ZIP restore | PASS_LOCAL_PREVIOUS | Prior P1-C4 handoff |
+| P1-C1 ZSTD codec and comparison | PASS_LOCAL_PREVIOUS | Optional local zstd; Windows distribution missing |
+| P1-C2 exclusive publication and simulated failures | PASS_LOCAL_PREVIOUS | No hardware power cut or NTFS proof |
+| P1-C3 independent read-only recovery audit | PASS_LOCAL_PREVIOUS | No mutation of published artifacts |
+| P1-C4 unsigned completion receipts + SHA chain | PASS_LOCAL_PREVIOUS | 125 Python tests prior to C5 |
+| **P1-C5 explicit offline CLI** | **CODE_COMMITTED / INTEGRATION_UNVERIFIED** | snapshot, archive ZIP/ZSTD, restore, receipt, audit; synthetic and plaintext acknowledgements |
+| P1-C5 newly written integration tests | NOT_RUN | 9 tests in tests/test_archive_cli.py |
+| P1-C5 isolated mock boundary checks | 11 PASS / 0 FAIL | Local syntax compile + mock routing/guard tests, not actual codec tests |
+| Full Python regression/ZIP/ZSTD live CLI | NOT_RERUN | Last known 125 PASS were for earlier C4 SHA |
+| Windows/Python3.11/actual GUI/customer files/Actions | NOT_TESTED | Release blocked pending real runs |
+| Vercel / Production | N/A | Local-only, no external deployment |
 
-Invocation: python -W error::ResourceWarning -m unittest discover -s tests -q; python -m compileall -q dbvora tests scripts; node --test tests/test_ui_dom.cjs; python -m scripts.preflight_archiving; python -m scripts.bench_codecs --trials 3 --rows 16.
+Code: dbvora/archive_cli.py. Tests: tests/test_archive_cli.py. Usage/caveats: docs/P1_C5_CLI.md.
+New commands do not encrypt source/artifacts, do not schedule/delete or overwrite, and do not transmit data. --synthetic-only is an assertion, not an enforceable file-content proof.
 
-New files dbvora/archive/receipts.py, tests/test_receipts.py and docs/P1_C4_RECEIPTS.md. Receipt is a separate SHA-connected record, NOT encryption, signature, durable external evidence or ownership attestation. Missing receipt leaves artifact CONTENT_VERIFIED_PUBLISH_UNPROVEN until opt-in re-verification. No original archives overwritten/deleted, no customer data committed.
-
-Next: docs/NEXT_TASK.md P1-C5 local CLI and Windows synthetic smoke / integration planning. Review and customer permission before any actual DB use, hosted deployment, deletion, payment or public distribution.
+**Next gate**: full source checkout test >=134 Python cases + Node DOM + compileall + preflight, inspect failures, then Windows/Python3.11 synthetic smoke if available. Do not claim CLI customer-ready without those checks. Need request-ID crash-safe idempotency before automation. Existing main/develop remain unchanged.
