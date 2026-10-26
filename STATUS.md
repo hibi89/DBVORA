@@ -33,3 +33,10 @@ New commands do not encrypt source/artifacts, do not schedule/delete or overwrit
 - Gate requires complete checkout, >=141 discovered tests (125 C4 + 9 C5 + 7 new), actual `scripts.synthetic_cli_gate` real ZIP/receipt/restore SHA verification, conditional ZSTD verification, Node DOM, compileall, and temporary filesystem preflight. Missing requirements cause FAIL_CLOSED; reporting always `ready_for_customer_data=false`.
 - Running gate on local **partial** source returned FAIL_CLOSED / INCOMPLETE_SOURCE_CHECKOUT (4 required files unavailable). This is a verified negative gate test, NOT a repo integration PASS. Private full checkout remains unavailable from current container due to GitHub DNS; previous Actions runs remain zero.
 - Previously recorded 125 test PASS refers to an EARLIER GitHub SHA, not current. 9 C5 real tests and all 141 on full checkout NOT RUN. No Windows/NTFS, Python3.11, real browser, customer DB or Production validation. Main/develop unchanged. Commit parent before this update: 4c0d6ecd1f5df504502fe7acbfcac9ff39cec413.
+
+## 2026-10-26 KST — P1-C5 gate hardening
+- Python regression gate now requires at least **145** discovered tests and checks skip counts: ZSTD installed => 0 skips; absent => at most 1 optional skip.
+- Node DOM exit 0 alone is insufficient: require TAP exactly 1 test / 1 pass / 0 fail.
+- Exact GitHub source blobs were tested locally with mocked subprocess responses: `tests.test_verify_release_gate` **11 PASS, 0 FAIL** on Linux Python 3.13.5; py_compile PASS.
+- Actual 145-test suite and real ZIP/ZSTD CLI roundtrip remain **NOT RUN**: checkout is incomplete and git clone cannot resolve github.com. The negative gate returns FAIL_CLOSED with 4 required files missing; not evidence of product failure.
+- No Windows, Power-cut, customer DB, Production or GitHub Actions validation. Do not mark P1-C5 complete. Code commit `ed382b4f80d5bc894558ba31d7cb06dd9f3d940a` on feature branch; main/develop unchanged.
