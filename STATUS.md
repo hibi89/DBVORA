@@ -1,4 +1,4 @@
-# DBVORA STATUS — offline HTML CSP guard committed; full 195-case regression and Windows gate pending (2026-10-26 KST)
+# DBVORA STATUS — real offline Python focus 17/17 PASS; full 199 & Windows gates pending (2026-10-26 KST)
 
 > **Current authoritative checkpoint is the latest dated section at the bottom.** Historical table and earlier test totals below describe older commits, not current HEAD acceptance.
 
@@ -103,3 +103,10 @@ New commands do not encrypt source/artifacts, do not schedule/delete or overwrit
 - **Remaining:** actual real-export selfcheck and 199+ suite; native Windows Python3.11/NTFS and real `file://` browser; no installer/customer data/power-cut/Production validation. No code promotion to main/develop or paid Actions.
 - Reproduction: `python -m dbvora.offline_selftest`; `python -m scripts.verify_release_gate` on complete checkout. Windows owner: `py -3.11 -m dbvora.offline_selftest` (private extracted preview). Separate `py -3.11 -B -m scripts.windows_ntfs_gate` from complete repo.
 - Evidence: `docs/OFFLINE_SELFTEST_20261026.md`. **Feature HEAD SHA must be rechecked after doc writes.**
+
+## 2026-10-26 KST — real Python offline exporter/inventory integration, 17-case focus
+- Reassembled **authentic GitHub Git-blob-verified** offline self-check, HTML exporter, schema inventory, SQLite read-only connector, metrics, errors, HTML skeleton, fixture, and 2 focused test files in temporary local workspace. `dbvora/web/style.css` and `app.js` remain explicitly **test substitutes**, so this is not full frontend/browser acceptance.
+- Ran Python 3.13.5 `python -W error::ResourceWarning -m unittest discover -s tests -v`: **17/17 focused checked-in tests PASS**, 0 FAIL/SKIP, 0 resource warnings after test-only SQLite close fix. Actual `python -m dbvora.offline_selftest` returned **9/9 checks PASS**, `ready_for_customer_data=false`, with genuine exporter/inventory/SQLite read-only logic.
+- Resolved observed Python ResourceWarning from hostile-identifier test: `tests/test_export_html.py` now closes its synthetic SQLite connection using `contextlib.closing`; tested local updated Git blob `cb524f88f8a11f7cc25fe0e539f05c756c4d0563` matches published GitHub code commit `d4eb0a0217eed5cce5df893e5932de2cd07f7513`.
+- **Still UNVERIFIED on current feature HEAD:** full 199-test regression and unified release gate; actual CSS/JS browser; native Windows3.11/NTFS, file://, crash durability, customer readiness, installer/Production. Historical 194 full suite/Chromium 7 belongs to older SHA.
+- Evidence `docs/OFFLINE_SELFTEST_REAL_CORE_20261026.md`. Main/develop untouched; no paid CI, external upload, real customer data or auto deletion.
