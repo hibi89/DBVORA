@@ -1,5 +1,5 @@
 """No-dependency offline HTML export, safety and source immutability tests."""
-from contextlib import redirect_stdout
+from contextlib import closing, redirect_stdout
 import hashlib
 import io
 import json
@@ -47,7 +47,7 @@ class OfflineHtmlTests(unittest.TestCase):
 
     def test_unsafe_identifier_base64_not_interpolated_in_html(self):
         attack = '<img src=x onerror=alert(17)></script><script>alert(2)</script>'
-        with sqlite3.connect(self.db) as conn:
+        with closing(sqlite3.connect(self.db)) as conn:
             conn.execute('CREATE TABLE "' + attack + '" ("<svg onload=alert(9)>" TEXT)')
         data = view.export(self.db, self.out)
         html = (self.out / data['filename']).read_text()
