@@ -32,7 +32,8 @@ _REQUIRED = {
     'pyproject.toml', 'README_PORTABLE.txt', 'run_dbvora_windows.cmd',
     'run_dbvora_unix.sh', 'dbvora/export_html.py',
     'export_dbvora_map_windows.cmd', 'export_dbvora_map_unix.sh',
-    'dbvora/offline_selftest.py',
+    'dbvora/offline_selftest.py', 'check_dbvora_windows.cmd',
+    'check_dbvora_unix.sh',
 }
 
 
@@ -97,7 +98,8 @@ def _contents(root: Path) -> dict[str, bytes]:
         'This is a source ZIP, NOT a standalone installer or bundled Python.\n'
         'NO-PIP OFFLINE MAP: use installed Python 3.11+ without FastAPI.\n'
         'SYNTHETIC-ONLY SELF-CHECK (no customer file, no pip):\n'
-        '  py -3.11 -m dbvora.offline_selftest\n'
+        '  Windows: check_dbvora_windows.cmd (or py -3.11 -m dbvora.offline_selftest)\n'
+        '  Linux/macOS: sh check_dbvora_unix.sh\n'
         '  This does NOT certify NTFS durability or native browser opening.\n'
         '  py -3 -m dbvora.export_html --db \"C:\\absolute\\synthetic.sqlite\" --out \"C:\\existing\\folder\"\n'
         '  Then open the generated dbvora-map-*.html in your browser.\n'
@@ -126,6 +128,18 @@ def _contents(root: Path) -> dict[str, bytes]:
         '#!/bin/sh\nset -eu\n'
         'if [ "$#" -ne 1 ]; then echo "Provide one absolute synthetic SQLite path" >&2; exit 2; fi\n'
         'cd "$(dirname "$0")"\nexec python3 -m dbvora.serve --db "$1"\n'
+    ).encode('utf-8')
+    files['check_dbvora_windows.cmd'] = (
+        '@echo off\r\nsetlocal\r\ncd /d "%~dp0"\r\n'
+        'if not "%~1"=="" (echo No arguments: synthetic-only self-check. 1>&2 & exit /b 2)\r\n'
+        'py -3.11 -m dbvora.offline_selftest\r\n'
+        'exit /b %ERRORLEVEL%\r\n'
+    ).encode('ascii')
+    files['check_dbvora_unix.sh'] = (
+        '#!/bin/sh\nset -eu\n'
+        'if [ "$#" -ne 0 ]; then echo "No arguments: synthetic-only self-check" >&2; exit 2; fi\n'
+        'cd "$(dirname "$0")"\n'
+        'exec python3 -m dbvora.offline_selftest\n'
     ).encode('utf-8')
     files['export_dbvora_map_windows.cmd'] = (
         '@echo off\r\nsetlocal\r\ncd /d "%~dp0"\r\n'
