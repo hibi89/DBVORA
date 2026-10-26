@@ -74,3 +74,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. Original data/backups: synthetic fixture only; source hash, size and mtime preserved, new-only archives/restores, staging cleanup under simulated errors; no customer files, secrets, deletion or Git force.
 9. Next: fetch exact-sha receipt/recovery catalog + CLI components; test actual nine checked-in CLI tests with synthetic fixture and audit, run remaining 156 full suite if feasible. Windows/NTFS and hardware crash stay separate required gates.
 10. Timestamp: 2026-10-26 KST. Evidence explicitly in docs/P1_C5_REAL_ENGINE_SMOKE_20261026.md. Never equate focused source runtime PASS with 156-suite/Windows/customer-release pass.
+
+## 2026-10-26 KST P1-C5 real CLI acceptance, 10-field handoff
+1. Goal: DBVORA sovereign local DB inventory plus safe SQLite archives, unencrypted/unsigned by default; synthetic-only during development.
+2. Code: no code changes this checkpoint; assembled original GitHub blob-matching `receipts.py` and `recovery_catalog.py` alongside `archive_cli.py`, ZIP/ZSTD and fixture for direct local execution.
+3. Evidence: Linux Python3.13.5, SQLite3.46.1, ZSTD1.5.7: exact checked-in CLI tests 9/9 PASS (0 skip/fail); actual synthetic 8/8 checks PASS; 22 checked-in helper tests PASS; 12 extra real adversarial receipt/chain/tampering checks PASS. Full 156 suite NOT RUN.
+4. State: P1-C5 core CLI and receipts real synthetic Linux path VERIFIED; overall release acceptance PARTIAL (31/156 checked-in cases, rest untested).
+5. Blocker/pivot: GitHub private full clone unavailable (container DNS); exact GitHub file contents manually reconstructed and `git hash-object`-verified in isolated local workspace. No live secrets, external uploads or paid Actions.
+6. Repository: hibi89/DBVORA private, feature/p0-db-map previous head `506ca9fe0aea6a3a92bc07ebdda8c743dc556176`; new documentation commit must be verified on next read. Main/develop remain `890f842e3ba0e13c901e785633bdd06eadc76cce`.
+7. Run: `python -W error::ResourceWarning -m unittest tests.test_archive_cli -v`; `python -W error::ResourceWarning -m scripts.synthetic_cli_gate`. Complete release `python -m scripts.verify_release_gate` still NOT RUN; Vercel/Production N/A.
+8. Safety: only OS-temp generated SQLite used, data and receipts unsigned/unencrypted; no originals, secrets, customer DB, data deletion or overwrite. Existing Git history preserved.
+9. Next: execute remaining 125 checked-in tests with full reconstructed source or authorized checkout, plus Node DOM/preflight. Fix real failures. Windows Python3.11/NTFS, browser and power-cut tests remain required before customer release. Never assume source is encrypted or receipts authenticated.
+10. Time/scope: 2026-10-26 KST. Full file SHAs and test commands/results in `docs/P1_C5_REAL_CLI_RECEIPTS_20261026.md`. No full-suite claims.
