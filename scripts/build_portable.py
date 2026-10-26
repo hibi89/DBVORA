@@ -32,7 +32,7 @@ _REQUIRED = {
     'pyproject.toml', 'README_PORTABLE.txt', 'run_dbvora_windows.cmd',
     'run_dbvora_unix.sh', 'dbvora/export_html.py',
     'export_dbvora_map_windows.cmd', 'export_dbvora_map_unix.sh',
-    'dbvora/offline_selftest.py', 'check_dbvora_windows.cmd',
+    'dbvora/offline_selftest.py', 'dbvora/archive/dedup_plan.py', 'check_dbvora_windows.cmd',
     'check_dbvora_unix.sh',
 }
 
