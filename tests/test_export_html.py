@@ -95,6 +95,21 @@ class OfflineHtmlTests(unittest.TestCase):
             with self.assertRaisesRegex(view.HtmlExportError, 'UNSAFE_WEB_ASSET'):
                 view.render_html({'engine': 'sqlite'}, web=p)
 
+    def test_missing_or_duplicated_security_template_anchors_fail_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            web = Path(tmp)
+            template = (view._WEB / 'index.html').read_text(encoding='utf-8')
+            for name in ('style.css', 'app.js'):
+                (web / name).write_bytes((view._WEB / name).read_bytes())
+            for marker in ('<meta charset="utf-8">', '</body>'):
+                for replacement in ('', marker * 2):
+                    with self.subTest(marker=marker, replacement_count=len(replacement)):
+                        (web / 'index.html').write_text(
+                            template.replace(marker, replacement), encoding='utf-8'
+                        )
+                        with self.assertRaisesRegex(view.HtmlExportError, 'UNSAFE_WEB_ASSET'):
+                            view.render_html({'engine': 'sqlite', 'tables': []}, web=web)
+
     def test_closing_script_in_asset_fails_closed(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp)
