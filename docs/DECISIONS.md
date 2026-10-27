@@ -20,3 +20,8 @@
 ## ADR-004: 작업 방식 및 Git
 - main 안정 / develop 통합 / feature/p0-db-map 첫 코드. 수동 PR 승인 전 데이터/권한 변경 없음.
 - 품질: 실제 검증 전 성공 주장 금지. 주요 단위 완료 시 SHA/STATUS/HANDOFF 갱신.
+
+## ADR-005: strict audit CLI without breaking enumeration (2026-10-27)
+- Alternative A: change existing audit exit code on any failed receipt/artifact, breaking older consumers.
+- Alternative B: additive `--require-all-verified` mode, fail-closed for empty/unverified catalogs while default audit remains read-only inventory. **Choose B** for compatibility and explicit automation policy with zero additional dependencies.
+- Evidence: docs/P1_C6_STRICT_AUDIT_20261027.md, genuine synthetic subprocess tests 3/3 PASS. Unsigned receipt + content proof is **not** cryptographic authenticity or crash durability.
