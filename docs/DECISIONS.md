@@ -45,3 +45,8 @@
 - Relying on simulated Node DOM alone misses browser integration; add window resize listener instrumentation to the real Chromium synthetic offline HTML probe.
 - After three refreshes, new resize registrations must equal zero. Historical leaking JS fails 1/14; current patched JS passes 14/14. This is set-content only, **not** a genuine file:// navigation pass.
 - Pin changed executable probe in QA v6, keep SHA integrity verification and all other 49 pins. QA kit selftests 19/19 PASS; full 214 product suite not yet run. Evidence docs/P1_C8_CHROMIUM_OFFLINE_REGRESSION_20261027.md.
+
+## ADR-010: owner-local private Git authentication for full release QA (2026-10-27)
+- Unavailable options: repeated unauthenticated container GitHub cloning, private code public mirror, automatic paid CI. Local source snapshots matched only 27/50 reviewed Git blobs, so cannot truthfully run 214-case complete release gate here.
+- Chosen: separately packaged owner-local read-only source verifier using installed Git credentials or existing clone, exact 50 reviewed Git blob pins, `git archive` one-root ZIP, and offline QA v6. No credentials sent or network except GitHub clone from owner's own machine. No product source or GitHub executable code changed.
+- Actual tests: five synthetic bootstrap PASS and 19 existing QA harness PASS after fresh bundle extraction; whole product 214 NOT RUN and Windows native durability NOT VERIFIED. Evidence `docs/OWNER_LOCAL_QA_BRIDGE_20261027.md`.
