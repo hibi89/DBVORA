@@ -280,3 +280,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. Data/security/backup: unchanged original source and prior v4 ZIP; tested synthetic/tmp data only. v5 ZIP 10,770 B, SHA-256 `701a6c8f5bc146fc6a6517cea9f1c4dbe3610efe1cf54ba667031b0ab94cca4b`. No customer files, secrets, paid CI, repo publicization or destructive retention.
 9. Next/approval: owner-authorized full private source archive → v5 pin verification → actual 214 Python+ZIP/ZSTD/Node integrated gate → native Windows3.11 NTFS/file://; only then C2 actual chunk store. Real DB/paid CI/public/permissions/delete require approval.
 10. Date and evidence: 2026-10-27 KST; narrow QA transport and focused tests verified, product release still PARTIAL/UNVERIFIED. GitHub contains evidence documentation, not the QA archive itself; final HEAD from remote re-fetch.
+
+## 2026-10-27 — latest P1-C8 / QA v6 handoff (10 fields)
+1. Goal: local-first DBVORA SQLite map, ZIP/ZSTD recovery and offline HTML; Python >=3.11, C2 dedup estimation remains read-only.
+2. Decision: extend real Chromium synthetic offline-browser probe with resize-listener leak detection on three refreshes. Source logic unchanged.
+3. Evidence: 13/13 real Python HTML export tests PASS; 14/14 actual Chromium set-content checks PASS; historical JS negative control 13/14 FAIL_CLOSED on only resize case; v6 kit 19/19 harness tests PASS.
+4. Current block: 214-case full product suite and six-stage release gate NOT RUN, complete private source unavailable.
+5. Limit: Chromium file:// page.goto blocked by administrator policy; no bypass and no file navigation pass claim. Earlier negative-run Python path correction recorded.
+6. Repo: hibi89/DBVORA private feature/p0-db-map, source baseline cafbd87e61f20cffe778692f8a29db541588eeaf; main and develop unmodified.
+7. Environment: Linux Python3.13.5 and real Chromium/Playwright; Production/Vercel not applicable.
+8. Safety: only synthetic DB, no customer files, paid CI or public changes. QA kit v6 SHA256 c80228f017c65c167ee00c345c5fe5b3caa02cb7080b0f8e142171a412abc594 (10,594 bytes), temporary conversation artifact.
+9. Next: verify authorized complete feature ZIP with all 50 v6 pins; execute 214 Python and unified gate; later native Windows3.11 NTFS, genuine file:// and power loss durability.
+10. Provenance: 2026-10-27 KST; see docs/P1_C8_CHROMIUM_OFFLINE_REGRESSION_20261027.md and docs/QA_V6_MANIFEST_20261027.md; fetch final GitHub HEAD after documentation.
