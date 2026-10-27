@@ -12,11 +12,12 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 224
+EXPECTED_PYTHON_TESTS = 225
 EXPECTED_GATE_CHECKS = 7
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"\bskipped=(\d+)\b", re.IGNORECASE)
 FAILED_TEST = re.compile(r"(?m)^(?:FAIL|ERROR): (test_[A-Za-z0-9_]+) \(([A-Za-z0-9_.]+)\)")
+SKIPPED_TEST = re.compile(r"(?m)^(test_[A-Za-z0-9_]+) \(([A-Za-z0-9_.]+)\) \.\.\. skipped ")
 SAFE_CODE = re.compile(r"[A-Z][A-Z0-9_]{0,63}")
 # Verbose unittest output identifies the one permitted optional ZSTD skip.
 OPTIONAL_ZSTD_TEST = "test_zstd_roundtrip_when_optional_codec_exists"
@@ -66,6 +67,12 @@ def _failing_test_ids(unittest_output):
                    for method, module in FAILED_TEST.findall(unittest_output)})[:20]
 
 
+def _skipped_test_ids(unittest_output):
+    """Only report bounded test identities, never filesystem paths or reasons."""
+    return sorted({module if module.endswith("." + method) else f"{module}.{method}"
+                   for method, module in SKIPPED_TEST.findall(unittest_output)})[:20]
+
+
 def verify():
     report = {"contract": "dbvora.offline-release-gate.v1", "mode": "synthetic_only",
               "ready_for_customer_data": False, "status": "FAIL_CLOSED", "steps": []}
@@ -103,7 +110,8 @@ def verify():
                             "skipped_tests": skipped, "maximum_allowed_skips": allowed_skips,
                             "skip_identity_verified": skip_identity_ok,
                             "exit_code": code if type(code) is int else -1,
-                            "failed_test_ids": _failing_test_ids(combined_tests)})
+                            "failed_test_ids": _failing_test_ids(combined_tests),
+                            "skipped_test_ids": _skipped_test_ids(combined_tests)})
 
     code, out, _ = _run([sys.executable, "-m", "scripts.synthetic_cli_gate"], timeout=240)
     try:
