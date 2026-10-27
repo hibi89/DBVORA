@@ -162,5 +162,53 @@ class VerificationGateTests(unittest.TestCase):
         self.assertEqual(child_env['PYTHONIOENCODING'], 'utf-8')
         self.assertEqual(child_env['DBVORA_SENTINEL'], 'keep')
 
+    def test_windows_failed_unittest_reports_ids_and_skip_count_without_tracebacks(self):
+        mocked = self.responses()
+        mocked[0] = (1, '', "test_archive_failure (test_safe_zip.ZipTests.test_archive_failure) ... FAIL\\n"
+                     "FAIL: test_archive_failure (test_safe_zip.ZipTests.test_archive_failure)\\n"
+                     "Traceback secret C:\\\\customer\\\\source.sqlite\\n"
+                     "Ran 218 tests in 1.0s\\nFAILED (failures=1, skipped=1)")
+        with patch.object(gate, '_run', side_effect=mocked), patch.object(gate.shutil, 'which', return_value='tool'):
+            step = gate.verify()['steps'][1]
+        self.assertEqual(step['status'], 'FAIL')
+        self.assertEqual(step['skipped_tests'], 1)
+        self.assertEqual(step['failed_test_ids'], ['test_safe_zip.ZipTests.test_archive_failure'])
+        self.assertNotIn('customer', str(step))
+
+    def test_real_cli_gate_reports_fixed_error_code_only(self):
+        mocked = self.responses()
+        mocked[1] = (2, json.dumps({'status':'FAIL','error_code':'CLI_PUBLISH_FAILED'}), '')
+        with patch.object(gate, '_run', side_effect=mocked), patch.object(gate.shutil, 'which', return_value='tool'):
+            step = gate.verify()['steps'][2]
+        self.assertEqual(step['status'], 'FAIL')
+        self.assertEqual(step['error_code'], 'CLI_PUBLISH_FAILED')
+
+    def test_unsafe_cli_error_code_is_replaced_not_echoed(self):
+        mocked = self.responses()
+        mocked[1] = (2, json.dumps({'status':'FAIL','error_code':'C:\\\\private\\\\db.sqlite'}), '')
+        with patch.object(gate, '_run', side_effect=mocked), patch.object(gate.shutil, 'which', return_value='tool'):
+            step = gate.verify()['steps'][2]
+        self.assertEqual(step['error_code'], 'NOT_REPORTED')
+        self.assertNotIn('private', str(step))
+
+    def test_node_tap_failure_has_only_numeric_counts(self):
+        mocked = self.responses()
+        mocked[3] = (1, '# tests 1\\n# pass 0\\n# fail 1\\n', '')
+        with patch.object(gate, '_run', side_effect=mocked), patch.object(gate.shutil, 'which', return_value='tool'):
+            step = gate.verify()['steps'][4]
+        self.assertEqual(step['status'], 'FAIL')
+        self.assertEqual(step['tap'], {'tests':1,'passed':0,'failed':1})
+        self.assertEqual(step['error_code'], 'NODE_TEST_FAILED')
+
+    def test_filesystem_failure_reports_archive_code(self):
+        mocked = self.responses()
+        mocked[4] = (0, json.dumps({'archive_publish_test':'unsupported_or_failed',
+                                     'failure_code':'PUBLISH_FAILED','ready_for_customer_data':False}), '')
+        with patch.object(gate, '_run', side_effect=mocked), patch.object(gate.shutil, 'which', return_value='tool'):
+            step = gate.verify()['steps'][5]
+        self.assertEqual(step['status'], 'FAIL')
+        self.assertEqual(step['error_code'], 'PUBLISH_FAILED')
+        self.assertEqual(step['publish_test'], 'unsupported_or_failed')
+
 if __name__ == '__main__':
     unittest.main()
