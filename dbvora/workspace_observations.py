@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+from dbvora.safe_metadata_file import MetadataInputError, read_local_json
 import re
 import stat
 import uuid
@@ -97,17 +98,9 @@ def compare_growth(previous: dict, current: dict) -> dict:
 
 
 def read_observation(raw: str | Path) -> dict:
-    p = Path(raw)
-    if not p.is_absolute():
-        raise ObservationError("INVALID_OBSERVATION_FILE")
     try:
-        if any(item.is_symlink() for item in (p, *p.parents)):
-            raise ObservationError("INVALID_OBSERVATION_FILE")
-        info = p.stat()
-        if not stat.S_ISREG(info.st_mode) or not 2 <= info.st_size <= MAX_OBSERVATION_BYTES:
-            raise ObservationError("INVALID_OBSERVATION_FILE")
-        return validate_observation(json.loads(p.read_text(encoding="utf-8")))
-    except (OSError, UnicodeError, ValueError, RecursionError, TypeError):
+        return validate_observation(read_local_json(raw, max_bytes=MAX_OBSERVATION_BYTES))
+    except MetadataInputError:
         raise ObservationError("INVALID_OBSERVATION_FILE") from None
 
 

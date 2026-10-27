@@ -14,6 +14,7 @@ import stat
 import tempfile
 import uuid
 from dbvora.errors import InventoryError
+from dbvora.safe_metadata_file import MetadataInputError, read_local_json
 from dbvora.workspace import inspect_workspace
 from dbvora.workspace_observations import (ObservationError, from_workspace, compare_growth,
                                           read_observation, write_observation)
@@ -145,24 +146,13 @@ def export_synthetic_workspace(output_directory:str | Path)->dict:
 
 
 def _load_links_manifest(raw_path: str | Path) -> list[dict]:
-    """Explicit local metadata-only JSON; no SQL/rows, remote URL or implicit scans."""
-    if not isinstance(raw_path, (str, Path)):
-        raise WorkspaceHtmlError('INVALID_LINK_MANIFEST')
-    p=Path(raw_path)
-    if not p.is_absolute():
-        raise WorkspaceHtmlError('INVALID_LINK_MANIFEST')
+    """Explicit bounded local metadata only; reject ambiguous JSON structure."""
     try:
-        if any(part.is_symlink() for part in (p,*p.parents)):
-            raise WorkspaceHtmlError('INVALID_LINK_MANIFEST')
-        info=p.stat()
-        if not stat.S_ISREG(info.st_mode) or info.st_size > 16*1024:
-            raise WorkspaceHtmlError('INVALID_LINK_MANIFEST')
-        text=p.read_text(encoding='utf-8')
-        result=json.loads(text)
-        if not isinstance(result,list):
+        result = read_local_json(raw_path, max_bytes=16 * 1024)
+        if type(result) is not list:
             raise WorkspaceHtmlError('INVALID_LINK_MANIFEST')
         return result
-    except (OSError,UnicodeError,ValueError,RecursionError):
+    except MetadataInputError:
         raise WorkspaceHtmlError('INVALID_LINK_MANIFEST') from None
 
 
@@ -177,7 +167,7 @@ def main(argv=None)->int:
     parser.add_argument('--save-observation',action='store_true',help='Write a new metadata-only comparison baseline JSON')
     args=parser.parse_args(argv)
     try:
-        if args.synthetic_only and (args.links_file or args.baseline_file):
+        if args.synthetic_only and (args.links_file or args.baseline_file or args.save_observation):
             raise WorkspaceHtmlError('INVALID_LINK_MANIFEST')
         links=_load_links_manifest(args.links_file) if args.links_file else None
         baseline=read_observation(args.baseline_file) if args.baseline_file else None
