@@ -13,7 +13,7 @@ MAX_DATABASES = 8
 MAX_TOTAL_TABLES = 2000
 
 
-def inspect_workspace(db_paths: list[str | Path]) -> dict:
+def inspect_workspace(db_paths: list[str | Path], *, declared_links: list[dict] | None = None) -> dict:
     if not isinstance(db_paths, (list, tuple)) or not 2 <= len(db_paths) <= MAX_DATABASES:
         raise InventoryError("INVALID_DATABASE_COUNT", "Select between 2 and 8 distinct SQLite databases.")
     members = []
@@ -56,7 +56,7 @@ def inspect_workspace(db_paths: list[str | Path]) -> dict:
                 "target_in_inventory": fk["to_table"] in table_names,
                 "evidence": "declared_foreign_key",
             })
-    return {
+    result = {
         "contract_version": "p0-03.workspace.v1",
         "scope": "explicit_read_only_sqlite_metadata",
         "database_count": len(members),
@@ -70,3 +70,5 @@ def inspect_workspace(db_paths: list[str | Path]) -> dict:
         "databases": members,
         "relationships": edges,
     }
+    from dbvora.workspace_links import attach_declared_links
+    return attach_declared_links(result, [] if declared_links is None else declared_links)

@@ -441,3 +441,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. **Originals/backups/auth:** no original customer database, live data rows, .env, credentials, external API, paid CI, public release, deletion or force push. Git original code/backup paths untouched. Generated SQLite files automatically cleaned; output only unique HTML.
 9. **Next/approval:** full checkout regression, genuine local file navigation, then evidence-backed cross-DB links or measured trends; existing archive durability separately. Production use/paid CI/real customer files and permission change need owner approval.
 10. **Provenance:** KST 2026-10-27, local Python3.13/Chromium vs new Windows unverified explicitly separated; docs and final Git commit SHA must match remote.
+
+## 2026-10-27 KST — P0-04 explicit cross-database navigation (10-field handoff)
+1. **Goal/stack:** MVP-first local offline SQLite schema graph and later lossless archiving, Python>=3.11, no external API/fees.
+2. **Changed:** `dbvora/workspace_links.py` 6-key explicit declarations (max 64), `workspace.py` optional attachment, `workspace_html.py` clickable link panel + optional JSON file, `tests/test_workspace_links.py` 14 regressions; never infer/verify cross-DB FK.
+3. **Verification:** Linux3.13.5 exact-source real SQLite **36/36 PASS** (prior 22 plus 14); Chromium set_content navigation **9/9 PASS**, 0 JS errors; compileall PASS. Full >=290 product suite, native Windows link UI, actual file:// not verified.
+4. **State:** P0 multi-DB clickable synthetic demo + manual metadata links implemented; higher original-design functionality (size trends, genuine resource metrics, PostgreSQL, dedup, scheduler, safe Windows archive, installer) incomplete.
+5. **Known blockers:** environment-managed Chromium real file:// page.goto `ERR_BLOCKED_BY_ADMINISTRATOR`; do not bypass. Previous Windows archive `PUBLISH_FAILED` remains a separate fail-closed gate.
+6. **Repo:** `hibi89/DBVORA` private `feature/p0-db-map`, baseline parent `e55ad70d9be33991606d3381c8959a642690cbf2`. Final HEAD SHA must be fetched. `main`/`develop` remain `890f842e3ba0e13c901e785633bdd06eadc76cce`.
+7. **Execution/URL:** local synthetic demo `python -m dbvora.workspace_html --synthetic-only --out ABS_EXISTING_DIR`, offline HTML; Vercel/Production URL not applicable.
+8. **Safety/source:** only synthetic temp SQLite, source Git history preserved; no customer DB, passwords, paths in reports, destructive backup change, paid CI, public repo, or permission modification. User-created local links manifest is read-only.
+9. **Next:** read back Git SHA/author and validate full checkout >=290 when authorized, then measured `dbstat` table bytes (if supported) and multi-snapshot growth with honest provenance. Windows real file URL and power durability remain separate tests; production/customer/paid actions require approval.
+10. **Time/provenance:** 2026-10-27 KST; real synthetic Linux targeted suite and Chromium set_content, no full-current-SHA Windows or release acceptance. `docs/P0_04_CROSS_DB_LINK_EVIDENCE_20261027.md` is evidence reference.
