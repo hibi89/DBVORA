@@ -49,6 +49,18 @@ class WindowsSyntheticPublicationTests(unittest.TestCase):
         self.assertEqual(hashlib.sha256(target.read_bytes()).hexdigest(), expected)
         self.assertFalse(stage.exists())
 
+    def test_staging_fsync_uses_writable_handle_on_windows(self):
+        root, stage, target = self.fixture()
+        observed_modes = []
+        original_open = Path.open
+        def open_spy(path, *args, **kwargs):
+            if path == stage:
+                observed_modes.append(args[0] if args else kwargs.get('mode', 'r'))
+            return original_open(path, *args, **kwargs)
+        with patch.object(Path, 'open', open_spy):
+            publish._commit_synthetic_staged(root, stage, target, move=simulated_create_only)
+        self.assertIn('r+b', observed_modes)
+
     def test_collision_never_overwrites_existing(self):
         root, stage, target = self.fixture()
         target.write_bytes(b'customer-keep-synthetic')
