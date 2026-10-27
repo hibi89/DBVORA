@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 214
+EXPECTED_PYTHON_TESTS = 217
 EXPECTED_GATE_CHECKS = 7
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"OK\s*\(skipped=(\d+)\)", re.IGNORECASE)
@@ -37,11 +37,17 @@ REQUIRED = (
 
 
 def _run(command, timeout=180):
+    """Decode child output as strict UTF-8 on every OS; malformed output fails closed."""
     try:
-        child = subprocess.run(command, cwd=ROOT, text=True, capture_output=True,
+        # Node emits UTF-8 TAP, even when Windows Python's default is CP949.
+        # Read bytes first so a subprocess reader thread cannot silently fail.
+        child = subprocess.run(command, cwd=ROOT, capture_output=True,
                                timeout=timeout, check=False, stdin=subprocess.DEVNULL)
-        return child.returncode, child.stdout, child.stderr
-    except (OSError, subprocess.TimeoutExpired):
+        stdout, stderr = child.stdout, child.stderr
+        if not isinstance(stdout, bytes) or not isinstance(stderr, bytes):
+            return -1, "", ""
+        return child.returncode, stdout.decode("utf-8"), stderr.decode("utf-8")
+    except (OSError, subprocess.TimeoutExpired, UnicodeError):
         return -1, "", ""
 
 
