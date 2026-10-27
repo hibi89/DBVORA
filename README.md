@@ -25,7 +25,7 @@
 - feature/p0-db-map P1-C2: 파일/디렉터리 fsync, 새 파일 독점 게시 및 게시 오류 롤백, 임시파일 판독/명시적 정리, 강제 프로세스 종료·다중 프로세스 실험. Python 76/76 PASS (Linux synthetic only). 실제 전원 차단 검증은 미완료.
 - feature/p0-db-map P1-C3: 재시작 후 SQLite/ZIP/ZSTD 파일을 별도 임시 폴더로 복사·검증하고 원본/이전 정본은 변경하지 않는 감사 기능, 임시파일/불완전 파일 분류, 합성 파일시스템 호환성 진단. Python 96/96 PASS. 콘텐츠 무결성과 실제 게시 내구성은 구별.
 - feature/p0-db-map P1-C4: 백업별 독립 completion receipt와 이전 기록 SHA 계보, 완전 복원 검증, 기록 누락/변조/손상 거부, 중복 작성 안전 실패. Linux 합성 테스트 누적 Python 125/125 PASS. 영수증은 미서명·미암호화이며 전원 차단 보증 아님.
-- 아직 구현되지 않음: CLI·고객용 검증된 전원중단 복구·증분/예약 보관, Windows 설치기. 브라우저 실제 렌더링, 고객 DB 미검증. 합성 ZIP 결과를 상용 압축률로 해석 금지.
+- 개발용 archive CLI는 구현됨(P1-C5, 합성 검증만). 아직 구현되지 않음: 고객용 검증된 전원중단 복구·증분/예약 보관, Windows 설치기. 브라우저 실제 렌더링, 고객 DB 미검증. 합성 ZIP 결과를 상용 압축률로 해석 금지.
 - 실행 방법: [docs/P0_02_USAGE.md](docs/P0_02_USAGE.md); P0-01 계약: [docs/P0_01_USAGE.md](docs/P0_01_USAGE.md); 다음 작업: [docs/NEXT_TASK.md](docs/NEXT_TASK.md).
 - 외부 유료 API·서버·데이터 전송·Vercel 배포 없음.
 
@@ -64,3 +64,15 @@ From the developer ZIP or source checkout, Python 3.11+ can generate an **offlin
 python -m dbvora.export_html --db /absolute/synthetic.sqlite --out /absolute/existing/folder
 ```
 On Windows, use `py -3 -m dbvora.export_html --db "C:\absolute\synthetic.sqlite" --out "C:\existing\folder"` or `export_dbvora_map_windows.cmd` with those two arguments. Open generated HTML offline. It includes schema metadata names, so **never share a confidential schema without authorization**; no rows or customer DB paths are inserted. [Detailed usage and evidence](docs/OFFLINE_HTML_PREVIEW_20261026.md). This is unsigned, not a standalone installer or customer-ready Windows backup solution.
+
+## Fastest synthetic-only MVP preview (2026-10-27)
+
+Use Python 3.11+ from a checkout and an **existing absolute output directory**. No FastAPI/Node/SQLite source file is required from the operator, and no real customer database is read:
+
+```powershell
+py -3.11 -B -m dbvora.demo_preview --synthetic-only --out "E:\\DBVORA_GIT"
+```
+
+Open the newly generated `dbvora-map-<uuid>.html` with a local browser. The created SQLite database is synthetic (departments/employees, FK, indexes); it is deleted with its OS temporary directory after export. The new HTML filename is generated exclusively, never overwriting an existing one. **It is a schema map, not a backup**. The HTML contains only synthetic metadata and is safe for demo use; no network or paid service is used by the generator.
+
+Developer checks: `python -m unittest -q tests.test_demo_preview` (six tests). First isolated Linux3.13 control-flow smoke with a mocked HTML exporter: **6/6 PASS**; full Git checkout integration and real `file://` browser are not yet verified. Existing offline self-test (`python -m dbvora.offline_selftest`) tests the actual exporter but doesn't persist a demo HTML. Read `docs/MVP_GAP_MATRIX_20261027.md` for scope, original-design differences and release gates. Do not load real/customer databases until specifically authorized and Windows archive safety has passed.

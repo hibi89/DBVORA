@@ -250,3 +250,10 @@ New commands do not encrypt source/artifacts, do not schedule/delete or overwrit
 - Local Python3.13 Linux with SHA-exact legacy publisher and new exact-source modules: **8/8 PASS** with development-mode ResourceWarning checking; original publisher blob and both new source blobs matched Git SHA. This is simulated create-only publication **not** native Windows W2 proof.
 - Mandatory release gate updated to require **>=248** Python tests and both shadow files. Full 248, updated mocked gate module, Windows W2 native, metadata/power durability, original Windows CLI and file:// all **NOT RUN/UNVERIFIED**; production archive disabled.
 - Evidence: `docs/WINDOWS_NTFS_SHADOW_EVIDENCE_20261027.md`. Main/develop remain original; private feature-only research; Vercel N/A.
+
+## 2026-10-27 KST — accelerated MVP-first real code checkpoint
+- User priority reordered: **complete reproducible P0 MVP -> compare original architecture and fill requirements -> security/stability/compatibility acceptance**. Do not postpone data-loss prevention or misstate Windows production readiness.
+- Added `dbvora/demo_preview.py` (one-command synthetic-only SQLite -> offline schema HTML), `tests/test_demo_preview.py` six cases; no real database path input, no network/server/PIP, generates unique HTML in an existing absolute folder and deletes synthetic source. Existing engine/backups unchanged.
+- Isolated local Python3.13.5 developer smoke **6/6 PASS** with a stand-in exporter (actual exporter not mounted). The committed tests invoke real `dbvora.export_html` on full checkout, **not run**. SHA1 blobs for new source matched locally before GitHub upload.
+- Gate source membership updated and `EXPECTED_PYTHON_TESTS` **248 -> 254**; full tests, real exporter/Windows native file:// not run. Prior owner's Windows NTFS 15/15 twice and original archiver Windows fail-closed state unchanged.
+- Gap matrix / design options: `docs/MVP_GAP_MATRIX_20261027.md`. Single SQLite structural view coded; whole multi-DB graph, measured table storage, incrementals, schedule, installer not complete. Product ready: **NO**; Vercel N/A.
