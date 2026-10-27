@@ -232,3 +232,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. **Original/backup/secrets/safety:** Historical developer ZIP left intact, only OS-temp extracted synthetic source/test workspace; all Git private code remained inside authorized ChatGPT environment. No customer DB, raw personal data, credentials, source uploads to third-party providers, source overwrite, archive purge, paid CI or public repo changes.
 9. **Next/completion/approvals:** Acquire authorized full current private source ZIP or runner, verify source SHAs, run >=210 tests + full synthetic ZIP/ZSTD release gate; then separate native Windows/NTFS and actual browser. Do not promote develop/main without integrated evidence. User approval still mandatory for customer data, paid CI, rights/public deployment, installers or destructive operations.
 10. **Updated/verification scope/document standard:** 2026-10-27 KST; actual Node TAP 1/1 and exact current source blobs only. Complete Python/client release remains PARTIAL. Query live branch SHA after final STATUS/NEXT/HANDOFF updates; document standard is that final SHA.
+
+## 2026-10-27 KST — latest P1-C6 handoff (10 fields)
+1. Goal/tech: DBVORA private local-first SQLite map, safe ZIP/ZSTD restoration and C2 reuse estimator; Python>=3.11.
+2. Implemented/decision: opt-in `audit --require-all-verified` rejects empty, missing receipts and damaged files without breaking ordinary read-only audit. A breaking default exit-code change was rejected.
+3. Tests: actual Python3.13.5 synthetic CLI cases **3/3 PASS**, compileall PASS; unchanged archive engine ZIP/ZSTD SHA and SQLite integrity smoke PASS. Entire **213** suite NOT RUN. QA v3 selftests 16 PASS but stale source pins.
+4. State: feature patch committed, narrow synthetic verification PASS; current full integration, Windows NTFS and customer release UNVERIFIED.
+5. Errors/pivot: initial test expected `RECEIPT_NOT_FOUND` but real code is `MISSING_RECEIPT`; corrected fixture and reran 3/3. Old developer ZIP lacks 28 of 49 pinned executable files and cannot run full regression.
+6. Repo/branch/SHAs: `hibi89/DBVORA` / `feature/p0-db-map`; source `68e7d7f0628c581fb81ca2b79b0591753f0214dc`, tests `88e817e4561517cdc3053a19371e159e2273ce40`, gate `0a89a7a9b24d9eefb919a9c40ea94080da0286f6`. main/develop unchanged. Re-fetch document final HEAD.
+7. Runtime/deployment: Linux Python3.13.5, Node22.16, local ZSTD 1.5.7; Vercel/Production N/A, no deployed URL.
+8. Original/security: Git history preserved, all test data synthesized under temporary folders, no real customer files, credentials, external source publication, deletion or paid CI; receipts are unsigned.
+9. Next/approvals: acquire full authorized current private checkout and run >=213 tests/unified synthetic gate; then native Windows3.11/NTFS and real file browser. Customer access, paid CI, public release or destructive operation need prior approval.
+10. Verified KST/source standard: 2026-10-27; exact new code/test Git blob SHA proven in local isolated tests. Evidence `docs/P1_C6_STRICT_AUDIT_20261027.md`; full release remains PARTIAL, handoff HEAD established by final remote fetch.
