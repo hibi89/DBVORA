@@ -75,6 +75,20 @@ def probe(chromium: str | None = None) -> dict:
                         '<svg onload=alert(9)>' in page.locator('#detail').inner_text()
                         and page.locator('#detail img').count() == 0 and not dialogs)
                     checks['no_browser_script_errors'] = not errors and page.locator('#error').is_hidden()
+                    # After initial page boot, manual refresh must not add resize listeners.
+                    # A leaking version registers inside render() on every refresh.
+                    page.evaluate("""() => {
+                        window.__dbvoraResizeRegistrations = 0;
+                        const originalAdd = window.addEventListener;
+                        window.addEventListener = function(type, ...args) {
+                            if (type === 'resize') window.__dbvoraResizeRegistrations++;
+                            return originalAdd.call(this, type, ...args);
+                        };
+                    }""")
+                    for _ in range(3):
+                        page.locator('#refresh').click()
+                    checks['refresh_does_not_add_resize_listeners'] = page.evaluate(
+                        'window.__dbvoraResizeRegistrations === 0')
                     page.locator('#refresh').click()
                     checks['refresh_works_without_server'] = (
                         page.locator('#tables button').count() == 4
