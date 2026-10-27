@@ -144,7 +144,7 @@ class VerificationGateTests(unittest.TestCase):
         self.assertEqual(gate._run(command), (0, '✓', '⚠'))
 
     def test_run_invalid_utf8_fails_closed_without_traceback(self):
-        invalid = subprocess.CompletedProcess(['node'], 0, b'\\xff', b'')
+        invalid = subprocess.CompletedProcess(['node'], 0, b'\xff', b'')
         with patch.object(gate.subprocess, 'run', return_value=invalid):
             self.assertEqual(gate._run(['node']), (-1, '', ''))
 
