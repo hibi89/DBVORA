@@ -35,3 +35,8 @@
 - **A: Repeat GitHub clone or use a remote CI runner.** The current container has no GitHub DNS/auth. Repeating failed clone wastes time; remote CI may require billing or rights changes and therefore needs explicit approval before execution.
 - **B: Owner-authorized private source ZIP + SHA-pinned offline QA kit.** No remote data upload, no paid runner, low maintenance and fail-closed on source mismatch. Requires owner to obtain the private ZIP once. **Selected B as a zero-cost handoff/verification path**, without falsely claiming full test execution.
 - QA v4 source baseline `318a49e3031b9d0aa052221e35ebdebbec70dedd`, **50** Git blobs; kit 16/16 selftests PASS. See `docs/QA_V4_MANIFEST_20261027.md`. Complete 214 test suite remains unexecuted. Future CI option remains approval-gated.
+
+## ADR-008: verify ZIP blob identities again during QA extraction (2026-10-27)
+- A: trust preflight checks and reopen source archive unchanged, susceptible to replacement between preflight/extraction.
+- B: rehash pinned source bytes while copying into private temporary checkout; refuse mismatch before execution. **Selected B**. Minimal stdlib cost, no network, compatible v4 ZIP pins and caller contract.
+- Evidence: `docs/QA_V5_POSTVERIFY_EXTRACTION_20261027.md`, v5 harness 19/19 PASS; does not validate DBVORA's full 214-case product suite or platform durability.
