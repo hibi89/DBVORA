@@ -164,10 +164,10 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_windows_failed_unittest_reports_ids_and_skip_count_without_tracebacks(self):
         mocked = self.responses()
-        mocked[0] = (1, '', "test_archive_failure (test_safe_zip.ZipTests.test_archive_failure) ... FAIL\\n"
-                     "FAIL: test_archive_failure (test_safe_zip.ZipTests.test_archive_failure)\\n"
-                     "Traceback secret C:\\\\customer\\\\source.sqlite\\n"
-                     "Ran 218 tests in 1.0s\\nFAILED (failures=1, skipped=1)")
+        mocked[0] = (1, '', "test_archive_failure (test_safe_zip.ZipTests.test_archive_failure) ... FAIL\n"
+                     "FAIL: test_archive_failure (test_safe_zip.ZipTests.test_archive_failure)\n"
+                     "Traceback secret C:\\\\customer\\\\source.sqlite\n"
+                     "Ran 218 tests in 1.0s\nFAILED (failures=1, skipped=1)")
         with patch.object(gate, '_run', side_effect=mocked), patch.object(gate.shutil, 'which', return_value='tool'):
             step = gate.verify()['steps'][1]
         self.assertEqual(step['status'], 'FAIL')
@@ -193,7 +193,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_node_tap_failure_has_only_numeric_counts(self):
         mocked = self.responses()
-        mocked[3] = (1, '# tests 1\\n# pass 0\\n# fail 1\\n', '')
+        mocked[3] = (1, '# tests 1\n# pass 0\n# fail 1\n', '')
         with patch.object(gate, '_run', side_effect=mocked), patch.object(gate.shutil, 'which', return_value='tool'):
             step = gate.verify()['steps'][4]
         self.assertEqual(step['status'], 'FAIL')
