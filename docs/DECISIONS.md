@@ -25,3 +25,8 @@
 - Alternative A: change existing audit exit code on any failed receipt/artifact, breaking older consumers.
 - Alternative B: additive `--require-all-verified` mode, fail-closed for empty/unverified catalogs while default audit remains read-only inventory. **Choose B** for compatibility and explicit automation policy with zero additional dependencies.
 - Evidence: docs/P1_C6_STRICT_AUDIT_20261027.md, genuine synthetic subprocess tests 3/3 PASS. Unsigned receipt + content proof is **not** cryptographic authenticity or crash durability.
+
+## ADR-006: Orphan receipt rejection in opt-in strict mode (2026-10-27)
+- Option A: add orphan receipt entries to all audit catalogs; more contract churn and downstream risk.
+- Option B: scan only generated-style receipt basenames for missing corresponding verified artifacts after normal strict verification, preserving legacy audit output and unrelated user files. **Chose B**: bounded local filename-only pass, zero dependencies.
+- Evidence and limits: `docs/P1_C7_ORPHAN_RECEIPT_20261027.md`. This is not proof of signed receipts, crash durability or customer readiness.
