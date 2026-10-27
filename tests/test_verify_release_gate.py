@@ -1,5 +1,7 @@
 """Offline synthetic release-gate decision logic (processes mocked)."""
 import json
+import subprocess
+import sys
 from pathlib import Path
 import tempfile
 import unittest
@@ -21,7 +23,7 @@ class VerificationGateTests(unittest.TestCase):
         self.root_patch.start()
         self.addCleanup(self.root_patch.stop)
 
-    def responses(self, *, tests=214, checks=8, zstd='passed', customer_ready=False):
+    def responses(self, *, tests=217, checks=8, zstd='passed', customer_ready=False):
         return [
             (0, '', f'Ran {tests} tests in 1.000s\nOK'),
             (0, json.dumps({'status': 'PASS_SYNTHETIC_ONLY',
@@ -48,11 +50,11 @@ class VerificationGateTests(unittest.TestCase):
         self.assertEqual(report['status'], 'FAIL_CLOSED')
         self.assertEqual(report['steps'][0]['error'], 'INCOMPLETE_SOURCE_CHECKOUT')
 
-    def test_213_tests_is_not_enough(self):
-        with patch.object(gate, '_run', side_effect=self.responses(tests=213)), patch.object(gate.shutil, 'which', return_value='tool'):
+    def test_216_tests_is_not_enough(self):
+        with patch.object(gate, '_run', side_effect=self.responses(tests=216)), patch.object(gate.shutil, 'which', return_value='tool'):
             report = gate.verify()
         self.assertEqual(report['status'], 'FAIL_CLOSED')
-        self.assertEqual(report['steps'][1]['discovered_tests'], 213)
+        self.assertEqual(report['steps'][1]['discovered_tests'], 216)
 
     def test_unsigned_customer_ready_claim_causes_failure(self):
         with patch.object(gate, '_run', side_effect=self.responses(customer_ready=True)), patch.object(gate.shutil, 'which', return_value='tool'):
@@ -71,7 +73,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_one_optional_zstd_skip_is_allowed_only_without_binary(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=7)
-        mocked[0] = (0, '', 'test_zstd_roundtrip_when_optional_codec_exists (test_archive_cli.ArchiveCliTests.test_zstd_roundtrip_when_optional_codec_exists) ... skipped \'optional external zstd executable unavailable\'\nRan 214 tests in 1.000s\nOK (skipped=1)')
+        mocked[0] = (0, '', 'test_zstd_roundtrip_when_optional_codec_exists (test_archive_cli.ArchiveCliTests.test_zstd_roundtrip_when_optional_codec_exists) ... skipped \'optional external zstd executable unavailable\'\nRan 217 tests in 1.000s\nOK (skipped=1)')
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -79,7 +81,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_any_skip_with_zstd_installed_fails_closed(self):
         mocked = self.responses()
-        mocked[0] = (0, '', 'Ran 214 tests in 1.000s\nOK (skipped=1)')
+        mocked[0] = (0, '', 'Ran 217 tests in 1.000s\nOK (skipped=1)')
         with patch.object(gate, '_run', side_effect=mocked), patch.object(gate.shutil, 'which', return_value='tool'):
             result = gate.verify()
         self.assertEqual(result['status'], 'FAIL_CLOSED')
@@ -87,7 +89,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_more_than_one_skip_without_zstd_fails_closed(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=7)
-        mocked[0] = (0, '', 'Ran 214 tests in 1.000s\nOK (skipped=2)')
+        mocked[0] = (0, '', 'Ran 217 tests in 1.000s\nOK (skipped=2)')
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -104,7 +106,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_unrelated_skip_rejected_even_without_zstd(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=7)
-        mocked[0] = (0, '', "test_backup (test_safety.Safety.test_backup) ... skipped 'bad reason'\nRan 214 tests in 1.000s\nOK (skipped=1)")
+        mocked[0] = (0, '', "test_backup (test_safety.Safety.test_backup) ... skipped 'bad reason'\nRan 217 tests in 1.000s\nOK (skipped=1)")
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -112,7 +114,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_skip_summary_without_identity_line_rejected(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=7)
-        mocked[0] = (0, '', 'Ran 214 tests in 1.000s\nOK (skipped=1)')
+        mocked[0] = (0, '', 'Ran 217 tests in 1.000s\nOK (skipped=1)')
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -120,7 +122,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_skip_identity_from_named_case_only(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=7)
-        mocked[0] = (0, '', "test_zstd_roundtrip_when_optional_codec_exists (test_archive_cli.ArchiveCliTests.test_zstd_roundtrip_when_optional_codec_exists) ... skipped 'wrong reason'\nRan 214 tests in 1.000s\nOK (skipped=1)")
+        mocked[0] = (0, '', "test_zstd_roundtrip_when_optional_codec_exists (test_archive_cli.ArchiveCliTests.test_zstd_roundtrip_when_optional_codec_exists) ... skipped 'wrong reason'\nRan 217 tests in 1.000s\nOK (skipped=1)")
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -133,6 +135,23 @@ class VerificationGateTests(unittest.TestCase):
         with patch.object(gate, '_run', side_effect=bad), patch.object(gate.shutil, 'which', return_value='tool'):
             self.assertEqual(gate.verify()['status'], 'FAIL_CLOSED')
 
+
+    def test_run_decodes_utf8_process_output_on_cp949_hosts(self):
+        # This reproduces UTF-8 TAP output regardless of Python's Windows locale.
+        command = [sys.executable, '-c',
+                   "import sys; sys.stdout.buffer.write('✓'.encode('utf-8')); "
+                   "sys.stderr.buffer.write('⚠'.encode('utf-8'))"]
+        self.assertEqual(gate._run(command), (0, '✓', '⚠'))
+
+    def test_run_invalid_utf8_fails_closed_without_traceback(self):
+        invalid = subprocess.CompletedProcess(['node'], 0, b'\\xff', b'')
+        with patch.object(gate.subprocess, 'run', return_value=invalid):
+            self.assertEqual(gate._run(['node']), (-1, '', ''))
+
+    def test_run_missing_output_stream_fails_closed(self):
+        missing = subprocess.CompletedProcess(['node'], 0, None, b'')
+        with patch.object(gate.subprocess, 'run', return_value=missing):
+            self.assertEqual(gate._run(['node']), (-1, '', ''))
 
 if __name__ == '__main__':
     unittest.main()
