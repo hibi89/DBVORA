@@ -47,3 +47,7 @@
 - Private `hibi89/DBVORA`, branch `feature/p0-db-map`; inspected parent `93945ffc72e1dd6c22ac3bc80c005752b6d9de93`.
 - Isolated test workspace Python3.13.5 6/6 PASS with a mock HTML renderer; real source exporter integration was **not executed** in that workspace. Both new source blobs locally Git SHA1 checked before commit.
 - Current Windows owner proof remains prior NTFS **15/15 twice**, not this demo's native browser. Vercel/Production N/A. Native consumer/customer readiness **UNVERIFIED**.
+
+## 2026-10-27 P0-03 concrete delta
+- The earlier multi-database architecture row marked NOT IMPLEMENTED is now **PARTIALLY IMPLEMENTED**: 2–8 SQLite files can be combined into a single offline clickable workspace (separate DB cards and scoped FK graph). Arbitrary service connections and cross-DB user-declared edges remain NOT IMPLEMENTED; no invented inter-DB edges.
+- Local 22/22 real SQLite targeted integration and 12 real Chromium set_content checks pass; strict original complete checkout >=276 and native file:// / Windows3.11 remain not verified. Original security/durability criteria stay open, not traded away for progress.

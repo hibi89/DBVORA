@@ -429,3 +429,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. **Originals/safety**: OS TEMP generated SQLite only; no customer data/credential/archive modification, external fees, force push, public visibility or overwrite. Existing source versions remain in Git history; local ZIP backup explicitly temporary.
 9. **Next tasks/approval**: transfer HTML/test source verified exact SHA; full integrated Python/Chromium/file tests then original gap analysis. Actual customer DB, production archive writes, paid CI or release require owner approval. No owner PowerShell required for standard tests.
 10. **KST/provenance**: 2026-10-27 KST; 7 real new registry tests plus 15 prototype tests recorded separately, parent SHA as above, new SHA read back after commit. See P0-03 evidence docs.
+
+## 2026-10-27 KST — P0-03 interactive multi-DB HTML merged, mandatory 10 items
+1. **Goal/tech:** finish demonstrable P0 MVP first (read-only multi-DB schema topology via offline Python3.11+), then original requirements, then safety/security/compatibility checks; never defer data integrity.
+2. **Changes:** P0-03 `dbvora/workspace.py` registry and newly committed `dbvora/workspace_html.py` interactive HTML + `tests/test_workspace.py` 15 cases. One-command two-DB synthetic demo; no live customer inputs.
+3. **Evidence:** Local Linux3.13.5 targeted 7+15=**22/22 PASS** real SQLite source/HTML; Chromium set_content **12 DOM/interaction assertions PASS**, 0 pageerrors; Node JS syntax PASS. Full >=276 product suite / genuine file:// / Windows3.11 new map **NOT RUN**.
+4. **State:** working synthetic P0-03 interactive MVP coded and tested locally, not customer release. Whole DBVORA product only partially complete; archive Windows fail-closed remains.
+5. **Errors/limits:** Previous incomplete clone/managed Chromium real navigation blocker persists. No silent substitute of set_content for actual file open. No attempts to relax archive fsync guards or accidentally infer cross-DB FK relations.
+6. **Repo/branch/SHA:** private `hibi89/DBVORA` feature `feature/p0-db-map`; parent `2f7b4b1756b5f8088c1b2680afb1919077753533`; latest SHA to refetch after commit. `main` and `develop` remain at `890f842e3ba0e13c901e785633bdd06eadc76cce`.
+7. **Runtime/URL:** offline local HTML, Python3.11+ intended but only Linux3.13.5 newly tested; demo `python -m dbvora.workspace_html --synthetic-only --out EXISTING_ABSOLUTE_DIR`; no production URL or Vercel.
+8. **Originals/backups/auth:** no original customer database, live data rows, .env, credentials, external API, paid CI, public release, deletion or force push. Git original code/backup paths untouched. Generated SQLite files automatically cleaned; output only unique HTML.
+9. **Next/approval:** full checkout regression, genuine local file navigation, then evidence-backed cross-DB links or measured trends; existing archive durability separately. Production use/paid CI/real customer files and permission change need owner approval.
+10. **Provenance:** KST 2026-10-27, local Python3.13/Chromium vs new Windows unverified explicitly separated; docs and final Git commit SHA must match remote.

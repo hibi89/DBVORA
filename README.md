@@ -82,3 +82,15 @@ Developer checks: `python -m unittest -q tests.test_demo_preview` (six tests). F
 `dbvora.workspace.inspect_workspace([db_a, db_b, ...])` aggregates **2–8 explicitly selected absolute SQLite files** into one read-only metadata contract. It includes separate DB nodes, table/column/index descriptions, scoped declared FK edges and measured sum of main DB file bytes. It deliberately does **not** infer cross-DB relations, query table rows or report fabricated CPU/RAM usage. Synthetic test: `python -m unittest -q tests.test_workspace_registry`.
 
 A two-DB interactive offline HTML prototype exists as a **separate temporary conversation source ZIP**, not yet committed to GitHub; do not mistake it for a shipped UI. Release gate minimum 261 Python cases. Details: [docs/P0_03_WORKSPACE_EVIDENCE_20261027.md](docs/P0_03_WORKSPACE_EVIDENCE_20261027.md).
+
+## P0-03 interactive multi-DB HTML MVP (2026-10-27)
+
+One-command **synthetic-only** demonstration from private source checkout, using an already existing absolute output folder:
+
+```powershell
+py -3.11 -B -m dbvora.workspace_html --synthetic-only --out "E:\\DBVORA_GIT"
+```
+
+Opens a newly created `dbvora-workspace-<uuid>.html`: 2 temporary SQLite databases, DB selector, tables/columns/PK/indexes, declared FK SVG lines, size sourced only from main DB file bytes. The generated SQLite fixture files are removed; no real source DB, network, package install or backup write is required. **Do not mistake this for a customer-ready backup or native Windows certified package.**
+
+For synthetic/authorized fixture databases only: `python -m dbvora.workspace_html --db /absolute/one.sqlite --db /absolute/two.sqlite --out /existing/absolute/output`. No implicit database search or row export; between 2 and 8 distinct SQLite paths. Tested locally on Linux3.13.5: 22/22 Python target cases and Chromium 12 DOM checks PASS; actual Windows file navigation and full 276 test suite are unverified. Evidence: `docs/P0_03_WORKSPACE_EVIDENCE_20261027.md`.
