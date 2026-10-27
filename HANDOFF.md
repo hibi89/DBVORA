@@ -466,3 +466,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. **Safety:** read-only SQLite metadata queries, JSON local bounded 512KiB and no pathname/row values; no billing/server/credential access, archive source unchanged or auto-delete.
 9. **Next/approval:** complete full checkout gate and Windows native offline browser, then resource/trend UI polish; customer DB, production archiver activation, paid CI or public promotion require separate approval.
 10. **Time/provenance:** 2026-10-27 KST; commit SHA must be fetched after update; real synthetic tests are not whole product sign-off.
+
+## 2026-10-27 KST — P0-06 integrated MVP (mandatory 10-field checkpoint)
+1. **Goal:** user order MVP usable -> original specification gap closure -> security/stability/Windows, preserving data integrity throughout. P0-06 verifies current synthetic multi-DB visual MVP end to end.
+2. **Implementation:** `scripts/mvp_offline_gate.py` uses actual inventory, declared links, SQLite dbstat, observation baseline and offline HTML; 13 fixed checks, real source hashes, no-row leak/unique output/CSP. `tests/test_mvp_offline_gate.py` has eight real/failure tests. Global release required count 304->312.
+3. **Actual tests:** Linux Python3.13.5 local reconstructed P0 mirror real synthetic SQLite **58/58 PASS** with ResourceWarning as error; 13/13 independent P0 integrated checks PASS; two exact Git blobs `9ddbafb27f202131170b5828665a87c61e1f2e4e` & `cd3b4657679ae07d640bf4aa57009994c90629f2` verified. Full 312 suite, mocked global gate in complete checkout, Windows3.11/browser and archive NOT RUN.
+4. **Status:** multi-DB P0 integrated on synthetic samples; not customer/product Windows ready. Single DB `demo_preview` is separately tested, not part of 13 checks. No physical archive durability claim.
+5. **Blockers/limits:** direct GitHub clone in sandbox failed DNS; connector reads work. Prior managed Chromium real `file://` blocked. Windows NTFS production archiver remains intentionally fail-closed; no unsafe fsync bypass.
+6. **Repository:** private `hibi89/DBVORA`, `feature/p0-db-map`, parent `65b0293b98fddc9f2a8b271818aa1277fbbc62c6`; verify final commit SHA, author and tree. main/develop unchanged.
+7. **Runtime/deploy:** Linux local Python3.13.5, Node installed but full repo UI TAP not run. Windows Python3.11 owner proof older NTFS isolated 15 tests only. Vercel/Production N/A.
+8. **Security/rollback:** only in-memory/synthetic OS-temp DB, all paths generated; no customer data, keys, remote uploads, scheduled deletion, paid CI or forced pushes. Original archive files unchanged; Git parent retained.
+9. **Next/approval:** complete checkout release gate >=312, run real file:// in allowed browser and native Windows; then extra malicious identifier/export bounds and observation authenticity review. Paid CI, customer file processing, production archive routing require separate authorization.
+10. **Evidence/date:** 2026-10-27 KST. `docs/P0_06_MVP_INTEGRATED_GATE_20261027.md` records precise commands/results and limitations.
