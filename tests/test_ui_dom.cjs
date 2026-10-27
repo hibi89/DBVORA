@@ -27,15 +27,16 @@ const data = {engine:'sqlite',db_id:'abc12345678901234567890',size_bytes:12345, 
     {name:'orders', columns:[{name:'customer_id',type:'INTEGER',pk_position:0,nullable_declared:false}],indexes:[],foreign_keys:[{to_table:'customers',from_columns:['customer_id'],to_columns:['id']}]},
     {name:marker, columns:[{name:'<svg onload=alert(9)>',type:'TEXT',pk_position:0,nullable_declared:true}],indexes:[],foreign_keys:[]}
   ]};
+const listeners = [];
 const sandbox = {
-  document:doc, window:{addEventListener(){}}, ResizeObserver:class {observe(){} disconnect(){}},
+  document:doc, window:{addEventListener(name, fn){ listeners.push({name, fn}); }}, ResizeObserver:class {observe(){} disconnect(){}},
   requestAnimationFrame: fn => fn(), fetch: async () => ({ok:true,json: async () => data}),
   console, Date, Map, Number, String, Intl
 };
 const script = fs.readFileSync(path.resolve(__dirname, '../dbvora/web/app.js'), 'utf8');
 assert.ok(!/\.innerHTML\s*=/.test(script));
 vm.runInNewContext(script, sandbox);
-setImmediate(() => {
+setImmediate(async () => {
   try {
     assert.equal(ids.tables.children.length, 3);
     assert.equal(ids['tables-count'].textContent, '3');
@@ -50,6 +51,13 @@ setImmediate(() => {
     const allTags = node => [node.tag,...node.children.flatMap(allTags)];
     assert.ok(!allTags(ids.detail).includes('img'));
     assert.equal(ids.error.hidden, true);
-    console.log('UI DOM SIMULATION PASS: 3 nodes, 1 declared edge, selection, literal XSS identifiers');
+    const resizeCount = () => listeners.filter(listener => listener.name === 'resize').length;
+    assert.equal(resizeCount(), 1, 'initial render must install exactly one resize listener');
+    await ids.refresh.events.click();
+    await ids.refresh.events.click();
+    assert.equal(resizeCount(), 1, 'repeated refresh must not accumulate resize listeners');
+    assert.equal(ids.tables.children.length, 3);
+    assert.equal(ids.edges.children.length, 1);
+    console.log('UI DOM SIMULATION PASS: schema, XSS identifiers and resize listener idempotence');
   } catch(e) { console.error(e); process.exitCode=1; }
 });
