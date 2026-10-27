@@ -76,3 +76,9 @@ py -3.11 -B -m dbvora.demo_preview --synthetic-only --out "E:\\DBVORA_GIT"
 Open the newly generated `dbvora-map-<uuid>.html` with a local browser. The created SQLite database is synthetic (departments/employees, FK, indexes); it is deleted with its OS temporary directory after export. The new HTML filename is generated exclusively, never overwriting an existing one. **It is a schema map, not a backup**. The HTML contains only synthetic metadata and is safe for demo use; no network or paid service is used by the generator.
 
 Developer checks: `python -m unittest -q tests.test_demo_preview` (six tests). First isolated Linux3.13 control-flow smoke with a mocked HTML exporter: **6/6 PASS**; full Git checkout integration and real `file://` browser are not yet verified. Existing offline self-test (`python -m dbvora.offline_selftest`) tests the actual exporter but doesn't persist a demo HTML. Read `docs/MVP_GAP_MATRIX_20261027.md` for scope, original-design differences and release gates. Do not load real/customer databases until specifically authorized and Windows archive safety has passed.
+
+## P0-03 multi-DB workspace metadata (2026-10-27)
+
+`dbvora.workspace.inspect_workspace([db_a, db_b, ...])` aggregates **2–8 explicitly selected absolute SQLite files** into one read-only metadata contract. It includes separate DB nodes, table/column/index descriptions, scoped declared FK edges and measured sum of main DB file bytes. It deliberately does **not** infer cross-DB relations, query table rows or report fabricated CPU/RAM usage. Synthetic test: `python -m unittest -q tests.test_workspace_registry`.
+
+A two-DB interactive offline HTML prototype exists as a **separate temporary conversation source ZIP**, not yet committed to GitHub; do not mistake it for a shipped UI. Release gate minimum 261 Python cases. Details: [docs/P0_03_WORKSPACE_EVIDENCE_20261027.md](docs/P0_03_WORKSPACE_EVIDENCE_20261027.md).

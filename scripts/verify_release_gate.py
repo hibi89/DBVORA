@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 254
+EXPECTED_PYTHON_TESTS = 261
 EXPECTED_GATE_CHECKS = 7
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"\bskipped=(\d+)\b", re.IGNORECASE)
@@ -41,6 +41,7 @@ REQUIRED = (
     "scripts/windows_ntfs_publish_probe.py", "tests/test_windows_ntfs_publish.py",
     "scripts/windows_ntfs_archive_shadow.py", "tests/test_windows_ntfs_archive_shadow.py",
     "dbvora/demo_preview.py", "tests/test_demo_preview.py",
+    "dbvora/workspace.py", "tests/test_workspace_registry.py",
 )
 
 
