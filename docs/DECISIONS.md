@@ -30,3 +30,8 @@
 - Option A: add orphan receipt entries to all audit catalogs; more contract churn and downstream risk.
 - Option B: scan only generated-style receipt basenames for missing corresponding verified artifacts after normal strict verification, preserving legacy audit output and unrelated user files. **Chose B**: bounded local filename-only pass, zero dependencies.
 - Evidence and limits: `docs/P1_C7_ORPHAN_RECEIPT_20261027.md`. This is not proof of signed receipts, crash durability or customer readiness.
+
+## ADR-007: Offline QA source transport for incomplete private checkout (2026-10-27)
+- **A: Repeat GitHub clone or use a remote CI runner.** The current container has no GitHub DNS/auth. Repeating failed clone wastes time; remote CI may require billing or rights changes and therefore needs explicit approval before execution.
+- **B: Owner-authorized private source ZIP + SHA-pinned offline QA kit.** No remote data upload, no paid runner, low maintenance and fail-closed on source mismatch. Requires owner to obtain the private ZIP once. **Selected B as a zero-cost handoff/verification path**, without falsely claiming full test execution.
+- QA v4 source baseline `318a49e3031b9d0aa052221e35ebdebbec70dedd`, **50** Git blobs; kit 16/16 selftests PASS. See `docs/QA_V4_MANIFEST_20261027.md`. Complete 214 test suite remains unexecuted. Future CI option remains approval-gated.
