@@ -15,7 +15,9 @@ import sys
 EXPECTED_PYTHON_TESTS = 218
 EXPECTED_GATE_CHECKS = 7
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
-SKIPPED_COUNT = re.compile(r"OK\s*\(skipped=(\d+)\)", re.IGNORECASE)
+SKIPPED_COUNT = re.compile(r"\bskipped=(\d+)\b", re.IGNORECASE)
+FAILED_TEST = re.compile(r"(?m)^(?:FAIL|ERROR): (test_[A-Za-z0-9_]+) \(([A-Za-z0-9_.]+)\)")
+SAFE_CODE = re.compile(r"[A-Z][A-Z0-9_]{0,63}")
 # Verbose unittest output identifies the one permitted optional ZSTD skip.
 OPTIONAL_ZSTD_TEST = "test_zstd_roundtrip_when_optional_codec_exists"
 OPTIONAL_ZSTD_SKIP_REASON = "optional external zstd executable unavailable"
@@ -53,6 +55,17 @@ def _run(command, timeout=180):
         return -1, "", ""
 
 
+def _safe_code(value, fallback="NOT_REPORTED"):
+    """Emit only fixed-format error identifiers, never source paths or traceback."""
+    return value if isinstance(value, str) and SAFE_CODE.fullmatch(value) else fallback
+
+
+def _failing_test_ids(unittest_output):
+    """Extract bounded Python test identifiers, never exception bodies."""
+    return sorted({f"{module}.{method}" for method, module in FAILED_TEST.findall(
+        unittest_output)})[:20]
+
+
 def verify():
     report = {"contract": "dbvora.offline-release-gate.v1", "mode": "synthetic_only",
               "ready_for_customer_data": False, "status": "FAIL_CLOSED", "steps": []}
@@ -67,7 +80,8 @@ def verify():
                            "discover", "-s", "tests", "-v"], timeout=240)
     count_match = TEST_COUNT.search(out + "\n" + err)
     count = int(count_match.group(1)) if count_match else 0
-    skipped_match = SKIPPED_COUNT.search(out + "\n" + err)
+    combined_tests = out + "\n" + err
+    skipped_match = SKIPPED_COUNT.search(combined_tests)
     skipped = int(skipped_match.group(1)) if skipped_match else 0
     zstd_available = shutil.which("zstd") is not None
     allowed_skips = 0 if zstd_available else 1
@@ -87,7 +101,9 @@ def verify():
     report["steps"].append({"step": "python_unittest", "status": "PASS" if unit_pass else "FAIL",
                             "discovered_tests": count, "minimum_required": EXPECTED_PYTHON_TESTS,
                             "skipped_tests": skipped, "maximum_allowed_skips": allowed_skips,
-                            "skip_identity_verified": skip_identity_ok})
+                            "skip_identity_verified": skip_identity_ok,
+                            "exit_code": code if type(code) is int else -1,
+                            "failed_test_ids": _failing_test_ids(combined_tests)})
 
     code, out, _ = _run([sys.executable, "-m", "scripts.synthetic_cli_gate"], timeout=240)
     try:
@@ -102,7 +118,9 @@ def verify():
                  and (zstd_status == "passed" if zstd_available else zstd_status == "skipped_no_local_codec"))
     report["steps"].append({"step": "real_cli_roundtrip", "status": "PASS" if gate_pass else "FAIL",
                             "checks": checks if type(checks) is int else 0,
-                            "zstd": zstd_status if zstd_status in ("passed", "skipped_no_local_codec") else "failed"})
+                            "zstd": zstd_status if zstd_status in ("passed", "skipped_no_local_codec") else "failed",
+                            "exit_code": code if type(code) is int else -1,
+                            "error_code": _safe_code(gate.get("error_code")) if not gate_pass else None})
 
     code, _, _ = _run([sys.executable, "-m", "compileall", "-q", "dbvora", "tests", "scripts"])
     report["steps"].append({"step": "compileall", "status": "PASS" if code == 0 else "FAIL"})
@@ -117,8 +135,20 @@ def verify():
                      and int(tests.group(1)) == 1 and int(passed.group(1)) == 1
                      and int(failed.group(1)) == 0)
     else:
+        code, tests, passed, failed = -1, None, None, None
         node_pass = False
-    report["steps"].append({"step": "node_dom", "status": "PASS" if node_pass else "FAIL"})
+    node_counts = {
+        "tests": int(tests.group(1)) if tests else None,
+        "passed": int(passed.group(1)) if passed else None,
+        "failed": int(failed.group(1)) if failed else None,
+    }
+    node_issue = ("NONE" if node_pass else
+                  "NODE_NOT_INSTALLED" if code == -1 and not shutil.which("node") else
+                  "SUBPROCESS_OR_UTF8_ERROR" if code == -1 else
+                  "TAP_SUMMARY_MISSING" if any(x is None for x in node_counts.values()) else
+                  "NODE_TEST_FAILED")
+    report["steps"].append({"step": "node_dom", "status": "PASS" if node_pass else "FAIL",
+                            "exit_code": code, "tap": node_counts, "error_code": node_issue})
 
     code, out, _ = _run([sys.executable, "-m", "scripts.preflight_archiving"])
     try:
@@ -127,7 +157,11 @@ def verify():
         preflight = {}
     preflight_pass = (code == 0 and preflight.get("archive_publish_test") == "passed_on_temporary_filesystem"
                       and preflight.get("ready_for_customer_data") is False)
-    report["steps"].append({"step": "filesystem_preflight", "status": "PASS" if preflight_pass else "FAIL"})
+    report["steps"].append({"step": "filesystem_preflight", "status": "PASS" if preflight_pass else "FAIL",
+                            "exit_code": code if type(code) is int else -1,
+                            "publish_test": preflight.get("archive_publish_test", "NOT_REPORTED"),
+                            "error_code": _safe_code(preflight.get("failure_code"))
+                            if not preflight_pass else None})
     if all(step["status"] == "PASS" for step in report["steps"]):
         report["status"] = "PASS_SYNTHETIC_ENVIRONMENT_ONLY"
     return report
