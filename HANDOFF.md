@@ -453,3 +453,16 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. **Safety/source:** only synthetic temp SQLite, source Git history preserved; no customer DB, passwords, paths in reports, destructive backup change, paid CI, public repo, or permission modification. User-created local links manifest is read-only.
 9. **Next:** read back Git SHA/author and validate full checkout >=290 when authorized, then measured `dbstat` table bytes (if supported) and multi-snapshot growth with honest provenance. Windows real file URL and power durability remain separate tests; production/customer/paid actions require approval.
 10. **Time/provenance:** 2026-10-27 KST; real synthetic Linux targeted suite and Chromium set_content, no full-current-SHA Windows or release acceptance. `docs/P0_04_CROSS_DB_LINK_EVIDENCE_20261027.md` is evidence reference.
+
+
+## 2026-10-27 KST — P0-05 checkpoint (10 fields)
+1. **Goal:** MVP-first multi-DB read-only offline HTML, original-design gap closure, then security/stability/compatibility. P0-05 implements limited table storage and snapshot delta.
+2. **Changes:** `storage_metrics.py` bounded `dbstat`, `workspace_observations.py` validated metadata-only snapshots; update multi-DB workspace data and HTML UI, CLI `--save-observation` and `--baseline-file`; 14 new tests, release discovery minimum 304.
+3. **Evidence:** exact tested source blob SHA pinned in `docs/P0_05_STORAGE_EVIDENCE_20261027.md`; Linux3.13.5 real SQLite **50/50** targeted cases, chromium set_content visible database/table Δ and cross link click PASS, zero pageerrors; not Windows file:// or full >=304 suite.
+4. **State:** P0 multi-DB map, manual unverified links, bounded dbstat and two-observation delta implementable; customer/archive production **NO**. Lack of dbstat is explicitly unavailable.
+5. **Known limits:** managed Chromium page navigation `ERR_BLOCKED_BY_ADMINISTRATOR`; no proof Windows native P0-05, WAL physical disk or actual per-table disk size; prior archive PUBLISH_FAILED and power durability unresolved.
+6. **Repo:** private `hibi89/DBVORA`, `feature/p0-db-map`; parent `ba5f9522b4b4f32f0ebce913fc0a53e06f9a8a20`, verify actual resulting HEAD and author, `main`/`develop` unchanged.
+7. **Runtime:** Python3.11+ target, actual local Linux Python3.13.5 with SQLite dbstat and Chromium set_content, no production URL/Vercel.
+8. **Safety:** read-only SQLite metadata queries, JSON local bounded 512KiB and no pathname/row values; no billing/server/credential access, archive source unchanged or auto-delete.
+9. **Next/approval:** complete full checkout gate and Windows native offline browser, then resource/trend UI polish; customer DB, production archiver activation, paid CI or public promotion require separate approval.
+10. **Time/provenance:** 2026-10-27 KST; commit SHA must be fetched after update; real synthetic tests are not whole product sign-off.

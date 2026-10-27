@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 290
+EXPECTED_PYTHON_TESTS = 304
 EXPECTED_GATE_CHECKS = 7
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"\bskipped=(\d+)\b", re.IGNORECASE)
@@ -43,6 +43,7 @@ REQUIRED = (
     "dbvora/demo_preview.py", "tests/test_demo_preview.py",
     "dbvora/workspace.py", "tests/test_workspace_registry.py",
     "dbvora/workspace_html.py", "dbvora/workspace_links.py", "tests/test_workspace_links.py", "tests/test_workspace.py",
+    "dbvora/storage_metrics.py", "dbvora/workspace_observations.py", "tests/test_workspace_storage.py",
 )
 
 

@@ -51,3 +51,8 @@
 ## 2026-10-27 P0-03 concrete delta
 - The earlier multi-database architecture row marked NOT IMPLEMENTED is now **PARTIALLY IMPLEMENTED**: 2–8 SQLite files can be combined into a single offline clickable workspace (separate DB cards and scoped FK graph). Arbitrary service connections and cross-DB user-declared edges remain NOT IMPLEMENTED; no invented inter-DB edges.
 - Local 22/22 real SQLite targeted integration and 12 real Chromium set_content checks pass; strict original complete checkout >=276 and native file:// / Windows3.11 remain not verified. Original security/durability criteria stay open, not traded away for progress.
+
+## 2026-10-27 P0-05 real measurement scope
+- **PARTIAL -> IMPLEMENTED (limited):** optional SQLite `dbstat` allocated per-table/index-btree bytes for databases with 64MiB main-file cap and bounded scan; no fabricated per-table actual disk footprint. Controlled unavailability without extension or when scan limit hits.
+- **NEW: two-observation measured differences** via metadata-only `--save-observation` and `--baseline-file` with stable database identity and timestamp checks. No time-series forecast, CPU/RAM allocation, actual WAL physical bytes, background schedule or retention automation.
+- Local synthetic 50/50 real SQLite targeted tests and Chromium set_content PASS, full >=304 release/Windows real file:// not yet verified. See `docs/P0_05_STORAGE_EVIDENCE_20261027.md`.

@@ -276,3 +276,10 @@ New commands do not encrypt source/artifacts, do not schedule/delete or overwrit
 - `workspace.py` accepts optional declarations; `workspace_html.py` includes clickable cross-database target navigation, local 16-KiB capped JSON `--links-file` and 1 generated demo link. Original paths preserved, no rows or credentials exported.
 - Executed exact-local-source Linux Python3.13.5 `tests.test_workspace tests.test_workspace_registry tests.test_workspace_links`: **36/36 PASS** (22 prior + 14 new). Real Chromium `page.set_content` **9/9 DOM checks PASS**, 0 page errors; direct `file://` **BLOCKED_BY_ADMINISTRATOR**, not certified.
 - Git blob hashes of 4 changed/new source files matched tested local bytes. Source/code regression minimum **276 -> 290**, but entire 290 suite, native Windows P0-04 and full release gate NOT RUN. Windows archive fail-closed and customer-ready=false unchanged. See `docs/P0_04_CROSS_DB_LINK_EVIDENCE_20261027.md`.
+
+
+## 2026-10-27 KST — P0-05 measured SQLite btree allocation and two timestamps
+- **CODE:** bounded read-only `dbstat` aggregation for table + associated SQLite index btree page allocations, 64MiB main DB/0.75s watchdog. Not physical file/row size; may include logical WAL pages, may exclude virtual table shadow storage. Unavailable remains unavailable.
+- **CODE:** local explicit metadata-only observation baseline save/read, measured DB main-file delta and dbstat table allocation delta; two observations are not a forecast. UI labels source/scope; no CPU/RAM guessed and no automatic monitoring/deletion.
+- **TEST:** Linux3.13.5 real synthetic SQLite targeted `tests.test_workspace* ` **50/50 PASS** (36 prior +14), Chromium set_content size+delta UI + crossDB navigation PASS with 0 pageerrors. Source files and Git blob hashes matched. Complete **>=304** unit/Node/CLI release gate, native Windows file:// and power-loss durability NOT RUN.
+- **FILES:** `dbvora/storage_metrics.py`, `dbvora/workspace_observations.py`, updated workspace+offline viewer, `tests/test_workspace_storage.py`, `docs/P0_05_STORAGE_EVIDENCE_20261027.md`. Git private feature only, customer ready FALSE, archive unchanged.

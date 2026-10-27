@@ -15,6 +15,8 @@ import tempfile
 import uuid
 from dbvora.errors import InventoryError
 from dbvora.workspace import inspect_workspace
+from dbvora.workspace_observations import (ObservationError, from_workspace, compare_growth,
+                                          read_observation, write_observation)
 
 _PAGE = '''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
@@ -31,15 +33,20 @@ table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}td,t
 .note{color:#9daebe;font-size:12px;margin-top:14px}@media(max-width:780px){body{padding:12px}.grid{grid-template-columns:1fr}header{display:block}}
 </style></head><body><header><div><h1>DBVORA <small>Multi-DB Map</small></h1><p class="muted">Offline schema topology — select a database and table</p></div><strong id="summary"></strong></header>
 <main><h2>Databases</h2><div class="dbs" id="databases"></div><div class="grid"><section class="panel"><h2>Tables &amp; declared FK</h2><div id="tables" class="tables"></div><svg id="graph" role="img" aria-label="Foreign key links"></svg><ul id="relationships"></ul></section>
-<section class="panel"><h2>Table details</h2><div id="details" aria-live="polite">Select a table</div></section></div><section class="panel" style="margin-top:16px"><h2>Cross-database links <small>(explicit declaration · unverified)</small></h2><div id="cross-links" class="tables"></div></section><p class="note">Main database file sizes only (WAL/SHM excluded). CPU/RAM and cross-database links are unverified. No customer paths or table row contents embedded.</p></main>
+<section class="panel"><h2>Table details</h2><div id="details" aria-live="polite">Select a table</div></section></div><section class="panel" style="margin-top:16px"><h2>Cross-database links <small>(explicit declaration · unverified)</small></h2><div id="cross-links" class="tables"></div></section><p class="note">Main file sizes exclude WAL/SHM; dbstat is *logical allocated btree pages*, with indexes and possibly WAL pages, not table disk size. Δ compares two timestamps, not a forecast. CPU/RAM unavailable; cross-DB links are user-declared/unverified. No customer paths or table row contents embedded.</p></main>
 <script>"use strict";
 const encodedWorkspace="__BASE64__";
 const workspace=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(encodedWorkspace),c=>c.charCodeAt(0))));
 const get=id=>document.getElementById(id),make=(tag,txt)=>{const e=document.createElement(tag);if(txt!==undefined)e.textContent=String(txt);return e};
 let activeDB=0;const size=n=>n<1024?n+' B':(n/1024).toFixed(1)+' KiB';
+const signed=n=>(n>0?'+':n<0?'−':'')+size(Math.abs(n));
+const changes=workspace.size_growth||{};
+const dbChange=db=>changes[db.db_id]&&changes[db.db_id].status==='measured'?(' · Δ '+signed(changes[db.db_id].delta_main_file_bytes)):' · Δ unavailable';
+const tableChange=(db,t)=>{const g=changes[db.db_id],d=g&&g.table_deltas&&g.table_deltas[t.name];return d&&d.status==='measured'?' · Δ '+signed(d.delta_allocated_btree_bytes):''};
 function details(index){const db=workspace.databases[activeDB],t=db.tables[index],pane=get('details');pane.replaceChildren();
  [...get('tables').children].forEach((node,i)=>node.setAttribute('aria-pressed',String(i===index)));
  if(!t){pane.append(make('p','No user tables'));return}pane.append(make('h3',t.name),make('p',t.columns.length+' columns · '+t.indexes.length+' indexes'));
+ pane.append(make('p',t.storage&&t.storage.status==='measured'?'Allocated btree pages (dbstat, with indexes): '+size(t.storage.allocated_btree_bytes)+tableChange(db,t):'Table btree bytes: unavailable (dbstat absent / scan bounded)'));
  const grid=make('table'),head=make('tr');['Column','Type','Key'].forEach(x=>head.append(make('th',x)));grid.append(head);
  t.columns.forEach(c=>{const row=make('tr');[c.name,c.type||'—',c.pk_position?'PK '+c.pk_position:'—'].forEach(x=>row.append(make('td',x)));grid.append(row)});pane.append(grid);
  t.foreign_keys.forEach(f=>pane.append(make('p',f.from_columns.join(', ')+' → '+f.to_table+' ('+f.to_columns.join(', ')+')')));
@@ -54,10 +61,10 @@ function draw(db){const svg=get('graph');svg.replaceChildren();const names=db.ta
  edges.forEach(e=>list.append(make('li',e.from_table+'.'+e.from_columns.join(', ')+' → '+e.to_table+'.'+e.to_columns.join(', ')+' ('+(e.target_in_inventory?'declared FK':'target absent')+')')));}
 function choose(index){activeDB=index;const db=workspace.databases[index],root=get('tables');root.replaceChildren();
  [...get('databases').children].forEach((node,i)=>node.setAttribute('aria-pressed',String(i===index)));
- db.tables.forEach((t,i)=>{const button=make('button');button.type='button';button.append(make('strong',t.name),make('span',t.columns.length+' columns · '+t.indexes.length+' indexes'));button.addEventListener('click',()=>details(i));root.append(button)});
+ db.tables.forEach((t,i)=>{const button=make('button');button.type='button';button.append(make('strong',t.name),make('span',t.columns.length+' columns · '+t.indexes.length+' indexes'+(t.storage&&t.storage.status==='measured'?' · '+size(t.storage.allocated_btree_bytes):' · size unavailable')+tableChange(db,t)));button.addEventListener('click',()=>details(i));root.append(button)});
  details(0);draw(db)}
 get('summary').textContent=workspace.database_count+' databases · '+workspace.table_count+' tables · '+size(workspace.total_main_db_size_bytes);
-workspace.databases.forEach((db,i)=>{const button=make('button');button.type='button';button.append(make('strong',db.label),make('span',db.tables.length+' tables · '+size(db.size_bytes)));button.addEventListener('click',()=>choose(i));get('databases').append(button)});choose(0);
+workspace.databases.forEach((db,i)=>{const button=make('button');button.type='button';button.append(make('strong',db.label),make('span',db.tables.length+' tables · '+size(db.size_bytes)+dbChange(db)));button.addEventListener('click',()=>choose(i));get('databases').append(button)});choose(0);
 const cross=get('cross-links'), links=workspace.declared_cross_database_links||[];
 if(!links.length)cross.append(make('p','No cross-database links declared. Relationships are never inferred.'));
 links.forEach(link=>{const button=make('button');button.type='button';button.setAttribute('aria-label','Unverified cross-database link');
@@ -97,9 +104,13 @@ def render_workspace_html(workspace: dict) -> bytes:
     return content
 
 
-def export_workspace(db_paths:list[str | Path],output_directory:str | Path,*,declared_links:list[dict]|None=None)->dict:
+def export_workspace(db_paths:list[str | Path],output_directory:str | Path,*,declared_links:list[dict]|None=None,
+                     baseline:dict|None=None,save_observation:bool=False)->dict:
     folder=_folder(output_directory)
     workspace=inspect_workspace(db_paths,declared_links=declared_links)
+    current_observation=from_workspace(workspace) if (baseline is not None or save_observation) else None
+    if baseline is not None:
+        workspace['size_growth']=compare_growth(baseline,current_observation)
     content=render_workspace_html(workspace)
     name='dbvora-workspace-'+uuid.uuid4().hex+'.html'
     target=folder/name
@@ -109,7 +120,9 @@ def export_workspace(db_paths:list[str | Path],output_directory:str | Path,*,dec
             output.write(content);output.flush();os.fsync(output.fileno())
     except OSError:
         raise WorkspaceHtmlError('OUTPUT_WRITE_FAILED') from None
+    observation_filename=write_observation(folder,current_observation) if save_observation else None
     return {'status':'CREATED_WORKSPACE_HTML','filename':name,'sha256':hashlib.sha256(content).hexdigest(),'size_bytes':len(content),
+            'observation_filename':observation_filename,'growth_comparison':('two_observations' if baseline is not None else 'unavailable_no_baseline'),
             'database_count':workspace['database_count'],'table_count':workspace['table_count'],
             'declared_cross_database_count':workspace['declared_cross_database_count'],
             'contains_table_rows':False,'ready_for_customer_data':False}
@@ -160,14 +173,19 @@ def main(argv=None)->int:
     mode.add_argument('--synthetic-only',action='store_true',help='Generate a two-DB demo')
     parser.add_argument('--out',required=True,help='Existing absolute output folder')
     parser.add_argument('--links-file',help='Explicit absolute JSON file of user-declared unverified links (requires --db)')
+    parser.add_argument('--baseline-file',help='Previous metadata-only observation JSON (requires --db)')
+    parser.add_argument('--save-observation',action='store_true',help='Write a new metadata-only comparison baseline JSON')
     args=parser.parse_args(argv)
     try:
-        if args.synthetic_only and args.links_file:
+        if args.synthetic_only and (args.links_file or args.baseline_file):
             raise WorkspaceHtmlError('INVALID_LINK_MANIFEST')
         links=_load_links_manifest(args.links_file) if args.links_file else None
-        result=export_synthetic_workspace(args.out) if args.synthetic_only else export_workspace(args.db,args.out,declared_links=links)
+        baseline=read_observation(args.baseline_file) if args.baseline_file else None
+        result=export_synthetic_workspace(args.out) if args.synthetic_only else export_workspace(args.db,args.out,declared_links=links,baseline=baseline,save_observation=args.save_observation)
     except InventoryError as e:
         result={'status':'FAIL_CLOSED','error_code':e.code,'ready_for_customer_data':False}
+    except ObservationError as e:
+        result={'status':'FAIL_CLOSED','error_code':str(e),'ready_for_customer_data':False}
     except WorkspaceHtmlError as e:
         result={'status':'FAIL_CLOSED','error_code':str(e),'ready_for_customer_data':False}
     except (OSError,sqlite3.Error):

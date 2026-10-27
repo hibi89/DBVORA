@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 from dbvora.errors import InventoryError
 from dbvora.inventory import inspect_sqlite
+from dbvora.storage_metrics import collect_table_storage
 
 MAX_DATABASES = 8
 MAX_TOTAL_TABLES = 2000
@@ -28,6 +29,9 @@ def inspect_workspace(db_paths: list[str | Path], *, declared_links: list[dict] 
             raise InventoryError("DUPLICATE_DATABASE", "Select distinct SQLite files.")
         seen.add(stable_id)
         tables = inventory["tables"]
+        measured_storage = collect_table_storage(Path(user_path), inventory["size_bytes"], tables)
+        for table in tables:
+            table["storage"] = measured_storage["tables"].get(table["name"], {"status": "unavailable", "reason": measured_storage.get("reason", "btree_not_measurable")})
         total_tables += len(tables)
         if total_tables > MAX_TOTAL_TABLES:
             raise InventoryError("WORKSPACE_LIMIT", "Workspace table count exceeds the safe limit.")
@@ -42,6 +46,8 @@ def inspect_workspace(db_paths: list[str | Path], *, declared_links: list[dict] 
             "observed_at": inventory["observed_at"],
             "provenance": inventory["provenance"],
             "tables": tables,
+            "table_storage_scope": measured_storage["scope"],
+            "table_storage_status": measured_storage["status"],
         })
         table_names = {table["name"] for table in tables}
         for fk in inventory["relationships"]:
