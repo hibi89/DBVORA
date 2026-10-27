@@ -256,3 +256,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. **Original/backups/security:** Original Git history and past source ZIP preserved; only synthetic OS temporary SQLite and receipts used; no customer DB, secrets, paid services, force-push, public release or destructive cleanup. Unsigned receipts remain unauthenticated and power-loss durability unproven.
 9. **Next/completion/approval:** Authenticate and reconstruct entire current private checkout, run >=214 test suite and six-stage synthetic release gate; then Windows3.11/NTFS and genuine file:// launch. Await approval for real DB, paid CI, permissions, public installer or destructive policies. C2 actual chunk store remains deferred until integrated safety gate.
 10. **KST timestamp/provenance:** 2026-10-27 KST, only latest four P1-C7/current-gate files + 18 tests proven locally, whole 214 and customer testing unverified. See `docs/P1_C7_ORPHAN_RECEIPT_20261027.md`. Check GitHub HEAD after document commits.
+
+## 2026-10-27 — QA v4 handoff (10 fields)
+1. Goal: private local-first DB map, ZIP/ZSTD restore, dedup research. Python >=3.11.
+2. Change: rebuilt external offline QA kit v4 with 50 exact source pins; removed outdated resize-patch step.
+3. Tests: 16/16 harness selftests PASS, old/missing source ZIP fails safely. Whole 214 Python tests and 6-stage release gate NOT RUN.
+4. State: QA v4 completed; full source checkout and native validation pending.
+5. Cause/response: runtime DNS and authorization unavailable for cloning; historical preview incomplete. SHA pinning kept.
+6. Repository: hibi89/DBVORA, feature/p0-db-map, code baseline 318a49e3031b9d0aa052221e35ebdebbec70dedd; main/develop unchanged. Final docs SHA from GitHub ref.
+7. Runtime: Python3.13.5 Linux harness. Hosted Production/Vercel not applicable.
+8. Integrity: old source unchanged, no customer DB touched. QA kit SHA256 1bd7ef0c0ab433f0f7593947595ae4fc39a0b8d19e623c8278f6e8b12c053929; artifact is temporary, GitHub keeps only manifest.
+9. Next: authorized complete private source ZIP, then >=214 tests and unified gate, then native Windows3.11 NTFS/browser; optional CI requires separate approval.
+10. Timestamp/provenance: 2026-10-27 KST. See docs/QA_V4_MANIFEST_20261027.md; product remains partially verified.
