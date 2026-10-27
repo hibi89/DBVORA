@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 218
+EXPECTED_PYTHON_TESTS = 223
 EXPECTED_GATE_CHECKS = 7
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"\bskipped=(\d+)\b", re.IGNORECASE)
@@ -159,7 +159,10 @@ def verify():
                       and preflight.get("ready_for_customer_data") is False)
     report["steps"].append({"step": "filesystem_preflight", "status": "PASS" if preflight_pass else "FAIL",
                             "exit_code": code if type(code) is int else -1,
-                            "publish_test": preflight.get("archive_publish_test", "NOT_REPORTED"),
+                            "publish_test": (preflight.get("archive_publish_test")
+                                if preflight.get("archive_publish_test") in
+                                ("passed_on_temporary_filesystem", "unsupported_or_failed",
+                                 "temporary_folder_unavailable", "not_run") else "NOT_REPORTED"),
                             "error_code": _safe_code(preflight.get("failure_code"))
                             if not preflight_pass else None})
     if all(step["status"] == "PASS" for step in report["steps"]):
