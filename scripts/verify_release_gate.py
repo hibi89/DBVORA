@@ -5,13 +5,14 @@ or expected test coverage are absent. JSON output contains no captured source pa
 """
 
 import json
+import os
 from pathlib import Path
 import re
 import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 217
+EXPECTED_PYTHON_TESTS = 218
 EXPECTED_GATE_CHECKS = 7
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"OK\s*\(skipped=(\d+)\)", re.IGNORECASE)
@@ -42,7 +43,8 @@ def _run(command, timeout=180):
         # Node emits UTF-8 TAP, even when Windows Python's default is CP949.
         # Read bytes first so a subprocess reader thread cannot silently fail.
         child = subprocess.run(command, cwd=ROOT, capture_output=True,
-                               timeout=timeout, check=False, stdin=subprocess.DEVNULL)
+                               timeout=timeout, check=False, stdin=subprocess.DEVNULL,
+                               env={**os.environ, "PYTHONIOENCODING": "utf-8"})
         stdout, stderr = child.stdout, child.stderr
         if not isinstance(stdout, bytes) or not isinstance(stderr, bytes):
             return -1, "", ""
