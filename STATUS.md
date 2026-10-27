@@ -157,3 +157,11 @@ New commands do not encrypt source/artifacts, do not schedule/delete or overwrit
 - Authenticated new source/test blobs: `d06cedf5ef6dd96f9afd7335ead5b19a3b4f218d` / `6f64fab9b5b7920cd93601c54323bca2cba7c365`. Actual Linux Python3.13.5 synthetic CLI tests: 3/3 PASS; compileall PASS.
 - Gate requires 213 Python test cases; complete current checkout and full suite NOT RUN. Separate unchanged ZIP+ZSTD synthetic restore and hash checks PASS. Windows/NTFS, actual customer data, installer and production NOT VERIFIED. No main/develop promotion.
 - Evidence `docs/P1_C6_STRICT_AUDIT_20261027.md`. Continue with full source checkout and `python -m scripts.verify_release_gate`.
+
+## 2026-10-27 KST — C7 orphan-receipt strict audit fix (latest checkpoint)
+- Remote prework feature SHA `015f986e99d5d0399a1fdfd82ea4a5902df8efd6`. `main`/`develop` untouched.
+- **Implemented:** `audit --require-all-verified` now also fails on orphan DBVORA receipt filenames (no matching verified artifact) with sanitized `AUDIT_VERIFICATION_FAILED`. Normal audit and unrelated local files retain existing behavior. No customer file, delete or network.
+- **Genuine local synthetic tests:** updated `tests.test_audit_strict` 4/4 PASS. Exact GitHub code/test blob SHA matched executed files. Exact-GitHub reconstructed release-gate + fixture mocked decision tests combined **18/18 Python PASS**, 0 failures/skips, compileall PASS.
+- GitHub test-source inventory: **214** declared Python tests in 16 modules; full 214 NOT EXECUTED. Updated `scripts.verify_release_gate` minimum **214**. Invoking unified gate from incomplete local checkout: **FAIL_CLOSED, INCOMPLETE_SOURCE_CHECKOUT (10 required files missing)**. This is an availability block, not a full-suite test failure.
+- Remote blobs: CLI `ccc965d7d62d268143f0c43e40e96bb10345d77e`, strict tests `31e62c0de1fc6598aa3bd77b4d0860bfab4b1a12`, gate `fd8d39c29b73bdc96a7bd3fff45ad0646d651c21`, gate tests `c5aa98d938afe5058ab989197a772fbb34dd62f1`.
+- Remaining: full latest checkout/214 test suite, six-stage ZIP/ZSTD integrated gate, Windows Python3.11/NTFS, native browser file://, hardware power-loss and customer acceptance unverified. Local-only Vercel N/A; feature not promoted. Evidence `docs/P1_C7_ORPHAN_RECEIPT_20261027.md`.
