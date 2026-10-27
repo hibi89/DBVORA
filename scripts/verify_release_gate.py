@@ -62,8 +62,8 @@ def _safe_code(value, fallback="NOT_REPORTED"):
 
 def _failing_test_ids(unittest_output):
     """Extract bounded Python test identifiers, never exception bodies."""
-    return sorted({f"{module}.{method}" for method, module in FAILED_TEST.findall(
-        unittest_output)})[:20]
+    return sorted({module if module.endswith("." + method) else f"{module}.{method}"
+                   for method, module in FAILED_TEST.findall(unittest_output)})[:20]
 
 
 def verify():
