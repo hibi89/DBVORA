@@ -40,3 +40,8 @@
 - A: trust preflight checks and reopen source archive unchanged, susceptible to replacement between preflight/extraction.
 - B: rehash pinned source bytes while copying into private temporary checkout; refuse mismatch before execution. **Selected B**. Minimal stdlib cost, no network, compatible v4 ZIP pins and caller contract.
 - Evidence: `docs/QA_V5_POSTVERIFY_EXTRACTION_20261027.md`, v5 harness 19/19 PASS; does not validate DBVORA's full 214-case product suite or platform durability.
+
+## ADR-009: Real Chromium resize regression and v6 source pin (2026-10-27)
+- Relying on simulated Node DOM alone misses browser integration; add window resize listener instrumentation to the real Chromium synthetic offline HTML probe.
+- After three refreshes, new resize registrations must equal zero. Historical leaking JS fails 1/14; current patched JS passes 14/14. This is set-content only, **not** a genuine file:// navigation pass.
+- Pin changed executable probe in QA v6, keep SHA integrity verification and all other 49 pins. QA kit selftests 19/19 PASS; full 214 product suite not yet run. Evidence docs/P1_C8_CHROMIUM_OFFLINE_REGRESSION_20261027.md.
