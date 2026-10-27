@@ -1,8 +1,11 @@
 """Isolated synthetic regression tests; do not certify real Windows durability."""
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import os
 from pathlib import Path
 import tempfile
+import subprocess
+import sys
 import unittest
 import uuid
 from unittest.mock import patch
@@ -126,6 +129,64 @@ class WindowsSyntheticPublicationTests(unittest.TestCase):
         self.assertEqual(publish.MOVEFILE_WRITE_THROUGH, 0x8)
         self.assertEqual(publish.MOVEFILE_WRITE_THROUGH & 0x1, 0)
 
+
+    def test_competing_create_only_publications_one_winner(self):
+        root, first, target = self.fixture()
+        second = root / ('.dbvora-stage-' + uuid.uuid4().hex + '.part')
+        second.write_bytes(b'B' * 4096)
+        mover = None if os.name == 'nt' else simulated_create_only
+        outcomes = []
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = [pool.submit(publish._commit_synthetic_staged, root, staged, target, move=mover)
+                       for staged in (first, second)]
+            for future in futures:
+                try:
+                    outcomes.append(('PASS', future.result(timeout=15)))
+                except publish.WinPublishError as error:
+                    outcomes.append(('BLOCKED', str(error)))
+        self.assertEqual(sum(status == 'PASS' for status, _ in outcomes), 1)
+        self.assertEqual(sum(status == 'BLOCKED' for status, _ in outcomes), 1)
+        self.assertIn(target.read_bytes(), (b'A' * 4096, b'B' * 4096))
+        self.assertEqual(sum(stage.exists() for stage in (first, second)), 1)
+        survivor = first if first.exists() else second
+        self.assertNotEqual(survivor.read_bytes(), target.read_bytes())
+
+    def test_child_exit_before_publication_preserves_stage(self):
+        root, stage, target = self.fixture()
+        expected = hashlib.sha256(stage.read_bytes()).hexdigest()
+        script = (
+            'import os,sys;from pathlib import Path;'
+            'from dbvora.archive.windows_ntfs_publish import _commit_synthetic_staged;'
+            '_commit_synthetic_staged(Path(sys.argv[1]),Path(sys.argv[2]),'
+            'Path(sys.argv[3]),move=lambda *_: os._exit(17))'
+        )
+        done = subprocess.run([sys.executable, '-B', '-c', script,
+                               str(root), str(stage), str(target)],
+                              capture_output=True, timeout=15, check=False)
+        self.assertEqual(done.returncode, 17)
+        self.assertFalse(target.exists())
+        self.assertEqual(hashlib.sha256(stage.read_bytes()).hexdigest(), expected)
+
+    def test_child_exit_after_native_publication_keeps_exact_bytes(self):
+        root, stage, target = self.fixture()
+        expected = hashlib.sha256(stage.read_bytes()).hexdigest()
+        # A controlled child exit is NOT a physical power-loss durability check.
+        script = (
+            'import os,sys;from pathlib import Path;'
+            'from dbvora.archive.windows_ntfs_publish import _commit_synthetic_staged,'
+            '_native_move_write_through;'
+            'root,stage,target=map(Path,sys.argv[1:4]);'
+            'defmove=(_native_move_write_through if os.name=="nt" else '
+            '(lambda s,t:(os.link(s,t),os.unlink(s))));'
+            '_commit_synthetic_staged(root,stage,target,move='
+            '(lambda s,t:(defmove(s,t),os._exit(19))))'
+        )
+        done = subprocess.run([sys.executable, '-B', '-c', script,
+                               str(root), str(stage), str(target)],
+                              capture_output=True, timeout=15, check=False)
+        self.assertEqual(done.returncode, 19)
+        self.assertFalse(stage.exists())
+        self.assertEqual(hashlib.sha256(target.read_bytes()).hexdigest(), expected)
 
 if __name__ == '__main__':
     unittest.main()
