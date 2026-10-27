@@ -9,12 +9,12 @@ import json
 from pathlib import Path
 import sys
 
-from dbvora.archive.recovery_catalog import PUBLISHED
+from dbvora.archive.recovery_catalog import PUBLISHED, MAX_DIRECTORY_ENTRIES
 from dbvora.archive.safe_zip import (
     ArchiveError, create_snapshot, make_zip_archive, restore_zip_archive,
 )
 from dbvora.archive.zstd_archive import create_zstd_archive, restore_zstd_archive
-from dbvora.archive.receipts import create_receipt, inspect_receipt_catalog
+from dbvora.archive.receipts import create_receipt, inspect_receipt_catalog, RECEIPT
 
 
 class _SafeParser(argparse.ArgumentParser):
@@ -125,6 +125,17 @@ def main(argv=None):
                         for item in records)):
                     raise _CLIError("AUDIT_VERIFICATION_FAILED",
                                     "Audit contains missing, damaged, or unverified artifacts or receipts.")
+                # Every DBVORA receipt must have a corresponding verified artifact.
+                # Unrelated user files remain ignored, preserving default audit behavior.
+                expected_receipts = {
+                    "dbvora-receipt-" + item["name"][7:39] + ".json"
+                    for item in records
+                }
+                for count, item in enumerate(Path(args.output_dir).iterdir()):
+                    if count >= MAX_DIRECTORY_ENTRIES or (RECEIPT.fullmatch(item.name)
+                                         and item.name not in expected_receipts):
+                        raise _CLIError("AUDIT_VERIFICATION_FAILED",
+                                        "Audit contains missing, damaged, or unverified artifacts or receipts.")
         else:
             _require_write_ack(args)
             if args.command == "snapshot":
