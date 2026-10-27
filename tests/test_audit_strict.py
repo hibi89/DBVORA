@@ -65,6 +65,26 @@ class StrictAuditCliTests(unittest.TestCase):
         self.assertEqual(json.loads(legacy.stdout)["result"]["records"][0]["receipt_error_code"],
                          "MISSING_RECEIPT")
 
+    def test_orphan_receipt_rejected_but_unrelated_file_ignored(self):
+        artifact = self.prepare_archive()
+        signed = self.command("receipt", "--artifact", str(artifact),
+                              "--accept-unsigned", "--synthetic-only")
+        self.assertEqual(signed.returncode, 0, signed.stderr)
+        output = self.root / "archive"
+        (output / "my-unrelated-note.txt").write_text("not a DBVORA receipt")
+        self.assertEqual(self.strict().returncode, 0)
+        orphan = output / ("dbvora-receipt-" + "e" * 32 + ".json")
+        orphan.write_text("unpaired synthetic receipt")
+        rejected = self.strict()
+        self.assertNotEqual(rejected.returncode, 0)
+        self.assertEqual(json.loads(rejected.stderr)["error"]["code"],
+                         "AUDIT_VERIFICATION_FAILED")
+        self.assertNotIn(str(self.root), rejected.stderr)
+        legacy = self.command("audit", "--output-dir", str(output))
+        self.assertEqual(legacy.returncode, 0, legacy.stderr)
+        self.assertEqual(json.loads(legacy.stdout)["result"]["records"][0]["status"],
+                         "RECORDED_AND_CONTENT_VERIFIED_UNSIGNED")
+
     def test_verified_receipt_passes_then_artifact_tamper_fails(self):
         artifact = self.prepare_archive()
         receipt = self.command("receipt", "--artifact", str(artifact),
