@@ -89,7 +89,8 @@ def _commit_synthetic_staged(root: Path, staged: Path, target: Path, *, move=Non
         before = staged.lstat()
         if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1 or staged.is_symlink():
             raise WinPublishError("UNSAFE_STAGE")
-        with staged.open("rb") as inp:
+        # Windows FlushFileBuffers requires a writable file handle.
+        with staged.open("r+b") as inp:
             opened = os.fstat(inp.fileno())
             if ((opened.st_dev, opened.st_ino, opened.st_size) !=
                 (before.st_dev, before.st_ino, before.st_size)):
