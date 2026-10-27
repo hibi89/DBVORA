@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 223
+EXPECTED_PYTHON_TESTS = 224
 EXPECTED_GATE_CHECKS = 7
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"\bskipped=(\d+)\b", re.IGNORECASE)
@@ -126,7 +126,7 @@ def verify():
     report["steps"].append({"step": "compileall", "status": "PASS" if code == 0 else "FAIL"})
 
     if shutil.which("node"):
-        code, node_out, node_err = _run(["node", "--test", "tests/test_ui_dom.cjs"])
+        code, node_out, node_err = _run(["node", "--test-reporter=tap", "--test", "tests/test_ui_dom.cjs"])
         tap = node_out + "\n" + node_err
         tests = NODE_TEST_COUNT.search(tap)
         passed = NODE_PASS_COUNT.search(tap)
