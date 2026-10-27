@@ -478,3 +478,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. **Security/rollback:** only in-memory/synthetic OS-temp DB, all paths generated; no customer data, keys, remote uploads, scheduled deletion, paid CI or forced pushes. Original archive files unchanged; Git parent retained.
 9. **Next/approval:** complete checkout release gate >=312, run real file:// in allowed browser and native Windows; then extra malicious identifier/export bounds and observation authenticity review. Paid CI, customer file processing, production archive routing require separate authorization.
 10. **Evidence/date:** 2026-10-27 KST. `docs/P0_06_MVP_INTEGRATED_GATE_20261027.md` records precise commands/results and limitations.
+
+## 2026-10-27 KST — P0-07 mandatory 10-field handoff
+1. **Priority**: MVP complete -> gap fill -> security/stability/compat, no compromise to baseline data integrity.
+2. **Code**: `safe_metadata_file.py` applies bounded regular file/descriptor match, duplicate key and nonstandard JSON denial to `workspace_html.py` and `workspace_observations.py`, and rejects synthetic save option.
+3. **Tests**: local Linux Python3.13.5 strict ResourceWarning **70/70 targeted PASS**, P0 actual product synthetic integrated 13/13 PASS. Full 324 suite on complete checkout NOT RUN. GitHub exact SHA hashes in evidence document.
+4. **State**: P0 multi-SQLite offline map + declared unverified cross-DB links + dbstat observation supported. Production/customer readiness NO. First-class Windows archive blocked.
+5. **Blockers**: direct sandbox private git clone DNS fails; GitHub connector usable. Managed Chromium blocked file:// and new Windows Python3.11 full gate unverified.
+6. **Repo**: private `hibi89/DBVORA`, `feature/p0-db-map`; code commit `c539670f2f6510ba903eb3ae536ed42a18f26386`. Main/develop unchanged; read final HEAD before reporting.
+7. **Runtime**: Linux Python3.13.5 partial reconstructed source P0; no production URL/Vercel, no paid CI runner.
+8. **Safety**: synthetic SQLite only, no real DB, credentials, modified original archive, deletion of customer outputs, force push or public release. Prior Git history retained.
+9. **Next/approval**: fix HTML+observation dual output partial failure without removing existing user files; malicious identifier and report size; full source test >=324, Windows native/browser QA. Paid CI, production or customer file needs approval.
+10. **Time/provenance**: 2026-10-27 KST; P0-07 evidence documented separately, old owner NTFS 15 PASS is earlier SHA and not this code's native proof.

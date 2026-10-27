@@ -111,3 +111,6 @@ For two *synthetic or separately authorized* SQLite DBs, first create a baseline
 From the full private checkout: `python -m scripts.mvp_offline_gate`. It generates two **temporary synthetic** SQLite files, runs 13 product-module checks (FK, explicitly unverified cross-DB link, independent HTML SHA/no row leak, manual baseline + actual size delta, dbstat provenance and no-overwrite), emits JSON and deletes the entire test fixture. Expected code 0 on `PASS_SYNTHETIC_P0_ONLY`; this is **not** a production or Windows archive pass.
 
 Eight new `tests.test_mvp_offline_gate` checks have been added; targeted reconstructed P0 subset **58/58 PASS** on Linux Python3.13.5. Full private checkout Python >=**312** plus Node, real CLI, actual file:// and Windows native gates remain **NOT RUN**, due environment/source limits. More: [P0-06 evidence](docs/P0_06_MVP_INTEGRATED_GATE_20261027.md).
+
+## P0-07 input security (2026-10-27)
+User-supplied observation and cross-database metadata JSON files are read with a bounded, checked file descriptor. Duplicate JSON properties and non-finite numeric constants are invalid. Synthetic demo rejects observation-save mode rather than silently accepting an ignored argument. Targeted P0 Linux Python3.13.5 **70/70 PASS**; full checkout >=**324** and Windows safety **NOT RUN**. See `docs/P0_07_METADATA_INPUT_SECURITY_20261027.md`.
