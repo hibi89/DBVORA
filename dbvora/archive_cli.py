@@ -65,6 +65,8 @@ def _parser():
 
     audit = subs.add_parser("audit", help="Read-only independent catalog/receipt verification")
     audit.add_argument("--output-dir", required=True, help="Existing absolute archive directory")
+    audit.add_argument("--require-all-verified", action="store_true",
+                       help="Exit nonzero unless at least one archive has a valid unsigned receipt and all entries pass")
 
     for child in (snapshot, archive, restore, receipt):
         child.add_argument("--synthetic-only", action="store_true",
@@ -115,6 +117,14 @@ def main(argv=None):
         args = _parser().parse_args(argv)
         if args.command == "audit":
             result = inspect_receipt_catalog(args.output_dir)
+            if args.require_all_verified:
+                records = result.get("records", ())
+                if (not records or not all(
+                        item.get("status") == "RECORDED_AND_CONTENT_VERIFIED_UNSIGNED"
+                        and item.get("receipt_status") == "RECEIPT_AND_CONTENT_VERIFIED_UNSIGNED"
+                        for item in records)):
+                    raise _CLIError("AUDIT_VERIFICATION_FAILED",
+                                    "Audit contains missing, damaged, or unverified artifacts or receipts.")
         else:
             _require_write_ack(args)
             if args.command == "snapshot":
