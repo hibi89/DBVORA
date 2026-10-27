@@ -143,8 +143,11 @@ function render(data) {
   if (observer) observer.disconnect();
   observer = new ResizeObserver(drawEdges);
   observer.observe($('diagram'));
-  window.addEventListener('resize', drawEdges, {passive: true});
+
 }
+
+// Register exactly once; render() may run on every manual refresh.
+window.addEventListener('resize', drawEdges, {passive: true});
 
 async function refresh() {
   const btn = $('refresh');
