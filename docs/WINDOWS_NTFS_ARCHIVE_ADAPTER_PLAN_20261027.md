@@ -50,3 +50,8 @@
 
 ## Provenance
 Reviewed GitHub private feature `9112244781e91f155d0be0e7c706e532be9c72fe`: `dbvora/archive/windows_ntfs_publish.py`, `tests/test_windows_ntfs_publish.py`, `scripts/windows_ntfs_publish_probe.py`, `dbvora/archive/safe_zip.py`, `dbvora/archive/zstd_archive.py`, `dbvora/archive/receipts.py`, `dbvora/archive/recovery_catalog.py`. This document is design/static review only; **zero new runtime product tests**.
+
+## 2026-10-27 implementation checkpoint (supersedes earlier pending W0 table)
+- W0 **owner verified native Windows 15/15 PASS twice**; second after updating feature checkout to `5ef6187`.
+- W2 now **implemented for synthetic temporary fixtures only** at `scripts/windows_ntfs_archive_shadow.py` with 8 Linux PASS under simulated same-filesystem create-only publication; real Windows W2 run not yet performed. ZIP only; optional ZSTD deferred. Release suite threshold increased to 248 without claiming full pass.
+- Scope remains original: production `safe_zip.py`/ZSTD/CLI/receipts untouched; neither process exit nor `MOVEFILE_WRITE_THROUGH` establishes physical power-loss durability. Next W3 synthetic restart/receipt gap; see `docs/WINDOWS_NTFS_SHADOW_EVIDENCE_20261027.md`.
