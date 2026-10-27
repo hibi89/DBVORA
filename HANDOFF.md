@@ -268,3 +268,15 @@ Read docs/P1_C5_CLI.md for syntax. Receipts and SHA chains are unsigned; they ca
 8. Integrity: old source unchanged, no customer DB touched. QA kit SHA256 1bd7ef0c0ab433f0f7593947595ae4fc39a0b8d19e623c8278f6e8b12c053929; artifact is temporary, GitHub keeps only manifest.
 9. Next: authorized complete private source ZIP, then >=214 tests and unified gate, then native Windows3.11 NTFS/browser; optional CI requires separate approval.
 10. Timestamp/provenance: 2026-10-27 KST. See docs/QA_V4_MANIFEST_20261027.md; product remains partially verified.
+
+## 2026-10-27 KST — latest QA v5 extraction re-verification handoff (10 fields)
+1. Goal/stack: DBVORA local-first SQLite visibility and ZIP/ZSTD recovery; Python >=3.11 with optional Node/Chromium, experimental read-only C2 estimator.
+2. Change/decision: offline QA kit v4 could reopen a different ZIP after its preflight checks. Created separate QA kit v5, re-hashes every extracted pinned source member before execution; no product code or behavior changes. No remote CI.
+3. Tests: QA kit 19/19 PASS locally and 19/19 after fresh extraction, including preflight ZIP replacement simulation; existing current-blob focused strict audit/gate 18/18 PASS. Full 214 product tests + six-stage gate **NOT RUN**.
+4. State/blocker: QA transport hardening done; full private checkout not available here. Native Windows3.11 NTFS/file browser, physical power loss/customer release unverified.
+5. Errors/pivot: GitHub API/raw DNS unavailable to container and authorized private archive not mounted; did not repeat unauthenticated clone or bypass Git blob pins. Fixed initial test-only fixture setup mismatches in isolated v5 harness before passing rerun.
+6. Repo/branch/SHA/paths: `hibi89/DBVORA` private, branch `feature/p0-db-map`; source baseline SHA `318a49e3031b9d0aa052221e35ebdebbec70dedd`, 50 source pins. After docs final SHA must be fetched; main/develop stay at `890f842e3ba0e13c901e785633bdd06eadc76cce`. Docs `docs/QA_V5_POSTVERIFY_EXTRACTION_20261027.md`, STATUS, NEXT_TASK.
+7. Runtime/Production: local Linux Python3.13.5/Node22.16.0, no Vercel deployment or Production URL (N/A).
+8. Data/security/backup: unchanged original source and prior v4 ZIP; tested synthetic/tmp data only. v5 ZIP 10,770 B, SHA-256 `701a6c8f5bc146fc6a6517cea9f1c4dbe3610efe1cf54ba667031b0ab94cca4b`. No customer files, secrets, paid CI, repo publicization or destructive retention.
+9. Next/approval: owner-authorized full private source archive → v5 pin verification → actual 214 Python+ZIP/ZSTD/Node integrated gate → native Windows3.11 NTFS/file://; only then C2 actual chunk store. Real DB/paid CI/public/permissions/delete require approval.
+10. Date and evidence: 2026-10-27 KST; narrow QA transport and focused tests verified, product release still PARTIAL/UNVERIFIED. GitHub contains evidence documentation, not the QA archive itself; final HEAD from remote re-fetch.
