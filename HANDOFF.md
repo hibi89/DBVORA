@@ -1,3 +1,16 @@
+## 2026-11-11 KST — P0-11 DBVORA offline FK graph alignment
+
+1. **Goal/technology:** DBVORA offline SQLite multi-DB FK graph accuracy, zero dependency Python HTML+DOM JavaScript.
+2. **Done:** Graph's SQLite ASCII-only case matching fixed missing displayed FK edge while retaining original labels; added a source-backed Node VM test and wired to existing one-TAP release gate, no Python floor change (355).
+3. **Tests:** local Node22 matching-key/Unicode subset 5/5 assertions PASS; previous exact-source 22 Python PASS. New complete-source offline DOM VM test NOT RUN, all >=355 Python suite/Windows/real browser/Archive NOT RUN; no incorrect full PASS claim.
+4. **Status:** DBVORA commercial completion **55%**, target 70%, RELEASE HOLD; current fix is only catalog-display correctness.
+5. **Failure:** P0-10 metadata target was true but JS `names.indexOf` was case sensitive; source inspected and fix applied. Private clone blocked by DNS; no repeat blind clone or unapproved paid Actions.
+6. **Git:** hibi89/DBVORA `feature/p0-db-map` code `47e9b7c840bcd9fd6613b69d58f3736cd43161c7` (documentation SHA verify after push); key `dbvora/workspace_html.py`, `tests/test_workspace_html_dom.cjs`, `tests/test_ui_dom.cjs`, release gate.
+7. **Runtime/production:** Node22 isolated snippet, Python3.13 local partial tests; intended Windows Python3.11 offline HTML. Vercel/Production not applicable; native browser unverified.
+8. **Originals/backup/security:** original SQLite/archiver and main/develop untouched, no customer DB or secrets/paid/remote upload. Git rollback via revert, no force.
+9. **Next:** full authorized checkout run `node --test tests/test_ui_dom.cjs` and `python -m scripts.verify_release_gate` (>=355 Python); Windows browser and archive durability gates after. Do not elevate % without evidence.
+10. **2026-11-11 KST:** P0-11 source SHA confirmed, subset only; no full integration. Detail docs/P0_11_FK_GRAPH_ASCII_20261111.md.
+
 ## 2026-11-11 KST — DBVORA P0-10 checkpoint
 1. Goal/tech: DBVORA SQLite catalog correctness toward 70%, standard-library Python and offline HTML.
 2. Done: ASCII-only identifier target comparison, fixes false absent-FK warning; six new standalone tests, two new repo integration tests, whole release gate count 347->355.

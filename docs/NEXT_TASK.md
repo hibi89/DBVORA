@@ -252,3 +252,8 @@ Real customer DB access, deletion/retention/overwrite, network/third-party uploa
 - First unresolved: complete private checkout -> run python -B -m unittest -v tests.test_sqlite_identifiers tests.test_workspace_registry tests.test_schema_review tests.test_schema_review_ui tests.test_publication_cleanup tests.test_workspace_publication, then python -m scripts.verify_release_gate (>=355).
 - Follow with Windows Python3.11 native offline HTML visual interaction and safe archive verification; no real customer DB or paid CI without approval.
 - Product 55% (unchanged), 70% target remains. docs/P0_10_SQLITE_IDENTIFIER_CASE_20261111.md is evidence. Unverified gate is not failure nor PASS.
+
+## 2026-11-11 KST — latest after P0-11
+- P0-11 code 47e9b7c840bcd9fd6613b69d58f3736cd43161c7 fixes offline SVG FK edge when SQLite ASCII table case differs; new DOM VM test appended to existing Node TAP gate. No customer/Production change, no increase beyond 55% commercial completion.
+- First: complete private checkout => `node --test tests/test_ui_dom.cjs` + `python -B -m unittest -v tests.test_workspace_registry tests.test_schema_review_ui tests.test_workspace_publication`; then `python -m scripts.verify_release_gate` (>=355 Python expected). Inspect source-backed failures before more features.
+- If full checkout remains unavailable due DNS, pivot to another product/authorized checkout rather than invent a PASS or repeat failed clone. Windows file:// browser and archive power loss remain separate needed acceptance. Source detail docs/P0_11_FK_GRAPH_ASCII_20261111.md.
