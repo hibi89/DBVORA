@@ -67,4 +67,23 @@ class WorkspaceRegistryTests(unittest.TestCase):
         self.assertEqual(len(unresolved),1)
         self.assertFalse(unresolved[0]['target_in_inventory'])
 
+
+    def test_ascii_mixed_case_fk_target_is_resolved(self):
+        with closing(sqlite3.connect(self.two)) as conn:
+            conn.executescript('CREATE TABLE "ParentCase" (id INTEGER PRIMARY KEY);'
+                               'CREATE TABLE case_child(parent_id INTEGER REFERENCES "PARENTCASE"(id));')
+        result=inspect_workspace([self.one,self.two])
+        edges=[r for r in result['relationships'] if r['to_table']=='PARENTCASE']
+        self.assertEqual(len(edges),1)
+        self.assertTrue(edges[0]['target_in_inventory'])
+
+    def test_unicode_different_case_is_not_fabricated(self):
+        with closing(sqlite3.connect(self.two)) as conn:
+            conn.executescript('CREATE TABLE "ÄTarget" (id INTEGER PRIMARY KEY);'
+                               'CREATE TABLE uni_child(parent_id INTEGER REFERENCES "ätarget"(id));')
+        result=inspect_workspace([self.one,self.two])
+        edges=[r for r in result['relationships'] if r['to_table']=='ätarget']
+        self.assertEqual(len(edges),1)
+        self.assertFalse(edges[0]['target_in_inventory'])
+
 if __name__=='__main__':unittest.main()

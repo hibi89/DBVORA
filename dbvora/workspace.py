@@ -9,6 +9,7 @@ from pathlib import Path
 from dbvora.errors import InventoryError
 from dbvora.inventory import inspect_sqlite
 from dbvora.storage_metrics import collect_table_storage
+from dbvora.sqlite_identifiers import sqlite_identifier_key
 
 MAX_DATABASES = 8
 MAX_TOTAL_TABLES = 2000
@@ -49,7 +50,8 @@ def inspect_workspace(db_paths: list[str | Path], *, declared_links: list[dict] 
             "table_storage_scope": measured_storage["scope"],
             "table_storage_status": measured_storage["status"],
         })
-        table_names = {table["name"] for table in tables}
+        # SQLite folds ASCII identifier case, not arbitrary Unicode case.
+        table_keys = {sqlite_identifier_key(table["name"]) for table in tables}
         for fk in inventory["relationships"]:
             # A SQLite-declared FK can only prove a relation within that DB.
             # A missing destination has evidence but cannot become a drawn edge.
@@ -59,7 +61,7 @@ def inspect_workspace(db_paths: list[str | Path], *, declared_links: list[dict] 
                 "from_columns": fk["from_columns"],
                 "to_table": fk["to_table"],
                 "to_columns": fk["to_columns"],
-                "target_in_inventory": fk["to_table"] in table_names,
+                "target_in_inventory": sqlite_identifier_key(fk["to_table"]) in table_keys,
                 "evidence": "declared_foreign_key",
             })
     result = {
