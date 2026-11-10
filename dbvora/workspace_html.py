@@ -16,6 +16,7 @@ import uuid
 from dbvora.errors import InventoryError
 from dbvora.safe_metadata_file import MetadataInputError, read_local_json
 from dbvora.workspace import inspect_workspace
+from dbvora.publication_cleanup import remove_new_report
 from dbvora.workspace_observations import (ObservationError, from_workspace, compare_growth,
                                           read_observation, write_observation)
 
@@ -116,12 +117,27 @@ def export_workspace(db_paths:list[str | Path],output_directory:str | Path,*,dec
     name='dbvora-workspace-'+uuid.uuid4().hex+'.html'
     target=folder/name
     flags=os.O_WRONLY|os.O_CREAT|os.O_EXCL|getattr(os,'O_BINARY',0)
+    created_stat=None
+    fd=None
     try:
-        with os.fdopen(os.open(target,flags,0o600),'wb') as output:
+        fd=os.open(target,flags,0o600)
+        created_stat=os.fstat(fd)
+        with os.fdopen(fd,'wb') as output:
+            fd=None
             output.write(content);output.flush();os.fsync(output.fileno())
     except OSError:
+        if fd is not None:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+        remove_new_report(folder,name,created_stat)
         raise WorkspaceHtmlError('OUTPUT_WRITE_FAILED') from None
-    observation_filename=write_observation(folder,current_observation) if save_observation else None
+    try:
+        observation_filename=write_observation(folder,current_observation) if save_observation else None
+    except ObservationError:
+        remove_new_report(folder,name,created_stat)
+        raise
     return {'status':'CREATED_WORKSPACE_HTML','filename':name,'sha256':hashlib.sha256(content).hexdigest(),'size_bytes':len(content),
             'observation_filename':observation_filename,'growth_comparison':('two_observations' if baseline is not None else 'unavailable_no_baseline'),
             'database_count':workspace['database_count'],'table_count':workspace['table_count'],
