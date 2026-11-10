@@ -1,3 +1,15 @@
+## 2026-11-11 KST — DBVORA P0-10 checkpoint
+1. Goal/tech: DBVORA SQLite catalog correctness toward 70%, standard-library Python and offline HTML.
+2. Done: ASCII-only identifier target comparison, fixes false absent-FK warning; six new standalone tests, two new repo integration tests, whole release gate count 347->355.
+3. Tests: exact Git blobs f43796a6 (code) / 53149f54 (tests), local Linux Python3.13.5 SQLite in-memory 22/22 PASS = 7 cleanup+9 schema+6 identifier. Two new integrated registry and >=355 whole-suite/Windows/browser NOT RUN.
+4. State: final readiness 55% unchanged, target 70%, RELEASE HOLD; no production promotion.
+5. Root cause/blocker: SQLite ASCII identifier equality differs from Python exact string equality; reproduced. Private checkout still blocked by container DNS; no blind clone retry or false whole-CI success.
+6. Repo/branch/SHA: hibi89/DBVORA feature/p0-db-map, code SHA a8169a969db919f336a2fc68343a63f291513960, doc SHA verified after push; changed sqlite_identifiers.py, workspace.py, two tests, release gate, handoff.
+7. Runtime/deploy: Linux isolated Python3.13.5 test, Windows Python3.11/file browser unverified; Vercel/Production N/A, no release.
+8. Originals/backups/security: synthetic memory SQLite only; source Git history rollback available. Customer data, main/develop, archives, paid API, permissions unchanged.
+9. Next: authorized complete checkout targeted tests and python -m scripts.verify_release_gate (>=355); then Windows offline viewer and native archive safety; owner approval for customer connections/paid CI/Production.
+10. Checked 2026-11-11 KST; exact helper and tests passed, integration unverified. Detail docs/P0_10_SQLITE_IDENTIFIER_CASE_20261111.md.
+
 ## 2026-11-11 KST — P0-09 DBVORA schema review 70%-path handoff
 
 1. **Goal/tech:** local-first DBVORA metadata governance capability toward 70%, Python3 stdlib SQLite, offline HTML without new dependencies.

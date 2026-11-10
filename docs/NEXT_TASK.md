@@ -246,3 +246,9 @@ Real customer DB access, deletion/retention/overwrite, network/third-party uploa
 - **FIRST GATE:** from a complete authorized private feature checkout run `python -B -m unittest -v tests.test_schema_review tests.test_schema_review_ui tests.test_publication_cleanup tests.test_workspace_publication`; then `python -m scripts.verify_release_gate` (>=347 discovered), collect exact Python/Node/ZIP/Windows outcomes. New full-source UI cases not yet executed.
 - **THEN:** source-backed Windows3.11 synthetic offline HTML test; prioritize read-only utility rather than unapproved real DB access. Existing original archive customer/NTFS durability fail-closed unchanged, no paid CI/customer files/external data/overwrite/new project/production.
 - **Completion:** DBVORA remains 55% until full relevant evidence; next 70% steps require substantive working delivered capabilities. `docs/P0_09_SCHEMA_REVIEW_20261111.md` is P0-09 evidence.
+
+## 2026-11-11 KST — NEXT after P0-10
+- Completed code in a8169a969db919f336a2fc68343a63f291513960: SQLite ASCII FK target casing, preserve Unicode distinctness. Local isolated SQLite/P0-08/P0-09 suite 22/22 PASS with exact SHA.
+- First unresolved: complete private checkout -> run python -B -m unittest -v tests.test_sqlite_identifiers tests.test_workspace_registry tests.test_schema_review tests.test_schema_review_ui tests.test_publication_cleanup tests.test_workspace_publication, then python -m scripts.verify_release_gate (>=355).
+- Follow with Windows Python3.11 native offline HTML visual interaction and safe archive verification; no real customer DB or paid CI without approval.
+- Product 55% (unchanged), 70% target remains. docs/P0_10_SQLITE_IDENTIFIER_CASE_20261111.md is evidence. Unverified gate is not failure nor PASS.
