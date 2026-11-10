@@ -61,5 +61,33 @@ class CleanupTests(unittest.TestCase):
         self.assertFalse(remove_new_report(self.directory, NAME, original))
 
 
+class ObservationCleanupTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.directory = Path(self.temp.name)
+        self.name = "dbvora-observation-" + "b" * 32 + ".json"
+        self.target = self.directory / self.name
+
+    def test_partial_observation_cleanup(self):
+        from dbvora.publication_cleanup import remove_new_observation
+        with self.target.open("xb") as out:
+            out.write(b"partial")
+            identity = os.fstat(out.fileno())
+        self.assertTrue(remove_new_observation(self.directory, self.name, identity))
+        self.assertFalse(self.target.exists())
+
+    def test_replaced_observation_preserved(self):
+        from dbvora.publication_cleanup import remove_new_observation
+        with self.target.open("xb") as out:
+            out.write(b"partial")
+            identity = os.fstat(out.fileno())
+        other = self.directory / "other"
+        other.write_bytes(b"existing")
+        os.replace(other, self.target)
+        self.assertFalse(remove_new_observation(self.directory, self.name, identity))
+        self.assertEqual(self.target.read_bytes(), b"existing")
+
+
 if __name__ == "__main__":
     unittest.main()

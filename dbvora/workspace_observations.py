@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 from dbvora.safe_metadata_file import MetadataInputError, read_local_json
+from dbvora.publication_cleanup import remove_new_observation
 import re
 import stat
 import uuid
@@ -115,8 +116,10 @@ def write_observation(directory: str | Path, data: dict) -> str:
         raise ObservationError("INVALID_OBSERVATION_OUTPUT")
     name = "dbvora-observation-" + uuid.uuid4().hex + ".json"
     fd = None
+    created_stat = None
     try:
         fd = os.open(folder / name, os.O_CREAT | os.O_EXCL | os.O_WRONLY | getattr(os, "O_BINARY", 0), 0o600)
+        created_stat = os.fstat(fd)
         with os.fdopen(fd, "wb") as out:
             fd = None
             out.write(content)
@@ -124,7 +127,10 @@ def write_observation(directory: str | Path, data: dict) -> str:
             os.fsync(out.fileno())
         return name
     except OSError:
-        raise ObservationError("OBSERVATION_WRITE_FAILED") from None
-    finally:
         if fd is not None:
-            os.close(fd)
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+        remove_new_observation(folder, name, created_stat)
+        raise ObservationError("OBSERVATION_WRITE_FAILED") from None

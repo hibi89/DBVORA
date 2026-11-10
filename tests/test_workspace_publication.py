@@ -63,6 +63,22 @@ class WorkspacePublicationTests(unittest.TestCase):
         self.assertEqual(str(e.exception), "OUTPUT_WRITE_FAILED")
         self.assertEqual(list(self.root.glob("dbvora-workspace-*.html")), [])
 
+    def test_observation_fsync_failure_removes_both_generated_outputs(self):
+        real_fsync = os.fsync
+        calls = [0]
+        def fail_on_second(fd):
+            calls[0] += 1
+            if calls[0] == 2:
+                raise OSError("synthetic second write failure")
+            return real_fsync(fd)
+        with patch("dbvora.workspace_html.os.fsync", side_effect=fail_on_second):
+            with self.assertRaises(ObservationError):
+                export_workspace(self.paths, self.root, save_observation=True)
+        self.assertEqual(calls[0], 2)
+        self.assertEqual(list(self.root.glob("dbvora-workspace-*.html")), [])
+        self.assertEqual(list(self.root.glob("dbvora-observation-*.json")), [])
+
+
 
 if __name__ == "__main__":
     unittest.main()
