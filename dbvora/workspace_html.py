@@ -17,6 +17,7 @@ from dbvora.errors import InventoryError
 from dbvora.safe_metadata_file import MetadataInputError, read_local_json
 from dbvora.workspace import inspect_workspace
 from dbvora.publication_cleanup import remove_new_report
+from dbvora.schema_review import SchemaReviewError, summarize_workspace_schema
 from dbvora.workspace_observations import (ObservationError, from_workspace, compare_growth,
                                           read_observation, write_observation)
 
@@ -35,7 +36,7 @@ table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}td,t
 .note{color:#9daebe;font-size:12px;margin-top:14px}@media(max-width:780px){body{padding:12px}.grid{grid-template-columns:1fr}header{display:block}}
 </style></head><body><header><div><h1>DBVORA <small>Multi-DB Map</small></h1><p class="muted">Offline schema topology — select a database and table</p></div><strong id="summary"></strong></header>
 <main><h2>Databases</h2><div class="dbs" id="databases"></div><div class="grid"><section class="panel"><h2>Tables &amp; declared FK</h2><div id="tables" class="tables"></div><svg id="graph" role="img" aria-label="Foreign key links"></svg><ul id="relationships"></ul></section>
-<section class="panel"><h2>Table details</h2><div id="details" aria-live="polite">Select a table</div></section></div><section class="panel" style="margin-top:16px"><h2>Cross-database links <small>(explicit declaration · unverified)</small></h2><div id="cross-links" class="tables"></div></section><p class="note">Main file sizes exclude WAL/SHM; dbstat is *logical allocated btree pages*, with indexes and possibly WAL pages, not table disk size. Δ compares two timestamps, not a forecast. CPU/RAM unavailable; cross-DB links are user-declared/unverified. No customer paths or table row contents embedded.</p></main>
+<section class="panel"><h2>Table details</h2><div id="details" aria-live="polite">Select a table</div></section></div><section class="panel" style="margin-top:16px"><h2>Cross-database links <small>(explicit declaration · unverified)</small></h2><div id="cross-links" class="tables"></div></section><section class="panel" style="margin-top:16px"><h2>Schema review <small>(catalog-only · advisory)</small></h2><div id="schema-review"></div></section><p class="note">Main file sizes exclude WAL/SHM; dbstat is *logical allocated btree pages*, with indexes and possibly WAL pages, not table disk size. Δ compares two timestamps, not a forecast. CPU/RAM unavailable; cross-DB links are user-declared/unverified. No customer paths or table row contents embedded.</p></main>
 <script>"use strict";
 const encodedWorkspace="__BASE64__";
 const workspace=JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(encodedWorkspace),c=>c.charCodeAt(0))));
@@ -67,6 +68,14 @@ function choose(index){activeDB=index;const db=workspace.databases[index],root=g
  details(0);draw(db)}
 get('summary').textContent=workspace.database_count+' databases · '+workspace.table_count+' tables · '+size(workspace.total_main_db_size_bytes);
 workspace.databases.forEach((db,i)=>{const button=make('button');button.type='button';button.append(make('strong',db.label),make('span',db.tables.length+' tables · '+size(db.size_bytes)+dbChange(db)));button.addEventListener('click',()=>choose(i));get('databases').append(button)});choose(0);
+const review=workspace.schema_review||{},reviewRoot=get('schema-review');
+if(review.contract==='dbvora.schema-review.v1'&&review.status==='REVIEW_ONLY'&&Array.isArray(review.findings)){
+ reviewRoot.append(make('p',review.total_tables+' tables · '+review.without_declared_pk+' without declared PK · '+review.unresolved_fk_targets+' absent FK targets · '+review.fk_index_review+' FK index review'));
+ const labels={NO_DECLARED_PRIMARY_KEY:'No declared primary key',FK_TARGET_OUTSIDE_INVENTORY:'Foreign key target absent from inspected catalog',FK_INDEX_REVIEW:'Declared FK columns lack a covering non-partial index'};
+ review.findings.forEach(f=>reviewRoot.append(make('p',f.table+' · '+(labels[f.code]||'Catalog review')+' · advisory only')));
+ if(review.truncated)reviewRoot.append(make('p','Finding list capped; totals include all inspected items.'));
+ if(!review.findings.length)reviewRoot.append(make('p','No catalog advisory findings in the inspected scope.'));
+}else reviewRoot.append(make('p','Catalog review unavailable for this workspace. No conclusion drawn.'));
 const cross=get('cross-links'), links=workspace.declared_cross_database_links||[];
 if(!links.length)cross.append(make('p','No cross-database links declared. Relationships are never inferred.'));
 links.forEach(link=>{const button=make('button');button.type='button';button.setAttribute('aria-label','Unverified cross-database link');
@@ -110,6 +119,12 @@ def export_workspace(db_paths:list[str | Path],output_directory:str | Path,*,dec
                      baseline:dict|None=None,save_observation:bool=False)->dict:
     folder=_folder(output_directory)
     workspace=inspect_workspace(db_paths,declared_links=declared_links)
+    try:
+        workspace['schema_review']=summarize_workspace_schema(workspace)
+    except SchemaReviewError:
+        workspace['schema_review']={'contract':'dbvora.schema-review.v1','status':'UNAVAILABLE',
+                                    'advisory_only':True,'reason':'catalog_review_limit_or_invalid',
+                                    'findings':[]}
     current_observation=from_workspace(workspace) if (baseline is not None or save_observation) else None
     if baseline is not None:
         workspace['size_growth']=compare_growth(baseline,current_observation)

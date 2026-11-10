@@ -240,3 +240,9 @@ Real customer DB access, deletion/retention/overwrite, network/third-party uploa
 2. Keep 55% product completion until evidence supports advancement; full Windows browser/NTFS and power-loss remain separate unverified gates. Failure cleanup is best-effort, not cross-file atomic publish guarantee.
 3. For the 70% roadmap, prefer demonstrable read-only observability and opt-in PostgreSQL connector contract vs. unsafe production archive changes. No customer DB, paid CI, automatic deletion, overwrite, permission change, main/develop merge or deployment without approval.
 4. Source P0-08 commits `0518269d8b1686f4dae686ebaec358eca41a4a7d` and `9d1d4b0898c5293f34f01feff4894c5ed97aabb1`; see `docs/P0_08_PUBLICATION_RECOVERY_20261111.md`.
+
+## 2026-11-11 KST — next after P0-09 (latest)
+- **DONE, isolated:** schema advisory pure Python module, SQLite in-memory catalog tests 9 PASS, previous P0-08 cleanup 7 PASS; exact source/test Git hashes and new UI snippet JS syntax checked.
+- **FIRST GATE:** from a complete authorized private feature checkout run `python -B -m unittest -v tests.test_schema_review tests.test_schema_review_ui tests.test_publication_cleanup tests.test_workspace_publication`; then `python -m scripts.verify_release_gate` (>=347 discovered), collect exact Python/Node/ZIP/Windows outcomes. New full-source UI cases not yet executed.
+- **THEN:** source-backed Windows3.11 synthetic offline HTML test; prioritize read-only utility rather than unapproved real DB access. Existing original archive customer/NTFS durability fail-closed unchanged, no paid CI/customer files/external data/overwrite/new project/production.
+- **Completion:** DBVORA remains 55% until full relevant evidence; next 70% steps require substantive working delivered capabilities. `docs/P0_09_SCHEMA_REVIEW_20261111.md` is P0-09 evidence.

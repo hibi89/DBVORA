@@ -1,3 +1,16 @@
+## 2026-11-11 KST — P0-09 DBVORA schema review 70%-path handoff
+
+1. **Goal/tech:** local-first DBVORA metadata governance capability toward 70%, Python3 stdlib SQLite, offline HTML without new dependencies.
+2. **Implemented:** bounded catalog-only `schema_review.py`, existing HTML schema-review panel (textContent safe), explicit unavailable fallback, 9 pure module SQLite tests + 2 HTML integration tests; release gate 336→347.
+3. **Verification:** exact new Python code Git blob `25d671c6`, test Git blob `7a76c2af`; in-memory SQLite 9/9 PASS and P0-08 generated-file helper 7/7 PASS, Python compile PASS, new JS snippet syntax PASS. 2 HTML integration/whole checkout >=347/Windows/customer/production NOT RUN.
+4. **State:** product 55% still provisional, 70% **not reached**, RELEASE HOLD, no commercial or customer DB readiness.
+5. **Limitations:** private full checkout unavailable in container (DNS); catalog warnings are advisory, not table-row/data-quality proof or performance prediction. No full browser smoke or origin archive regression yet.
+6. **Repository:** `hibi89/DBVORA` `feature/p0-db-map`; prior P0-08 last HEAD `098d027e`, new P0-09 HEAD must be verified after push. Core paths `dbvora/schema_review.py`, `dbvora/workspace_html.py`, `tests/test_schema_review*.py`, `docs/P0_09_SCHEMA_REVIEW_20261111.md`.
+7. **Deploy/runtime:** local-only HTML/SQLite; no Vercel/Production. Execute `python -B -m unittest -v tests.test_schema_review tests.test_schema_review_ui tests.test_publication_cleanup tests.test_workspace_publication` and `python -m scripts.verify_release_gate` from complete authorized checkout.
+8. **Source & backup:** private existing source and Git parent reversible; only synthetic/in-memory SQLite tests, no real DB, credentials, external transfer, archive overwrite/deletion, main/develop changes or paid CI.
+9. **Next:** obtain full checkout source-backed integration results; fix failures, then progress toward validated customer-use read-only DB diagnostics/Windows and existing archive durability. Real connection/paid CI/production require owner approval.
+10. **KST checkpoint:** 2026-11-11; isolated 9+7 tests verified, complete product unverified; see detailed P0-09 evidence file; reference current commit after GitHub push.
+
 ## 2026-11-11 KST — P0-08 failure cleanup / 70% target handoff
 
 1. **Goal/stack:** DBVORA local-first SQLite/DB visibility and lossless archival; improve partial-output safety while progressing toward final-product 70%. Python3.11+ standard library, private GitHub source.
