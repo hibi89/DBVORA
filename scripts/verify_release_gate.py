@@ -51,6 +51,7 @@ REQUIRED = (
     "dbvora/schema_review.py", "tests/test_schema_review.py",
     "tests/test_schema_review_ui.py",
     "dbvora/sqlite_identifiers.py", "tests/test_sqlite_identifiers.py",
+    "tests/test_workspace_html_dom.cjs",
 )
 
 

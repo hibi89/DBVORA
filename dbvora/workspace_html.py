@@ -54,10 +54,13 @@ function details(index){const db=workspace.databases[activeDB],t=db.tables[index
  t.columns.forEach(c=>{const row=make('tr');[c.name,c.type||'—',c.pk_position?'PK '+c.pk_position:'—'].forEach(x=>row.append(make('td',x)));grid.append(row)});pane.append(grid);
  t.foreign_keys.forEach(f=>pane.append(make('p',f.from_columns.join(', ')+' → '+f.to_table+' ('+f.to_columns.join(', ')+')')));
  t.indexes.forEach(i=>pane.append(make('p','Index: '+i.name+(i.unique?' · unique':''))));}
+// SQLite identifier comparisons fold ASCII case only; never fold non-ASCII identifiers.
+const sqliteAsciiKey=s=>String(s).replace(/[A-Z]/g,c=>String.fromCharCode(c.charCodeAt(0)+32));
 function draw(db){const svg=get('graph');svg.replaceChildren();const names=db.tables.map(t=>t.name),ns='http://www.w3.org/2000/svg';
+ const positions=new Map(names.map((n,i)=>[sqliteAsciiKey(n),i]));
  const pos=i=>[10+(i%3)*215,10+Math.floor(i/3)*78];svg.setAttribute('viewBox','0 0 650 '+Math.max(80,Math.ceil(names.length/3)*78+20));
  function element(tag,attrs,text){const node=document.createElementNS(ns,tag);Object.entries(attrs).forEach(([k,v])=>node.setAttribute(k,String(v)));if(text!==undefined)node.textContent=text;svg.append(node)}
- const edges=workspace.relationships.filter(e=>e.database_id===db.db_id);edges.filter(e=>e.target_in_inventory).forEach(e=>{const a=names.indexOf(e.from_table),b=names.indexOf(e.to_table);if(a<0||b<0)return;
+ const edges=workspace.relationships.filter(e=>e.database_id===db.db_id);edges.filter(e=>e.target_in_inventory).forEach(e=>{const a=positions.get(sqliteAsciiKey(e.from_table)),b=positions.get(sqliteAsciiKey(e.to_table));if(a===undefined||b===undefined)return;
  const [x,y]=pos(a),[xx,yy]=pos(b);element('line',{x1:x+100,y1:y+45,x2:xx+100,y2:yy+45,stroke:'#45d2bb','stroke-width':2})});
  names.forEach((n,i)=>{const [x,y]=pos(i);element('rect',{x,y,width:194,height:48,rx:8,fill:'#21455b',stroke:'#4f9b9e'});element('text',{x:x+10,y:y+27,fill:'#f0f5fa','font-size':12},n.length>25?n.slice(0,22)+'…':n)});
  const list=get('relationships');list.replaceChildren();if(!edges.length)list.append(make('li','No declared foreign keys'));

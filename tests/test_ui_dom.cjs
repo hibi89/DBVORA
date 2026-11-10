@@ -58,6 +58,7 @@ setImmediate(async () => {
     assert.equal(resizeCount(), 1, 'repeated refresh must not accumulate resize listeners');
     assert.equal(ids.tables.children.length, 3);
     assert.equal(ids.edges.children.length, 1);
+    require('./test_workspace_html_dom.cjs').verify();
     console.log('UI DOM SIMULATION PASS: schema, XSS identifiers and resize listener idempotence');
   } catch(e) { console.error(e); process.exitCode=1; }
 });
