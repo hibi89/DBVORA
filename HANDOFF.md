@@ -1,3 +1,15 @@
+## 2026-11-11 KST — P0-12 Node + headless Chromium handoff
+1. Goal/tech: DBVORA 55->70 delivery readiness, demonstrate previously coded P0-11 offline SQLite UI in Node and real Chromium without customer DB; Python stdlib, optional Playwright.
+2. Done: Node exact source UI TAP test verified; 3 synthetic Chromium DOM scenarios; added optional scripts/browser_workspace_smoke.py via private feature branch code SHA 55749bfc687acb114d62b359ecf2abe1c5e9c120.
+3. Evidence: exact Git JS/test blobs match; Node22 TAP 1/1 PASS, Chromium3/3 PASS via document injection, source inline JS length 6575/FNV1a 6e298a23. Previous 22 isolated Python tests not rerun. Full repo Python >=355, original HTML template, real file URL/Windows/NTFS NOT RUN.
+4. Status: final product completion 55% unchanged, target 70%, RELEASE HOLD. No customer or production readiness claim.
+5. Blocker and pivot: strict file:// Chromium navigates to ERR_BLOCKED_BY_ADMINISTRATOR in execution environment, so used explicit document-only mode; cannot certify native file navigation. Private full checkout DNS also blocked; do not repeat same approach.
+6. Repo/source: hibi89/DBVORA feature/p0-db-map, prior P0-11 docs HEAD 1b16d7e9, new optional script code commit 55749bfc, documentation commit verify after push; key scripts/browser_workspace_smoke.py, docs/P0_12_BROWSER_SMOKE_20261111.md.
+7. Runtime/deploy: Linux Python3.13, Node22, installed Chromium headless; intended Windows Python3.11 still unverified; Vercel/Production not applicable.
+8. Originals/backups/security: synthetic fixture only; no customer DB, credentials, paid Actions, external transmissions, archive mutations or main/develop change. Ordinary Git revert of script commit possible.
+9. Next: complete authorized feature checkout Node+Python >=355 release gate, run new optional browser smoke against full HTML and unrestricted file://; then Windows/NTFS archive safety before uplift. No owner interaction until real gating step.
+10. Verified 2026-11-11 KST: exact source Node 1 PASS, Chromium synthetic 3 PASS; file and product integration unverified; detail docs/P0_12_BROWSER_SMOKE_20261111.md.
+
 ## 2026-11-11 KST — P0-11 DBVORA offline FK graph alignment
 
 1. **Goal/technology:** DBVORA offline SQLite multi-DB FK graph accuracy, zero dependency Python HTML+DOM JavaScript.
