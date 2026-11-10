@@ -1,3 +1,16 @@
+## 2026-11-11 KST — P0-08 failure cleanup / 70% target handoff
+
+1. **Goal/stack:** DBVORA local-first SQLite/DB visibility and lossless archival; improve partial-output safety while progressing toward final-product 70%. Python3.11+ standard library, private GitHub source.
+2. **Changed:** isolated generated-file cleanup helper, HTML+observation write failure paths, 7 helper tests, 5 full-source SQLite integration tests, release gate >=336 required discovered tests. Narrow reversible patch selected over transactional rewrite to minimize safety risk.
+3. **Tests:** exact helper source blob SHA `060b48cde0b1cdd5ddd8bc3559ae48cfa6caa210`, isolated Linux 7 PASS/0 FAIL, syntax PASS. GitHub integration five / full >=336 / Node / Windows / actual customer/Production **NOT RUN**. New source committed != verified integration.
+4. **State:** DBVORA final product **55% unchanged**, target 70% not achieved; offline P0 improvements coded, RELEASE HOLD; archives and customer readiness unchanged.
+5. **Known limitation:** incomplete authorized private full checkout blocks full regression. Best-effort inode-based cleanup is not atomic under power-cut/hostile rename races. Do not repeat blind failed Git clone or claim safety from mocks.
+6. **Repository:** `hibi89/DBVORA`, `feature/p0-db-map`. P0-08 source commits `0518269d8b1686f4dae686ebaec358eca41a4a7d` → `9d1d4b0898c5293f34f01feff4894c5ed97aabb1`; gate/docs follow-up is next HEAD; preserve parent Git history. Key files `dbvora/publication_cleanup.py`, `workspace_html.py`, `workspace_observations.py`, `tests/test_*publication*.py`.
+7. **Runtime/deploy:** no Vercel or Production (N/A). Run targeted `python -B -m unittest -v tests.test_publication_cleanup tests.test_workspace_publication`, then `python -m scripts.verify_release_gate` on a complete authorized checkout.
+8. **Data/backups:** tested local synthetic OS temp only. No customer DB, paid API, original archive, credentials, remote upload, main/develop change. Roll back via normal Git revert of P0-08 code commits if regression occurs.
+9. **Next and approvals:** run whole-source/Windows gates; only after that proceed to useful read-only observability, PostgreSQL design and selected integration. Customer connection, production archive, paid Actions, product release require separate explicit approval.
+10. **As of 2026-11-11 KST:** source SHA and isolated helper checked; complete integration unverified. Detailed trace in `docs/P0_08_PUBLICATION_RECOVERY_20261111.md`. Documentation SHA must be read back after push.
+
 # DBVORA HANDOFF — focused offline Python integration checkpoint (2026-10-26 KST)
 
 > **READ THE FINAL 10-FIELD CHECKPOINT FIRST.** Earlier handoff entries are chronological history; previously verified 194-case Linux results are not current 195-case HEAD proof.
