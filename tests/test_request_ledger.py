@@ -130,6 +130,19 @@ class RequestLedgerTests(unittest.TestCase):
             result = record_artifact(self.folder, ID, PLAN, ARTIFACT)
         self.assertEqual(result["status"], "RECORDED_UNVERIFIED")
 
+    def test_record_only_sqlite_connect_race_never_creates_replacement(self):
+        reserve(self.folder, ID, PLAN)
+        ledger_path = self.folder / LEDGER_NAME
+        raw_connect = sqlite3.connect
+        def remove_before_write(uri, *args, **kwargs):
+            if isinstance(uri, str) and uri.endswith('?mode=rw'):
+                ledger_path.unlink()
+            return raw_connect(uri, *args, **kwargs)
+        with patch.object(request_ledger.sqlite3, 'connect', side_effect=remove_before_write):
+            with self.assertRaisesRegex(LedgerError, 'LEDGER_UNAVAILABLE'):
+                record_artifact(self.folder, ID, PLAN, ARTIFACT)
+        self.assertFalse(ledger_path.exists())
+
     def test_missing_output_is_not_created(self):
         with self.assertRaisesRegex(LedgerError, "LEDGER_DIRECTORY_UNAVAILABLE"):
             reserve(self.folder / "missing", ID, PLAN)
