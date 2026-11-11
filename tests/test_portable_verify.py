@@ -100,6 +100,17 @@ class ExtractedPreviewTests(unittest.TestCase):
         (cache / 'x.cpython-311.pyc').write_bytes(b'generated')
         self.assertEqual(package.verify(self.root)['status'], 'PASS_UNSIGNED_EXTRACTED_CONTENTS_ONLY')
 
+    def test_cache_symlink_rejected_before_ignored_bytecode(self):
+        cache = self.root / 'dbvora/__pycache__'
+        cache.mkdir()
+        link = cache / 'evil.cpython-311.pyc'
+        try:
+            link.symlink_to(self.root / 'dbvora/archive/request_service.py')
+        except (OSError, NotImplementedError):
+            self.skipTest('symlink unsupported')
+        with self.assertRaisesRegex(package.PortableVerifyError, 'UNSAFE_PACKAGE_ENTRY'):
+            package.verify(self.root)
+
     def test_bad_name_rejected(self):
         for bad in ('../private.py', 'dbvora/./temp.py', 'dbvora/../sitecustomize.py',
                     'dbvora\\private.py', '/tmp/private.py', '.env', 'customer.sqlite'):
