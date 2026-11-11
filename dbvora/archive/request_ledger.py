@@ -68,16 +68,20 @@ def _connect(root: Path, *, create: bool = True):
     path = root / LEDGER_NAME
     made_new = False
     try:
-        if not create and not path.exists():
+        # Recording an existing reservation is never allowed to create a new
+        # ledger, even if another process removes it between exists() and open().
+        # In the old flow, create=False still executed O_CREAT|O_EXCL.
+        if create:
+            try:
+                fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY |
+                             getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0), 0o600)
+            except FileExistsError:
+                pass
+            else:
+                os.close(fd)
+                made_new = True
+        elif not path.exists():
             raise LedgerError("UNRESERVED_REQUEST")
-        try:
-            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY |
-                         getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0), 0o600)
-        except FileExistsError:
-            pass
-        else:
-            os.close(fd)
-            made_new = True
         identity = _file_identity(path)
         if not made_new:
             uri = "file:" + quote(str(path), safe="/") + "?mode=ro"
