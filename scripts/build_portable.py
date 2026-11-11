@@ -33,7 +33,8 @@ _REQUIRED = {
     'run_dbvora_unix.sh', 'dbvora/export_html.py',
     'export_dbvora_map_windows.cmd', 'export_dbvora_map_unix.sh',
     'dbvora/offline_selftest.py', 'dbvora/archive/dedup_plan.py', 'check_dbvora_windows.cmd',
-    'check_dbvora_unix.sh',
+    'check_dbvora_unix.sh', 'dbvora/archive/review_selftest.py',
+    'check_dbvora_archive_windows.cmd', 'check_dbvora_archive_unix.sh',
 }
 
 
@@ -100,6 +101,12 @@ def _contents(root: Path) -> dict[str, bytes]:
         'SYNTHETIC-ONLY SELF-CHECK (no customer file, no pip):\n'
         '  Windows: check_dbvora_windows.cmd (or py -3.11 -m dbvora.offline_selftest)\n'
         '  Linux/macOS: sh check_dbvora_unix.sh\n'
+        'PORTABLE ARCHIVE RECOVERY CHECK (no customer path and no extra Python packages):\n'
+        '  Windows: check_dbvora_archive_windows.cmd\n'
+        '  Linux/macOS: sh check_dbvora_archive_unix.sh\n'
+        '  Or: python -m dbvora.archive.review_selftest\n'
+        '  This generates and removes only temporary synthetic SQLite archives.\n'
+        '  PASS is not proof of Windows NTFS/physical power-loss or customer readiness.\n'
         '  This does NOT certify NTFS durability or native browser opening.\n'
         '  py -3 -m dbvora.export_html --db \"C:\\absolute\\synthetic.sqlite\" --out \"C:\\existing\\folder\"\n'
         '  Then open the generated dbvora-map-*.html in your browser.\n'
@@ -141,6 +148,18 @@ def _contents(root: Path) -> dict[str, bytes]:
         'cd "$(dirname "$0")"\n'
         'exec python3 -m dbvora.offline_selftest\n'
     ).encode('utf-8')
+    files['check_dbvora_archive_windows.cmd'] = (
+        '@echo off\\r\\nsetlocal\\r\\ncd /d "%~dp0"\\r\\n'
+        'if not "%~1"=="" (echo No arguments: synthetic-only archive check. 1>&2 & exit /b 2)\\r\\n'
+        'py -3.11 -B -m dbvora.archive.review_selftest\\r\\n'
+        'exit /b %ERRORLEVEL%\\r\\n'
+    ).encode('ascii')
+    files['check_dbvora_archive_unix.sh'] = (
+        '#!/bin/sh\\nset -eu\\n'
+        'if [ "$#" -ne 0 ]; then echo "No arguments: synthetic-only archive check" >&2; exit 2; fi\\n'
+        'cd "$(dirname "$0")"\\n'
+        'exec python3 -m dbvora.archive.review_selftest\\n'
+    ).encode('ascii')
     files['export_dbvora_map_windows.cmd'] = (
         '@echo off\r\nsetlocal\r\ncd /d "%~dp0"\r\n'
         'if "%~1"=="" goto usage\r\n'
