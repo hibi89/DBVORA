@@ -1,3 +1,15 @@
+## 2026-11-11 KST — P1-PG01 PostgreSQL catalog read-only contract checkpoint
+1. Goal: advance missing PostgreSQL metadata support for 70% target while preserving SQLite/archive customers and permissions.
+2. Delivered: stand-alone opt-in psycopg3 metadata-only catalog adapter, TLS verify-full and transaction read_only, bounded static SELECTs for schema/table/size/column/PK/FK/index; no user supplied SQL, no automatic connection.
+3. Tests: exact local source/test blobs bec1a361... / 9191cab8... match, new PostgreSQL fake catalog 15/15 PASS, combined original + P3 request service + PG 147/147 PASS Linux Python3.13.5, strict ResourceWarning, 0 FAIL/SKIP. Real PostgreSQL server and complete >=429 gate NOT RUN.
+4. Status: separate prototype module not yet wired to workspace/UI, readiness 55% provisional unchanged, 70% unmet, RELEASE HOLD.
+5. Blockers: no psycopg driver/approved sandbox PostgreSQL test endpoint; actual `pg_catalog` query compatibility and client TLS/untrusted credentials not tested. No unauthorized connections or user data; do not call live PostgreSQL verified.
+6. Repo/branch: hibi89/DBVORA feature/p0-db-map previous SHA 4d7c44fd7f91459b8b5e2eb66e8f267f7ce933a4, new final SHA verify. Paths new postgres_reader.py, test_postgres_reader.py, gate/doc.
+7. Deploy/runtime: local Linux Python3.13.5; Windows3.11, real Postgres, browsers not verified; Vercel/production N/A.
+8. Originals: no PostgreSQL credentials, customer DB, existing archive, source SQLite, paid CI, GitHub main/develop, deployment or security policy modified. Previous commit can revert additions.
+9. Next: live approved read-only PostgreSQL with TLS plus index/FK query validation and workspace normalization; full Python >=429, Node DOM/Chromium and Windows/NTFS package, then reassess 70%.
+10. Updated 2026-11-11 KST; exact per-file source hash and 147 targeted tests only, not entire repo.
+
 ## 2026-11-11 KST — P3-05 synthetic request archive-once verified core
 1. Objective/stack: advance DBVORA from 55 to 70 with local-only safe request idempotency groundwork; Python3.11 stdlib + optional installed ZSTD.
 2. Changed: independent synthetic-only service, `archive_once`, binds snapshot SHA+codec+level+destination to request, reserves first, uses real ZIP/ZSTD engine and independent restore catalog audit, records unverified digest, never auto retries or overwrites.

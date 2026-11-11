@@ -1,3 +1,9 @@
+## 2026-11-11 KST — P1-PG01 immediate unfinished
+1. Full checkout `python -m scripts.verify_release_gate` with Python >=429, Node/browser and ZIP/ZSTD + P3 request-service tests.
+2. Safely validate PostgreSQL SQL against **owner-approved read-only sandbox** only, optional installed psycopg3 and TLS verify-full; no credential logging/remote telemetry. This connector is not currently exposed by workspace/UI.
+3. Verify Windows3.11/NTFS synthetic artifact publication + package installer, P3 ledger crash recovery. Read-only PG, P3 automatic schedule and final Windows customer acceptance remain before 70%.
+4. Provisional 55% unchanged pending acceptance, RELEASE HOLD, no external DB connection used in this turn.
+
 ## 2026-11-11 KST — P3-05 highest priority
 - Confirm new exact `feature/p0-db-map` commit, two new source Git blobs and docs parity. Full Python `unittest discover` floor is now **414**, not yet executed.
 - From complete source checkout run `python -m scripts.verify_release_gate`, then browser smoke/Node, then a native Python3.11 Windows/NTFS synthetic ZIP/ZSTD backup+restore+replay fault gate. Use authorized test directories only; no real customer data until explicitly approved.
