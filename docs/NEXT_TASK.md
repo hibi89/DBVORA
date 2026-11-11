@@ -1,3 +1,8 @@
+## 2026-11-11 — P3-03 first unfinished verified release gate
+- Commit adds `python -m scripts.request_archive_gate` real-source acceptance and 17 fault tests. Prior 17/17 local tests were with CLI/ledger stand-ins; no integrated production code verification.
+- On **complete private checkout**, run `python -W error::ResourceWarning -m unittest -v tests.test_request_archive_gate`, `python -m scripts.request_archive_gate` and `python -m scripts.verify_release_gate`. Floor >=397 Python + Node TAP + existing ZIP/ZSTD + new 9-check request replay gate.
+- Next native Windows Python3.11/NTFS crash/restore tests and user-facing source-only consent before raising completion. No paid CI/real customer DB/force push/public mirror. Provisional 55% until proven.
+
 ## 2026-11-11 KST — P3-02 next priority (supersedes old milestones)
 1. This branch has **synthetic gate-only** request reservation integrated with genuine archive CLI calls. Run `python -m scripts.synthetic_cli_gate` from a **complete authorized checkout**, then `python -m scripts.verify_release_gate` (Python >=378, Node TAP 1, ZIP/ZSTD and filesystem). The new two P3-02 tests have not been run on current commit.
 2. Require exact source blob SHA verification and actual Linux/Windows results, do not re-use prior 30-case evidence as new integrated proof.

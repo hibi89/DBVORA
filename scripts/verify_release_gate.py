@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 378
+EXPECTED_PYTHON_TESTS = 397
 EXPECTED_GATE_CHECKS = 9
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"\bskipped=(\d+)\b", re.IGNORECASE)
@@ -54,6 +54,7 @@ REQUIRED = (
     "tests/test_workspace_html_dom.cjs",
     "tests/test_schema_review_identifier_case.py",
     "dbvora/archive/request_ledger.py", "tests/test_request_ledger.py",
+    "scripts/request_archive_gate.py", "tests/test_request_archive_gate.py",
 )
 
 
@@ -190,6 +191,33 @@ def verify():
                                  "temporary_folder_unavailable", "not_run") else "NOT_REPORTED"),
                             "error_code": _safe_code(preflight.get("failure_code"))
                             if not preflight_pass else None})
+
+    # A separate, fresh synthetic ZIP request replay gate. This does not
+    # certify Windows NTFS, crash-atomic publication, or customer readiness.
+    code, out, _ = _run([sys.executable, "-m", "scripts.request_archive_gate"], timeout=240)
+    try:
+        request_gate = json.loads(out)
+    except (ValueError, TypeError):
+        request_gate = {}
+    request_ok = (
+        code == 0 and request_gate.get("status") == "PASS_SYNTHETIC_REQUEST_AND_ZIP_ONLY"
+        and type(request_gate.get("checks")) is int and request_gate["checks"] >= 9
+        and request_gate.get("archive_executed") is True
+        and request_gate.get("replay_held") is True
+        and request_gate.get("zip_restore_content_verified") is True
+        and request_gate.get("ledger_artifact_state") == "RECORDED_UNVERIFIED"
+        and request_gate.get("ready_for_customer_data") is False
+        and request_gate.get("exactly_once_verified") is False
+        and request_gate.get("windows_ntfs_verified") is False
+    )
+    report["steps"].append({"step": "synthetic_request_zip_replay",
+                            "status": "PASS" if request_ok else "FAIL",
+                            "checks": request_gate.get("checks", 0)
+                                if type(request_gate.get("checks")) is int else 0,
+                            "exit_code": code if type(code) is int else -1,
+                            "error_code": "NONE" if request_ok else
+                                _safe_code(request_gate.get("error_code"), "REQUEST_GATE_FAILED")})
+
     if all(step["status"] == "PASS" for step in report["steps"]):
         report["status"] = "PASS_SYNTHETIC_ENVIRONMENT_ONLY"
     return report

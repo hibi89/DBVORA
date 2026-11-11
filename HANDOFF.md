@@ -1,3 +1,15 @@
+## 2026-11-11 KST — P3-03 synthetic archive replay/tampering checkpoint
+1. Goal: DBVORA safe read-only/synthetic archiving progress toward 70%, no customer exposure.
+2. Added: independent synthetic-only request gate; reserve → source snapshot → ZIP SHA → restore integrity → unverified ledger record → replay hold; interruption after reserve and tamper/refusal tests. Full release gate now includes this stage.
+3. Test scope: exact git source/test blobs source SHA 1e502359.../cca55e4b..., local Linux Python3.13.5 strict 17/17 tests PASS and stand-in CLI SQLite ZIP roundtrip PASS. Existing original CLI/ledger not executed in this isolated environment, full >=397 Python/Node/Windows unrun.
+4. State: readiness 55% provisional; target 70% unmet; RELEASE HOLD.
+5. Blocker: full private GitHub checkout cannot be materialized using authorized tools; new runner meant to fail closed if full source missing. Avoid paid Actions, repeating inaccessible clone, and false equivalence of stub vs original integration.
+6. Repo: hibi89/DBVORA feature/p0-db-map previous HEAD 985ff2edca604e22aa4c42e4caf5d2bcc3ec315c, new SHA verify after commit. Paths scripts/request_archive_gate.py, tests/test_request_archive_gate.py, scripts/verify_release_gate.py and docs/P3_03_REQUEST_ARCHIVE_FAULTS_20261111.md.
+7. Runtime: Python3.13.5 isolated synthetic Linux; intended Python3.11 Windows NTFS, Vercel/Production N/A.
+8. Originals/backups/auth: customer DB, previous SQLite archives, main/develop, privileges, credentials, paid services, release unchanged. Normal Git revert rollback.
+9. Next: source-exact full checkout and real `python -m scripts.verify_release_gate` >=397, Windows3.11 NTFS backup/restore with disposable files; only then consider request ID customer CLI, scheduling and actual 70% milestone.
+10. KST 2026-11-11; precise verification scope isolated, not production.
+
 ## 2026-11-11 KST — P3-02 synthetic actual-CLI request replay integration handoff
 1. Goal/stack: advance DBVORA toward 70% by linking existing P3-01 SQLite reservation to synthetic archive CLI acceptance; Python3.11+ stdlib, ZIP and optional ZSTD.
 2. Completed: reserve-before-snapshot, independent ZIP/restore/receipt validation then record UNSIGNED/UNVERIFIED archive digest, repeated request fails closed; existing archive_cli unchanged.
