@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 499
+EXPECTED_PYTHON_TESTS = 516
 EXPECTED_GATE_CHECKS = 9
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"\bskipped=(\d+)\b", re.IGNORECASE)
@@ -60,6 +60,7 @@ REQUIRED = (
     "dbvora/multi_engine_report.py", "tests/test_multi_engine_report.py",
     "dbvora/archive/request_audit.py", "tests/test_request_audit.py",
     "dbvora/archive/review_html.py", "tests/test_review_html.py",
+    "scripts/recovery_review_gate.py", "tests/test_recovery_review_gate.py",
     "dbvora/mixed_cli.py", "tests/test_mixed_cli.py",
 )
 
@@ -223,6 +224,41 @@ def verify():
                             "exit_code": code if type(code) is int else -1,
                             "error_code": "NONE" if request_ok else
                                 _safe_code(request_gate.get("error_code"), "REQUEST_GATE_FAILED")})
+
+    # Separate synthetic-only full engine snapshot -> archive -> independent
+    # recovery catalog -> local static report -> replay and corruption HOLD.
+    # Does not prove Windows durability, exactly-once, or customer readiness.
+    code, out, _ = _run([sys.executable, "-m", "scripts.recovery_review_gate"], timeout=240)
+    try:
+        recovery = json.loads(out)
+    except (ValueError, TypeError):
+        recovery = {}
+    recovery_checks = recovery.get("checks", 0)
+    recovery_zstd = recovery.get("optional_zstd")
+    recovery_ok = (
+        code == 0 and recovery.get("status") == "PASS_SYNTHETIC_ARCHIVE_REVIEW_ONLY"
+        and type(recovery_checks) is int
+        and recovery_checks >= (16 if zstd_available else 8)
+        and recovery.get("zip") == "passed"
+        and (recovery_zstd == "passed" if zstd_available
+             else recovery_zstd == "skipped_no_local_codec")
+        and recovery.get("replay_held") is True
+        and recovery.get("content_corruption_detected") is True
+        and recovery.get("offline_html_written") is True
+        and recovery.get("source_unchanged") is True
+        and recovery.get("customer_ready") is False
+        and recovery.get("exactly_once_verified") is False
+        and recovery.get("power_loss_verified") is False
+        and recovery.get("windows_ntfs_verified") is False
+    )
+    report["steps"].append({"step": "synthetic_recovery_review",
+                            "status": "PASS" if recovery_ok else "FAIL",
+                            "checks": recovery_checks if type(recovery_checks) is int else 0,
+                            "exit_code": code if type(code) is int else -1,
+                            "zstd": recovery_zstd if recovery_zstd in
+                                ("passed", "skipped_no_local_codec") else "failed",
+                            "error_code": "NONE" if recovery_ok else
+                                _safe_code(recovery.get("error_code"), "RECOVERY_REVIEW_GATE_FAILED")})
 
     if all(step["status"] == "PASS" for step in report["steps"]):
         report["status"] = "PASS_SYNTHETIC_ENVIRONMENT_ONLY"
