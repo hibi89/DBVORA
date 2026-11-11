@@ -149,16 +149,16 @@ def _contents(root: Path) -> dict[str, bytes]:
         'exec python3 -m dbvora.offline_selftest\n'
     ).encode('utf-8')
     files['check_dbvora_archive_windows.cmd'] = (
-        '@echo off\\r\\nsetlocal\\r\\ncd /d "%~dp0"\\r\\n'
-        'if not "%~1"=="" (echo No arguments: synthetic-only archive check. 1>&2 & exit /b 2)\\r\\n'
-        'py -3.11 -B -m dbvora.archive.review_selftest\\r\\n'
-        'exit /b %ERRORLEVEL%\\r\\n'
+        '@echo off\r\nsetlocal\r\ncd /d "%~dp0"\r\n'
+        'if not "%~1"=="" (echo No arguments: synthetic-only archive check. 1>&2 & exit /b 2)\r\n'
+        'py -3.11 -B -m dbvora.archive.review_selftest\r\n'
+        'exit /b %ERRORLEVEL%\r\n'
     ).encode('ascii')
     files['check_dbvora_archive_unix.sh'] = (
-        '#!/bin/sh\\nset -eu\\n'
-        'if [ "$#" -ne 0 ]; then echo "No arguments: synthetic-only archive check" >&2; exit 2; fi\\n'
-        'cd "$(dirname "$0")"\\n'
-        'exec python3 -m dbvora.archive.review_selftest\\n'
+        '#!/bin/sh\nset -eu\n'
+        'if [ "$#" -ne 0 ]; then echo "No arguments: synthetic-only archive check" >&2; exit 2; fi\n'
+        'cd "$(dirname "$0")"\n'
+        'exec python3 -m dbvora.archive.review_selftest\n'
     ).encode('ascii')
     files['export_dbvora_map_windows.cmd'] = (
         '@echo off\r\nsetlocal\r\ncd /d "%~dp0"\r\n'
