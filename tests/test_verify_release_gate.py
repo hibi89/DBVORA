@@ -23,7 +23,7 @@ class VerificationGateTests(unittest.TestCase):
         self.root_patch.start()
         self.addCleanup(self.root_patch.stop)
 
-    def responses(self, *, tests=499, checks=10, zstd='passed', customer_ready=False):
+    def responses(self, *, tests=516, checks=10, zstd='passed', customer_ready=False):
         return [
             (0, '', f'Ran {tests} tests in 1.000s\nOK'),
             (0, json.dumps({'status': 'PASS_SYNTHETIC_ONLY',
@@ -39,6 +39,12 @@ class VerificationGateTests(unittest.TestCase):
                             'ledger_artifact_state': 'RECORDED_UNVERIFIED',
                             'ready_for_customer_data': False, 'exactly_once_verified': False,
                             'windows_ntfs_verified': False}), ''),
+            (0, json.dumps({'status': 'PASS_SYNTHETIC_ARCHIVE_REVIEW_ONLY',
+                            'checks': 16, 'zip': 'passed', 'optional_zstd': 'passed',
+                            'replay_held': True, 'content_corruption_detected': True,
+                            'offline_html_written': True, 'source_unchanged': True,
+                            'customer_ready': False, 'exactly_once_verified': False,
+                            'power_loss_verified': False, 'windows_ntfs_verified': False}), ''),
         ]
 
     def test_full_mocked_gate_synthetic_pass_not_customer_release(self):
@@ -46,7 +52,7 @@ class VerificationGateTests(unittest.TestCase):
             report = gate.verify()
         self.assertEqual(report['status'], 'PASS_SYNTHETIC_ENVIRONMENT_ONLY')
         self.assertFalse(report['ready_for_customer_data'])
-        self.assertEqual(len(report['steps']), 7)
+        self.assertEqual(len(report['steps']), 8)
 
     def test_incomplete_checkout_fails_before_execution(self):
         (self.root / 'dbvora/archive/safe_zip.py').unlink()
@@ -79,7 +85,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_one_optional_zstd_skip_is_allowed_only_without_binary(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=9)
-        mocked[0] = (0, '', 'test_zstd_roundtrip_when_optional_codec_exists (test_archive_cli.ArchiveCliTests.test_zstd_roundtrip_when_optional_codec_exists) ... skipped \'optional external zstd executable unavailable\'\nRan 499 tests in 1.000s\nOK (skipped=1)')
+        mocked[0] = (0, '', 'test_zstd_roundtrip_when_optional_codec_exists (test_archive_cli.ArchiveCliTests.test_zstd_roundtrip_when_optional_codec_exists) ... skipped \'optional external zstd executable unavailable\'\nRan 516 tests in 1.000s\nOK (skipped=1)')
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -87,7 +93,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_any_skip_with_zstd_installed_fails_closed(self):
         mocked = self.responses()
-        mocked[0] = (0, '', 'Ran 499 tests in 1.000s\nOK (skipped=1)')
+        mocked[0] = (0, '', 'Ran 516 tests in 1.000s\nOK (skipped=1)')
         with patch.object(gate, '_run', side_effect=mocked), patch.object(gate.shutil, 'which', return_value='tool'):
             result = gate.verify()
         self.assertEqual(result['status'], 'FAIL_CLOSED')
@@ -95,7 +101,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_more_than_one_skip_without_zstd_fails_closed(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=9)
-        mocked[0] = (0, '', 'Ran 499 tests in 1.000s\nOK (skipped=2)')
+        mocked[0] = (0, '', 'Ran 516 tests in 1.000s\nOK (skipped=2)')
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -112,7 +118,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_unrelated_skip_rejected_even_without_zstd(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=9)
-        mocked[0] = (0, '', "test_backup (test_safety.Safety.test_backup) ... skipped 'bad reason'\nRan 499 tests in 1.000s\nOK (skipped=1)")
+        mocked[0] = (0, '', "test_backup (test_safety.Safety.test_backup) ... skipped 'bad reason'\nRan 516 tests in 1.000s\nOK (skipped=1)")
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -120,7 +126,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_skip_summary_without_identity_line_rejected(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=9)
-        mocked[0] = (0, '', 'Ran 499 tests in 1.000s\nOK (skipped=1)')
+        mocked[0] = (0, '', 'Ran 516 tests in 1.000s\nOK (skipped=1)')
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -128,7 +134,7 @@ class VerificationGateTests(unittest.TestCase):
 
     def test_skip_identity_from_named_case_only(self):
         mocked = self.responses(zstd='skipped_no_local_codec', checks=9)
-        mocked[0] = (0, '', "test_zstd_roundtrip_when_optional_codec_exists (test_archive_cli.ArchiveCliTests.test_zstd_roundtrip_when_optional_codec_exists) ... skipped 'wrong reason'\nRan 499 tests in 1.000s\nOK (skipped=1)")
+        mocked[0] = (0, '', "test_zstd_roundtrip_when_optional_codec_exists (test_archive_cli.ArchiveCliTests.test_zstd_roundtrip_when_optional_codec_exists) ... skipped 'wrong reason'\nRan 516 tests in 1.000s\nOK (skipped=1)")
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', side_effect=lambda name: None if name == 'zstd' else '/usr/bin/node'
         ):
@@ -173,7 +179,7 @@ class VerificationGateTests(unittest.TestCase):
         mocked[0] = (1, '', "test_archive_failure (test_safe_zip.ZipTests.test_archive_failure) ... FAIL\n"
                      "FAIL: test_archive_failure (test_safe_zip.ZipTests.test_archive_failure)\n"
                      "Traceback secret C:\\\\customer\\\\source.sqlite\n"
-                     "Ran 499 tests in 1.0s\nFAILED (failures=1, skipped=1)")
+                     "Ran 516 tests in 1.0s\nFAILED (failures=1, skipped=1)")
         with patch.object(gate, '_run', side_effect=mocked), patch.object(gate.shutil, 'which', return_value='tool'):
             step = gate.verify()['steps'][1]
         self.assertEqual(step['status'], 'FAIL')
@@ -233,7 +239,7 @@ class VerificationGateTests(unittest.TestCase):
     def test_skip_ids_are_sanitized_without_reasons_or_paths(self):
         mocked = self.responses()
         mocked[0] = (1, '', "test_missing_symlink (test_safety.FileSafety.test_missing_symlink) ... skipped 'C:\\private\\bad'\n"
-                     "Ran 499 tests in 1.0s\nFAILED (errors=1, skipped=1)")
+                     "Ran 516 tests in 1.0s\nFAILED (errors=1, skipped=1)")
         with patch.object(gate, '_run', side_effect=mocked), patch.object(
             gate.shutil, 'which', return_value='tool'
         ):
@@ -269,6 +275,31 @@ class VerificationGateTests(unittest.TestCase):
             gate.shutil, 'which', return_value='tool'
         ):
             self.assertEqual(gate.verify()['status'], 'FAIL_CLOSED')
+
+    def test_recovery_review_gate_rejects_missing_corruption_evidence(self):
+        responses = self.responses()
+        failing = json.loads(responses[6][1])
+        failing['content_corruption_detected'] = False
+        responses[6] = (0, json.dumps(failing), '')
+        with patch.object(gate, '_run', side_effect=responses), patch.object(
+            gate.shutil, 'which', return_value='tool'
+        ):
+            report = gate.verify()
+        self.assertEqual(report['status'], 'FAIL_CLOSED')
+        self.assertEqual(report['steps'][-1]['step'], 'synthetic_recovery_review')
+        self.assertEqual(report['steps'][-1]['status'], 'FAIL')
+
+    def test_recovery_review_gate_rejects_customer_ready_claim(self):
+        responses = self.responses()
+        falsified = json.loads(responses[6][1])
+        falsified['customer_ready'] = True
+        responses[6] = (0, json.dumps(falsified), '')
+        with patch.object(gate, '_run', side_effect=responses), patch.object(
+            gate.shutil, 'which', return_value='tool'
+        ):
+            report = gate.verify()
+        self.assertEqual(report['status'], 'FAIL_CLOSED')
+        self.assertFalse(report['ready_for_customer_data'])
 
 if __name__ == '__main__':
     unittest.main()
