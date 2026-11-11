@@ -1,6 +1,6 @@
 ## 2026-11-12 KST — P3-06 latest, target 85%; full integration verification first
-- Added synthetic-only read-only audit CLI `python -m dbvora.archive.request_audit --ledger-dir ... --archive-dir ... --synthetic-only`; isolated Linux reconstructed test 16 PASS, **whole repository NOT RUN**.
-- **Highest priority:** complete original checkout, `python -m scripts.verify_release_gate` (Python minimum 476 + Node), archive request replay and recovery tests with original source; no test count reduction or release-acceptance shortcut.
+- Added synthetic-only read-only audit CLI `python -m dbvora.archive.request_audit --ledger-dir ... --archive-dir ... --synthetic-only`; isolated Linux reconstructed test 17 PASS, **whole repository NOT RUN**.
+- **Highest priority:** complete original checkout, `python -m scripts.verify_release_gate` (Python minimum 477 + Node), archive request replay and recovery tests with original source; no test count reduction or release-acceptance shortcut.
 - Then native Windows Python3.11 NTFS and `file://` browser; approved read-only PostgreSQL TLS role only if separately authorized. All customer source and output remain protected.
 - Product readiness remains **70% provisional / 85% NOT MET / RELEASE HOLD**. See `docs/P3_06_REQUEST_LEDGER_AUDIT_20261112.md`.
 
