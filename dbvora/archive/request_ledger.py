@@ -109,7 +109,14 @@ def _connect(root: Path, *, create: bool = True):
             if not checked:
                 raise LedgerError("UNTRUSTED_LEDGER_FILE")
         # SQLite is only used on the explicitly selected existing local directory.
-        connection = sqlite3.connect(path, timeout=2.0, isolation_level=None)
+        # Record-only connections must not create a replacement ledger when
+        # the existing file disappears after earlier path/identity validation.
+        if create:
+            connection = sqlite3.connect(path, timeout=2.0, isolation_level=None)
+        else:
+            existing_uri = "file:" + quote(str(path), safe="/") + "?mode=rw"
+            connection = sqlite3.connect(existing_uri, uri=True, timeout=2.0,
+                                         isolation_level=None)
         if _file_identity(path) != identity:
             connection.close()
             raise LedgerError("LEDGER_REPLACED")
