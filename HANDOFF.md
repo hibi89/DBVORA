@@ -1,3 +1,15 @@
+## 2026-11-11 KST — P0-13 full-source-slice 15/15 exact Git blob follow-up
+1. Goal: close SQLite identifier advisory regression without weakening DBVORA readiness gate.
+2. Completed: original git source 2 modules, previous 9 tests, newly committed 6 tests reconstructed without code edits.
+3. Evidence: four exact Git blob SHAs local hash-object MATCH. Python3.13.5 Linux strict ResourceWarning original 15/15 PASS, 0 FAIL/SKIP, compileall PASS. This supersedes earlier equivalent-only six-case evidence.
+4. Scope/status: targeted module-slice PASS; complete repository >=361 unittest, Node, real CLI, Windows/NTFS, customer data still NOT RUN. Completion 55% unchanged, RELEASE HOLD.
+5. Error/blocker: full private repo checkout via inaccessible Git transport remains unavailable; exact slice GitHub connector reconstruction succeeded. Avoid claiming broad integration or repeating blocked clone.
+6. Repository: hibi89/DBVORA feature/p0-db-map code+test SHA 43ce6ac8e3e8369f0d1cbb71e904dbc3fd34cab3; document-only verification update SHA to be confirmed.
+7. Runtime/production: Linux Python3.13.5; Windows Python3.11 unverified; no hosted deployment, Vercel N/A.
+8. Preservation: original SQLite/archive/customer data, credentials, main/develop, paid CI and rights unchanged; normal Git revert available.
+9. Next: complete authorized checkout run python -m scripts.verify_release_gate (>=361) then Windows/NTFS, real browser and archive acceptance; only then reassess target 70.
+10. 2026-11-11 KST checkpoint, original source/test 4 SHA and 15 scoped tests confirmed.
+
 ## 2026-11-11 KST — P0-13 SQLite catalog FK index case proof checkpoint
 1. Objective/stack: safely advance DBVORA 55% toward 70% without customer data, using SQLite catalog metadata and Python3.11+ stdlib.
 2. Change/decision: use existing sqlite_identifier_key ASCII-only comparison for FK index/PK prefix instead of widening to DB queries; validate malformed index keys; six regression cases and 355->361 floor.
