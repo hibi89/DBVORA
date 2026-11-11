@@ -133,10 +133,10 @@ def verify(root: Path | None = None) -> dict:
             raise PortableVerifyError('PACKAGE_ENTRY_LIMIT')
         try:
             relative = path.relative_to(folder)
-            if '__pycache__' in relative.parts or path.suffix == '.pyc':
-                continue
             if path.is_symlink():
                 raise PortableVerifyError('UNSAFE_PACKAGE_ENTRY')
+            if '__pycache__' in relative.parts or path.suffix == '.pyc':
+                continue
             if path.is_file() and path.suffix in ('.py', '.js', '.html', '.css') and relative.as_posix() not in files:
                 raise PortableVerifyError('UNLISTED_PACKAGE_SOURCE')
         except PortableVerifyError:
