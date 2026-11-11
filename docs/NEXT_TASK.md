@@ -1,3 +1,9 @@
+## 2026-11-11 KST — P3-02 next priority (supersedes old milestones)
+1. This branch has **synthetic gate-only** request reservation integrated with genuine archive CLI calls. Run `python -m scripts.synthetic_cli_gate` from a **complete authorized checkout**, then `python -m scripts.verify_release_gate` (Python >=378, Node TAP 1, ZIP/ZSTD and filesystem). The new two P3-02 tests have not been run on current commit.
+2. Require exact source blob SHA verification and actual Linux/Windows results, do not re-use prior 30-case evidence as new integrated proof.
+3. Then test Windows3.11/NTFS with original `py -3.11 -B -m scripts.windows_ntfs_gate` and a safe copied fixture. Do not modify user-facing archive_cli or enable scheduling until request ledger and post-crash recovery are proven.
+4. Commercial completeness remains **55% provisional**, 70 target pending; release HOLD. No customer files, paid CI, real backup overwrites, changed permissions or production.
+
 # NEXT_TASK — authentic frontend assets and full 199-case integration gate
 
 > **Latest active work is the final section of this document.** Older first-unfinished headings below are preserved as historical checkpoints and must not be repeated.

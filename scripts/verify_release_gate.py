@@ -12,8 +12,8 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 376
-EXPECTED_GATE_CHECKS = 7
+EXPECTED_PYTHON_TESTS = 378
+EXPECTED_GATE_CHECKS = 9
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"\bskipped=(\d+)\b", re.IGNORECASE)
 FAILED_TEST = re.compile(r"(?m)^(?:FAIL|ERROR): (test_[A-Za-z0-9_]+) \(([A-Za-z0-9_.]+)\)")

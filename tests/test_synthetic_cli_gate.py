@@ -88,6 +88,29 @@ class SyntheticCliGateTests(unittest.TestCase):
         self.assertEqual(data['error_code'], 'HASH_MISMATCH')
         self.assertIs(data['ready_for_customer_data'], False)
 
+    def test_replayed_request_fails_before_archive_call(self):
+        from dbvora.archive.request_ledger import reserve
+        with tempfile.TemporaryDirectory(prefix='dbvora-synthetic-replay-') as tmp:
+            root = Path(tmp)
+            plan = hashlib.sha256(b'local-test-plan').hexdigest()
+            gate._reserve_new_request(root, 'synthetic-request-test-001', plan)
+            with self.assertRaises(gate.GateFailure) as error:
+                gate._reserve_new_request(root, 'synthetic-request-test-001', plan)
+            self.assertEqual(str(error.exception), 'REQUEST_RESERVATION_FAILED')
+            self.assertEqual(reserve(root, 'synthetic-request-test-001', plan)['status'],
+                             'REPLAY_REQUIRES_MANUAL_REVIEW')
+
+    def test_recorded_request_is_not_verified_or_replayed_as_success(self):
+        from dbvora.archive.request_ledger import reserve
+        with tempfile.TemporaryDirectory(prefix='dbvora-synthetic-record-') as tmp:
+            root = Path(tmp)
+            plan = hashlib.sha256(b'local-test-plan').hexdigest()
+            gate._reserve_new_request(root, 'synthetic-request-test-002', plan)
+            gate._record_then_hold_replay(root, 'synthetic-request-test-002', plan, 'a' * 64)
+            self.assertEqual(reserve(root, 'synthetic-request-test-002', plan)['status'],
+                             'RECORDED_REQUIRES_ARTIFACT_VERIFICATION')
+
+
 
 if __name__ == '__main__':
     unittest.main()

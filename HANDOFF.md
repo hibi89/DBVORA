@@ -1,3 +1,15 @@
+## 2026-11-11 KST — P3-02 synthetic actual-CLI request replay integration handoff
+1. Goal/stack: advance DBVORA toward 70% by linking existing P3-01 SQLite reservation to synthetic archive CLI acceptance; Python3.11+ stdlib, ZIP and optional ZSTD.
+2. Completed: reserve-before-snapshot, independent ZIP/restore/receipt validation then record UNSIGNED/UNVERIFIED archive digest, repeated request fails closed; existing archive_cli unchanged.
+3. Tests: two new regression tests checked in, local equivalent boundary logic 2/2 PASS with stubs; **full exact-source code/CLI >=378 Python, new two tests, Node, native Windows unexecuted**. Old P3-01 30/30 belongs to prior SHA.
+4. Status: code committed to feature only; 55% provisional unchanged, 70% not reached, RELEASE HOLD.
+5. Blockers: complete private checkout unavailable via old Git transport in runtime; real native Windows NTFS and archive-power-loss checks pending; no paid CI or customer DB approval. Avoid claiming stub checks prove real CLI operation.
+6. Repo/branch: hibi89/DBVORA feature/p0-db-map; parent 650955698c4ed4725c4751a5ae7369b474737bc7; current new SHA verify after write. Paths scripts/synthetic_cli_gate.py, tests/test_synthetic_cli_gate.py, scripts/verify_release_gate.py, docs/P3_02_SYNTHETIC_REQUEST_ARCHIVE_20261111.md.
+7. Runtime/production: local Python3.13.5 stub gate only, intended Windows3.11, Vercel/Production N/A.
+8. Source/backups/security: original customer data/ZIPs, main/develop, real CLI, credentials/paid workflows untouched, ordinary Git revert rollback via previous parent.
+9. Next: original source-slice regression with exact blobs, full 378-case gate + Node + real ZIP restore, Windows NTFS, then owner-approved user-facing idempotency integration after crash test.
+10. 2026-11-11 KST, scope limited to inserted helper decision verification and repository commit, all other gates NOT RUN.
+
 ## 2026-11-11 KST — P3-01 request ledger prototype, independent and not wired
 1. Goal/stack: progress DBVORA 55→70 with an opt-in local Python3.11 stdlib SQLite reservation ledger before future archive automation.
 2. Implemented: distinct request hash/plan digest, SQLite full-sync transactional reservation, replay review, caller-supplied artifact digest state (NOT verified), symlink/unknown-ledger refusal; 15 new tests. A SQLite ledger selected over separate O_EXCL JSON markers for bounded concurrency, no external library.

@@ -18,6 +18,7 @@ import sys
 import tempfile
 
 from dbvora.archive_cli import main as archive_cli_main
+from dbvora.archive.request_ledger import reserve, record_artifact
 from tests.fixtures.make_sqlite import create_fixture
 
 
@@ -68,6 +69,28 @@ def _check(condition, code):
         raise GateFailure(code)
 
 
+
+def _reserve_new_request(ledger_dir: Path, request_id: str, plan_sha: str) -> None:
+    """Fail closed BEFORE invoking archive_cli when a request is not new."""
+    entry = reserve(ledger_dir, request_id, plan_sha)
+    _check(entry.get('status') == 'RESERVED_NOT_EXECUTED'
+           and entry.get('archive_executed') is False
+           and entry.get('exactly_once_verified') is False,
+           'REQUEST_RESERVATION_FAILED')
+
+
+def _record_then_hold_replay(ledger_dir: Path, request_id: str,
+                             plan_sha: str, archive_sha: str) -> None:
+    """Record *unverified* digest after caller has independently verified ZIP."""
+    record = record_artifact(ledger_dir, request_id, plan_sha, archive_sha)
+    _check(record.get('status') == 'RECORDED_UNVERIFIED'
+           and record.get('independent_artifact_verification') is False,
+           'LEDGER_RECORD_UNVERIFIED')
+    replay = reserve(ledger_dir, request_id, plan_sha)
+    _check(replay.get('status') == 'RECORDED_REQUIRES_ARTIFACT_VERIFICATION'
+           and replay.get('exactly_once_verified') is False,
+           'REPLAY_NOT_HELD')
+
 def run_gate(*, include_zstd=True):
     """Run genuine library calls end-to-end, then report only synthetic hashes."""
     result = {
@@ -88,9 +111,16 @@ def run_gate(*, include_zstd=True):
         restore_dir = root / 'restored'
         for folder in (src_dir, snap_dir, arc_dir, restore_dir):
             folder.mkdir()
+        ledger_dir = root / 'request_ledger'
+        ledger_dir.mkdir()
         original = create_fixture(src_dir / 'fixture.sqlite')
         before = (hashlib.sha256(original.read_bytes()).hexdigest(),
                   original.stat().st_mtime_ns, original.stat().st_size)
+
+        request_id = 'synthetic-request-zip-0001'
+        plan_sha = hashlib.sha256(b'dbvora.synthetic-archive-request.v1').hexdigest()
+        _reserve_new_request(ledger_dir, request_id, plan_sha)
+        result['checks'].append('request_reserved_before_any_archive_execution')
 
         snapshot = _invoke('snapshot', '--source', str(original),
                            '--output-dir', str(snap_dir), '--synthetic-only',
@@ -124,6 +154,14 @@ def run_gate(*, include_zstd=True):
         _check(entries.get(zip_path.name) == 'RECORDED_AND_CONTENT_VERIFIED_UNSIGNED',
                'RECEIPT_AUDIT_FAILED')
         result['checks'].append('read_only_receipt_audit')
+
+        # ZIP hash was independently checked above; the ledger itself still
+        # stores a caller-supplied, unsigned and unverified digest.
+        _record_then_hold_replay(ledger_dir, request_id, plan_sha,
+                                 archive['archive_sha256'])
+        _check(len(list(arc_dir.glob('dbvora-*.zip'))) == 1,
+               'REPLAY_CREATED_DUPLICATE_ARCHIVE')
+        result['checks'].append('recorded_request_replay_held_without_duplicate')
 
         if include_zstd:
             if shutil.which('zstd') is None:
