@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 397
+EXPECTED_PYTHON_TESTS = 414
 EXPECTED_GATE_CHECKS = 9
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"\bskipped=(\d+)\b", re.IGNORECASE)
@@ -55,6 +55,7 @@ REQUIRED = (
     "tests/test_schema_review_identifier_case.py",
     "dbvora/archive/request_ledger.py", "tests/test_request_ledger.py",
     "scripts/request_archive_gate.py", "tests/test_request_archive_gate.py",
+    "dbvora/archive/request_service.py", "tests/test_request_service.py",
 )
 
 

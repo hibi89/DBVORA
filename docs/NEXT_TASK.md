@@ -1,3 +1,9 @@
+## 2026-11-11 KST — P3-05 highest priority
+- Confirm new exact `feature/p0-db-map` commit, two new source Git blobs and docs parity. Full Python `unittest discover` floor is now **414**, not yet executed.
+- From complete source checkout run `python -m scripts.verify_release_gate`, then browser smoke/Node, then a native Python3.11 Windows/NTFS synthetic ZIP/ZSTD backup+restore+replay fault gate. Use authorized test directories only; no real customer data until explicitly approved.
+- `dbvora.archive.request_service.archive_once` is currently **synthetic-only Python API** and does not replace the user CLI/scheduler. Verify request-ID ledger integrity/power-loss edge cases before expanding that boundary. No exactly-once guarantee.
+- Assess PostgreSQL read-only connector, workspace integrations, product packaging, documentation and P4 criteria; score stays **55% provisional** versus target 70%, RELEASE HOLD until evidence improves.
+
 ## 2026-11-11 — P3-03 first unfinished verified release gate
 - Commit adds `python -m scripts.request_archive_gate` real-source acceptance and 17 fault tests. Prior 17/17 local tests were with CLI/ledger stand-ins; no integrated production code verification.
 - On **complete private checkout**, run `python -W error::ResourceWarning -m unittest -v tests.test_request_archive_gate`, `python -m scripts.request_archive_gate` and `python -m scripts.verify_release_gate`. Floor >=397 Python + Node TAP + existing ZIP/ZSTD + new 9-check request replay gate.

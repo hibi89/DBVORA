@@ -1,3 +1,15 @@
+## 2026-11-11 KST — P3-05 synthetic request archive-once verified core
+1. Objective/stack: advance DBVORA from 55 to 70 with local-only safe request idempotency groundwork; Python3.11 stdlib + optional installed ZSTD.
+2. Changed: independent synthetic-only service, `archive_once`, binds snapshot SHA+codec+level+destination to request, reserves first, uses real ZIP/ZSTD engine and independent restore catalog audit, records unverified digest, never auto retries or overwrites.
+3. Tests: Linux3.13.5 source-exact 115 original + 17 new = 132/132 PASS strict ResourceWarning, 0 FAIL/SKIP. Original synthetic_cli_gate 10 PASS, request_archive_gate 9 PASS, preflight PASS; full checkout >=414, real browser, Windows3.11 NTFS customer test NOT RUN.
+4. State: 55% provisional unchanged until broader product QA; target 70% NOT MET, RELEASE HOLD. This code is not an installer or customer CLI.
+5. Error evidence: injected snapshot mutation yielded `REQUEST_PLAN_CONFLICT` on repeated call, not `REQUEST_REPLAY_HELD`; adjusted test to correct fail-closed invariant, reverified 17 and then 132 PASS. No lingering new failed tests.
+6. Repo: hibi89/DBVORA feature/p0-db-map parent 47459828171439a59045f9ed44d7b1862a7cdd0f; new source blob 1ccfa25f7e75f2bc9fe4f0387f019b313b3162cd, tests 9290de8772ee65242135f960b94e60dfaa55986c; final commit SHA verify after push.
+7. Runtime/deploy: local Linux Python3.13.5 synthetic, SQLite3.46.1, installed ZSTD binary; Windows3.11 NTFS unverified, Vercel/Production N/A.
+8. Originals/backup/access: no customer data, GitHub secrets, production, main/develop, external calls/paid CI, automatic deletion, source archival overwrites or author identity changes. Parent Git SHA allows revert.
+9. Next: authorized complete checkout `python -m scripts.verify_release_gate` at minimum 414, Node browser, native Windows/NTFS and crash recovery; PostgreSQL read-only integration and packaging then readiness reevaluation. Do not claim exactly-once for real customer backups.
+10. 2026-11-11 KST, checkpoint source/test 9 modules with exact Git Blob bytes and unit-test scope only; docs based on new feature commit.
+
 ## 2026-11-11 KST — P3-03 synthetic archive replay/tampering checkpoint
 1. Goal: DBVORA safe read-only/synthetic archiving progress toward 70%, no customer exposure.
 2. Added: independent synthetic-only request gate; reserve → source snapshot → ZIP SHA → restore integrity → unverified ledger record → replay hold; interruption after reserve and tamper/refusal tests. Full release gate now includes this stage.
