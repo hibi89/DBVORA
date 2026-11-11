@@ -91,6 +91,45 @@ class PortableTests(unittest.TestCase):
         self.assertEqual(report['error_code'], 'NO_USER_INPUT_ALLOWED')
         self.assertNotIn('private.sqlite', completed.stdout)
 
+    def test_extracted_source_verifier_passes_unsigned_manifest(self):
+        archive = pack.build(self.folder)
+        self.assertEqual(pack.verify_zip(archive)['status'], 'PASS_UNSIGNED_SOURCE_INTEGRITY_ONLY')
+        dest = self.folder / 'verified_extraction'
+        dest.mkdir()
+        with zipfile.ZipFile(archive) as zipped:
+            zipped.extractall(dest)
+            self.assertIn('dbvora/archive/portable_verify.py', zipped.namelist())
+            self.assertIn('verify_dbvora_portable_windows.cmd', zipped.namelist())
+            self.assertIn('verify_dbvora_portable_unix.sh', zipped.namelist())
+        env = dict(os.environ, PYTHONPATH='')
+        result = subprocess.run([sys.executable, '-B', '-m',
+                                 'dbvora.archive.portable_verify'],
+                                cwd=dest, env=env, capture_output=True,
+                                text=True, timeout=15, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        verification = json.loads(result.stdout)
+        self.assertEqual(verification['status'], 'PASS_UNSIGNED_EXTRACTED_CONTENTS_ONLY')
+        self.assertFalse(verification['publisher_authenticity_verified'])
+        self.assertFalse(verification['customer_ready'])
+
+    def test_extracted_source_verifier_rejects_modified_script(self):
+        archive = pack.build(self.folder)
+        dest = self.folder / 'tamper_extraction'
+        dest.mkdir()
+        with zipfile.ZipFile(archive) as zipped:
+            zipped.extractall(dest)
+        with (dest / 'dbvora/archive/request_service.py').open('ab') as stream:
+            stream.write(b'\\n# appended\n')
+        result = subprocess.run([sys.executable, '-B', '-m',
+                                 'dbvora.archive.portable_verify'],
+                                cwd=dest, env=dict(os.environ, PYTHONPATH=''),
+                                capture_output=True, text=True,
+                                timeout=15, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        evidence = json.loads(result.stdout)
+        self.assertEqual(evidence['status'], 'FAIL_CLOSED')
+        self.assertEqual(evidence['error_code'], 'PACKAGE_DIGEST_MISMATCH')
+
     def test_determinism_rebuild_in_new_folder(self):
         a = pack.build(self.folder)
         bdir = self.folder / 'second'
