@@ -1,5 +1,8 @@
 """Opt-in request ledger exercises only temp folder and synthetic digests."""
 from concurrent.futures import ThreadPoolExecutor
+from unittest.mock import patch
+import os
+from dbvora.archive import request_ledger
 from contextlib import closing
 import hashlib
 from pathlib import Path
@@ -106,6 +109,26 @@ class RequestLedgerTests(unittest.TestCase):
     def test_relative_output_is_rejected(self):
         with self.assertRaisesRegex(LedgerError, "INVALID_LEDGER_DIRECTORY"):
             reserve("relative-path", ID, PLAN)
+
+    def test_record_missing_ledger_race_never_creates_new_file(self):
+        # Simulate a positive exists check followed by an absent file.
+        # This used to cause the record-only path to create a fresh ledger.
+        path = self.folder / LEDGER_NAME
+        with patch.object(Path, "exists", return_value=True):
+            with self.assertRaises(LedgerError):
+                record_artifact(self.folder, ID, PLAN, ARTIFACT)
+        self.assertFalse(path.exists())
+
+    def test_record_existing_reservation_never_requests_os_create(self):
+        reserve(self.folder, ID, PLAN)
+        actual_open = os.open
+        def deny_create(file, flags, *args, **kwargs):
+            if flags & os.O_CREAT:
+                self.fail("record-only path attempted OS-level file create")
+            return actual_open(file, flags, *args, **kwargs)
+        with patch.object(request_ledger.os, "open", side_effect=deny_create):
+            result = record_artifact(self.folder, ID, PLAN, ARTIFACT)
+        self.assertEqual(result["status"], "RECORDED_UNVERIFIED")
 
     def test_missing_output_is_not_created(self):
         with self.assertRaisesRegex(LedgerError, "LEDGER_DIRECTORY_UNAVAILABLE"):
