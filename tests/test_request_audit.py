@@ -70,6 +70,14 @@ class RequestReconcileTests(unittest.TestCase):
         self.create_ledger([(sha('id'), sha('plan'), 'RECORDED', digest)])
         self.assertEqual(self.run_audit(catalog(digest, digest))['counts']['DUPLICATE_ARTIFACT_REVIEW_REQUIRED'], 1)
 
+    def test_same_archive_claimed_by_two_requests_is_ambiguous(self):
+        digest = sha('shared')
+        self.create_ledger([(sha('one'), sha('plan1'), 'RECORDED', digest),
+                            (sha('two'), sha('plan2'), 'RECORDED', digest)])
+        result = self.run_audit(catalog(digest))
+        self.assertEqual(result['counts']['RECORDED_MATCH_REVIEW_REQUIRED'], 0)
+        self.assertEqual(result['counts']['DUPLICATE_ARTIFACT_REVIEW_REQUIRED'], 2)
+
     def test_unmatched_verified_archive_not_assumed_approved(self):
         self.create_ledger()
         self.assertEqual(self.run_audit(catalog(sha('orphan')))['unmatched_verified_archive_count'], 1)
