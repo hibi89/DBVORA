@@ -1,3 +1,9 @@
+## 2026-11-12 KST — P3-07 current resume: DBVORA 72 provisional / 85 goal
+- New synthetic-only explicit CLI python -m dbvora.archive.review_html with separate existing ledger/archive/output dirs and --accept-plaintext-summary; automatic replay/authorization prohibited.
+- Local isolated 39 PASS/0 FAIL/0 SKIP and HTML Chromium synthetic 5 rows/0 JS/0 outbound; exact new Git Blob parity. Full original-source Python minimum 499 plus Node, real archive ZIP/ZSTD roundtrip NOT RUN.
+- **Next MUST**: authorized complete original checkout, python -m scripts.verify_release_gate and original archive request service roundtrip; then Windows3.11/NTFS browser file://, approved real PG read-only TLS. No source overwrite, customer credentials, auto retry, paid CI or deployment.
+- Score 70→72 provisional via P3 owner review+P4 static HTML; 85 NOT MET. RELEASE HOLD, no customer acceptance. See docs/P3_07_OFFLINE_RECOVERY_REVIEW_20261112.md.
+
 ## 2026-11-12 KST — P3-06 latest, target 85%; full integration verification first
 - Added synthetic-only read-only audit CLI `python -m dbvora.archive.request_audit --ledger-dir ... --archive-dir ... --synthetic-only`; isolated Linux reconstructed test 17 PASS, **whole repository NOT RUN**.
 - **Highest priority:** complete original checkout, `python -m scripts.verify_release_gate` (Python minimum 477 + Node), archive request replay and recovery tests with original source; no test count reduction or release-acceptance shortcut.
