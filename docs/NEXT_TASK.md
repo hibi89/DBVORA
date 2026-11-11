@@ -1,3 +1,10 @@
+## 2026-11-11 KST — P1-PG02 provisional 70% milestone, 30% unverified product scope
+- New `dbvora/multi_engine_report.py` and `dbvora/mixed_cli.py` with 31 regression tests source-exact; current targeted 178/178 Linux PASS; Chromium set_content 9 conditions PASS, direct file:// blocked by environment. RELEASE HOLD.
+- **Next P0:** whole repo `python -m scripts.verify_release_gate` Python >=460 + Node DOM, ensure old features work after mix report.
+- **Next P1:** authorized nonproduction PostgreSQL actual psycopg3 metadata/TLS/DB ACL test; no credentials in args or source, no auto connection.
+- **Next P4:** native Windows3.11/NTFS SQLite/ZSTD, HTML file:// click/console, package/restore/backward compatibility, power loss tests. Only after verified customer approvals plan release.
+- Engineering 70% is a weighted estimate, not a complete product or commercial release. No automation or pruning enabled.
+
 ## 2026-11-11 KST — P1-PG01 immediate unfinished
 1. Full checkout `python -m scripts.verify_release_gate` with Python >=429, Node/browser and ZIP/ZSTD + P3 request-service tests.
 2. Safely validate PostgreSQL SQL against **owner-approved read-only sandbox** only, optional installed psycopg3 and TLS verify-full; no credential logging/remote telemetry. This connector is not currently exposed by workspace/UI.
