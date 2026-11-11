@@ -36,6 +36,61 @@ class PortableTests(unittest.TestCase):
             self.assertNotIn('tests/test_receipts.py', names)
             self.assertIn('C:\\absolute', z.read('README_PORTABLE.txt').decode('utf-8'))
 
+    def test_bundle_includes_synthetic_archive_selfcheck_and_launchers(self):
+        archive = pack.build(self.folder)
+        self.assertEqual(pack.verify_zip(archive)['status'], 'PASS_UNSIGNED_SOURCE_INTEGRITY_ONLY')
+        with zipfile.ZipFile(archive) as zipped:
+            members = set(zipped.namelist())
+            self.assertIn('dbvora/archive/review_selftest.py', members)
+            self.assertIn('check_dbvora_archive_windows.cmd', members)
+            self.assertIn('check_dbvora_archive_unix.sh', members)
+            self.assertIn(b'dbvora.archive.review_selftest', zipped.read('check_dbvora_archive_windows.cmd'))
+            self.assertIn(b'dbvora.archive.review_selftest', zipped.read('check_dbvora_archive_unix.sh'))
+            self.assertIn('no customer path', zipped.read('README_PORTABLE.txt').decode('utf-8'))
+            self.assertFalse(any(name.startswith('tests/') for name in members))
+
+    def test_unpacked_portable_selfcheck_from_separate_process(self):
+        # The actual shipped portable ZIP executes only generated temp SQLite.
+        # On native Windows a separate NTFS durability gate is required.
+        archive = pack.build(self.folder)
+        destination = self.folder / 'separate_unpacked'
+        destination.mkdir()
+        with zipfile.ZipFile(archive) as zipped:
+            zipped.extractall(destination)
+        env = dict(os.environ, PYTHONPATH='')
+        executed = subprocess.run(
+            [sys.executable, '-m', 'dbvora.archive.review_selftest'],
+            cwd=destination, env=env, capture_output=True, text=True,
+            timeout=45, check=False)
+        result = json.loads(executed.stdout)
+        self.assertFalse(result['customer_ready'])
+        self.assertFalse(result['windows_ntfs_durability_verified'])
+        self.assertFalse(result.get('hardware_power_loss_verified', False))
+        if os.name != 'nt':
+            self.assertEqual(executed.returncode, 0, executed.stderr)
+            self.assertEqual(result['status'], 'PASS_SYNTHETIC_PREVIEW_ONLY')
+            self.assertEqual(result['zip'], 'passed')
+            self.assertIn(result['zstd'], ('passed', 'skipped_no_local_codec'))
+        else:
+            # Never mistake Linux POSIX success for Windows durability.
+            self.assertIn(result['status'], ('PASS_SYNTHETIC_PREVIEW_ONLY', 'FAIL_CLOSED'))
+
+    def test_packaged_selfcheck_refuses_supplied_customer_file(self):
+        archive = pack.build(self.folder)
+        destination = self.folder / 'no_input_unpacked'
+        destination.mkdir()
+        with zipfile.ZipFile(archive) as zipped:
+            zipped.extractall(destination)
+        completed = subprocess.run(
+            [sys.executable, '-m', 'dbvora.archive.review_selftest',
+             '--db', 'C:\\customer\\private.sqlite'],
+            cwd=destination, env=dict(os.environ, PYTHONPATH=''),
+            capture_output=True, text=True, timeout=12, check=False)
+        self.assertNotEqual(completed.returncode, 0)
+        report = json.loads(completed.stdout)
+        self.assertEqual(report['error_code'], 'NO_USER_INPUT_ALLOWED')
+        self.assertNotIn('private.sqlite', completed.stdout)
+
     def test_determinism_rebuild_in_new_folder(self):
         a = pack.build(self.folder)
         bdir = self.folder / 'second'
