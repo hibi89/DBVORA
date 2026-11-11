@@ -6,6 +6,7 @@ produced by inspect_recovery_catalog. Synthetic-only preview, not a release.
 """
 from __future__ import annotations
 
+from collections import Counter
 from contextlib import closing
 from pathlib import Path
 import re
@@ -136,13 +137,14 @@ def reconcile_requests(ledger_directory: str | Path, recovery_catalog: dict,
                  'RECORDED_NOT_VERIFIED': 0,
                  'DUPLICATE_ARTIFACT_REVIEW_REQUIRED': 0}
     matched = set()
+    digest_usage = Counter(digest for phase, digest in ledger if phase == 'RECORDED')
     for phase, digest in ledger:
         if phase == 'RESERVED':
             breakdown['INTERRUPTED_REVIEW_REQUIRED'] += 1
-        elif verified.get(digest, 0) == 1:
+        elif verified.get(digest, 0) == 1 and digest_usage[digest] == 1:
             breakdown['RECORDED_MATCH_REVIEW_REQUIRED'] += 1
             matched.add(digest)
-        elif verified.get(digest, 0) > 1:
+        elif verified.get(digest, 0) > 1 or digest_usage[digest] > 1:
             breakdown['DUPLICATE_ARTIFACT_REVIEW_REQUIRED'] += 1
         else:
             breakdown['RECORDED_NOT_VERIFIED'] += 1
