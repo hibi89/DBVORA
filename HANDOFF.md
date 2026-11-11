@@ -1,3 +1,15 @@
+## 2026-11-11 KST — P3-01 request ledger prototype, independent and not wired
+1. Goal/stack: progress DBVORA 55→70 with an opt-in local Python3.11 stdlib SQLite reservation ledger before future archive automation.
+2. Implemented: distinct request hash/plan digest, SQLite full-sync transactional reservation, replay review, caller-supplied artifact digest state (NOT verified), symlink/unknown-ledger refusal; 15 new tests. A SQLite ledger selected over separate O_EXCL JSON markers for bounded concurrency, no external library.
+3. Tests: Linux Python3.13.5 exact Git blob-targeted source and tests, combined 15 prior schema +15 ledger=30/30 PASS strict ResourceWarning, repeat concurrent first-reservation scenario 20/20 PASS, compileall PASS. Whole repository >=376/Node/Windows/real DB NOT RUN.
+4. Status: isolated P3 safety foundation only; no archive_cli/scheduler execution integration, no idempotent archive guarantee, readiness 55% unchanged, RELEASE HOLD.
+5. Earlier prototype concurrent first-open race caused one UNTRUSTED_LEDGER_FILE; fixed with bounded 1sec read-only header probe and foreign-SQLite rejection; rerun 15 PASS plus 20 repeats. No uncontrolled retries or paid CI. Hardware crash/replay remains unverified.
+6. Repo/branch: hibi89/DBVORA feature/p0-db-map, previous document HEAD c1055ca44c3d01d51dcc850d1ca411c0237ac544; source Blob ac8e7f830ae8d09a38775cdbd17b1342f02b5d66, test 2968c436ecc4e0bdccbe7d19c3188280da89b426, resulting feature HEAD verify.
+7. Runtime/deploy: synthetic-only Linux3.13.5; intended Windows3.11 local-first, Vercel/Production N/A.
+8. Data/security: only OS temporary synthetic SQLite ledger; original customer DB/archives and main/develop, keys, external calls, paid CI, permissions, ZIP content, prior receipts unchanged. New experimental code reversible via Git.
+9. Next: review ledger durability in native Windows/NTFS; integrate with CLI under owner-approved end-to-end design, artifact verification, crash/recovery, test >=376 complete checkout/Node. Do not auto retry or claim exactly-once until verified.
+10. 2026-11-11 KST, exact local source/test Git hashes and bounded synthetic outcomes; documentation basis this commit.
+
 ## 2026-11-11 KST — P0-13 full-source-slice 15/15 exact Git blob follow-up
 1. Goal: close SQLite identifier advisory regression without weakening DBVORA readiness gate.
 2. Completed: original git source 2 modules, previous 9 tests, newly committed 6 tests reconstructed without code edits.
