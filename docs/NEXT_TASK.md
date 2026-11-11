@@ -1,3 +1,9 @@
+## 2026-11-12 KST — P3-08 most recent: real ZIP/ZSTD synthetic chain PASS, 77 provisional, target85
+- Actual GitHub source bytes reconstituted for SQLite reader, safe_zip, zstd_archive, recovery_catalog, request_service, request_ledger, request_audit, review_html, fixture, plus new P3-08 gate and 15 tests. Verified exact Git Blob SHA. Linux Python3.13.5 + local zstd: **actual P3-08 16 checks PASS**, ZIP/ZSTD independent restore and corruption/replay HOLD; isolated unit 58 PASS, compileall PASS. No customer source.
+- Fixed create=False record-only ledger recreation on disappeared path; two added regression tests and local equivalent race/concurrency cases PASS.
+- Whole private original checkout **not available** due Git DNS; `python -m scripts.verify_release_gate` floor **518** plus Node never run. No paid CI triggered. Native Windows/NTFS+browser and approved real PG/TLS unverified. RELEASE HOLD and no automatic retry/retention/sale.
+- **Next**: full 518+ Python/Node original-run; Windows3.11 NTFS, owner-approved read-only nonproduction PostgreSQL, portable installer. 77 is provisional engineering 22+8+19+17+11, 85 still 8p away. See docs/P3_08_REAL_CHAIN_AND_LEDGER_RACE_20261112.md.
+
 ## 2026-11-12 KST — P3-07 current resume: DBVORA 72 provisional / 85 goal
 - New synthetic-only explicit CLI python -m dbvora.archive.review_html with separate existing ledger/archive/output dirs and --accept-plaintext-summary; automatic replay/authorization prohibited.
 - Local isolated 39 PASS/0 FAIL/0 SKIP and HTML Chromium synthetic 5 rows/0 JS/0 outbound; exact new Git Blob parity. Full original-source Python minimum 499 plus Node, real archive ZIP/ZSTD roundtrip NOT RUN.
