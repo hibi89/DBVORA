@@ -1,6 +1,8 @@
 """Bounded metadata-only SQLite schema review. Findings are advisory, not SQL errors."""
 from __future__ import annotations
 
+from dbvora.sqlite_identifiers import sqlite_identifier_key
+
 MAX_FINDINGS = 200
 MAX_DATABASES = 8
 MAX_TABLES = 2000
@@ -17,14 +19,17 @@ def _name(value: object) -> bool:
 
 def _covered(table: dict, from_columns: list[str]) -> bool:
     """Check only leading index columns or declared primary-key columns."""
-    key = tuple(from_columns)
+    key = tuple(sqlite_identifier_key(column) for column in from_columns)
     for idx in table["indexes"]:
         if type(idx) is not dict:
             raise SchemaReviewError("INVALID_WORKSPACE")
         cols = idx.get("key_columns")
-        if type(cols) is not list or len(cols) > 500 or type(idx.get("partial")) is not bool:
+        if (type(cols) is not list or len(cols) > 500 or type(idx.get("partial")) is not bool
+                or not all(col is None or _name(col) for col in cols)):
             raise SchemaReviewError("INVALID_WORKSPACE")
-        if key and not idx["partial"] and tuple(cols[: len(key)]) == key:
+        if (key and not idx["partial"] and len(cols) >= len(key)
+                and all(col is not None and sqlite_identifier_key(col) == target
+                        for col, target in zip(cols, key))):
             return True
     pk = []
     for col in table["columns"]:
@@ -33,7 +38,7 @@ def _covered(table: dict, from_columns: list[str]) -> bool:
         if col["pk_position"] > 0:
             pk.append((col["pk_position"], col["name"]))
     pk.sort()
-    return bool(key) and tuple(col for _, col in pk[: len(key)]) == key
+    return bool(key) and tuple(sqlite_identifier_key(col) for _, col in pk[: len(key)]) == key
 
 
 def summarize_workspace_schema(workspace: dict) -> dict:

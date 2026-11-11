@@ -1,3 +1,15 @@
+## 2026-11-11 KST — P0-13 SQLite catalog FK index case proof checkpoint
+1. Objective/stack: safely advance DBVORA 55% toward 70% without customer data, using SQLite catalog metadata and Python3.11+ stdlib.
+2. Change/decision: use existing sqlite_identifier_key ASCII-only comparison for FK index/PK prefix instead of widening to DB queries; validate malformed index keys; six regression cases and 355->361 floor.
+3. Tests: locally reproduced six synthetic cases on an equivalent standalone module, Python3.13.5 Linux 6/6 PASS and compileall PASS. Exact committed Git module/complete repo 361 tests/Windows3.11 are NOT RUN. No cross-SHA combined PASS claim.
+4. Status: DBVORA final readiness 55% unchanged; P0-13 implementation source pushed, integration verification pending, RELEASE HOLD.
+5. Risk/pivot: private clone unavailable historically; patch via GitHub exact file read plus minimal replacement. A local equivalent-function test is not complete checkout/source-SHA proof; avoid duplicate cloning, paid CI, and false product acceptance.
+6. Repo/branch: hibi89/DBVORA feature/p0-db-map, parent c91aa69bd6793e83b7cd075bd41ba4dfbbeb2e30; final HEAD verify after commit. Files schema_review.py, new test_schema_review_identifier_case.py, release gate and tests, docs/P0_13_INDEX_CASE_20261111.md.
+7. Runtime/deploy: local Python3.13.5 synthetic checks; intended Windows3.11 and no hosted/Vercel Production. Full release command python -m scripts.verify_release_gate.
+8. Source/backups/auth: exact Git parent preserved for normal revert, customer databases/backups/market files not accessed, no credentials, new paid CI, force, external upload, main/develop or release.
+9. Next: source-exact complete checkout run >=361 Python + 1 Node TAP + real CLI ZIP/ZSTD + preflight, native Windows NTFS + local browser; repair observed failures; then re-evaluate 70%. Approval needed for client DB, paid CI, permissions or release.
+10. Checked 2026-11-11 KST; P0-13 local scope only, new implementation unverified on whole repository, doc basis is this Git commit.
+
 ## 2026-11-11 KST — P0-12 Node + headless Chromium handoff
 1. Goal/tech: DBVORA 55->70 delivery readiness, demonstrate previously coded P0-11 offline SQLite UI in Node and real Chromium without customer DB; Python stdlib, optional Playwright.
 2. Done: Node exact source UI TAP test verified; 3 synthetic Chromium DOM scenarios; added optional scripts/browser_workspace_smoke.py via private feature branch code SHA 55749bfc687acb114d62b359ecf2abe1c5e9c120.

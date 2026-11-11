@@ -1,3 +1,5 @@
+> **2026-11-11 KST — P0-13 SQLite FK index ASCII 식별자 검토 정확성 보강:** `feature/p0-db-map`에서 스키마 검토의 외래키 컬럼/인덱스/PK 접두 컬럼 매칭에 SQLite의 ASCII-only 식별자 규칙을 적용한다. 대문자와 소문자의 혼용으로 실제 인덱스를 누락 경고하던 문제를 해결하되 Unicode 대소문자 자동 동일시는 하지 않는다. 표현식 인덱스 None은 커버리지 증거로 인정하지 않고 비정상 인덱스 항목은 INVALID_WORKSPACE로 거부한다. 신규 합성 회귀 6개를 별도 모듈에 추가하고 전체 검증의 최소 탐색 테스트를 355→361로 조정했다. 정확한 신규 코드/테스트의 전체 소스 회귀 및 Windows 실행은 **미실행**. 이 채팅의 로컬 등가 구현 Linux Python3.13.5 합성 회귀 **6/6 PASS**, 동일 Git Blob 직접 실행으로 확대 주장 금지. **최종 상품 완성률 55% 유지, 목표 70%, RELEASE HOLD.** 디자인 대안·검증 한계: [P0-13](docs/P0_13_INDEX_CASE_20261111.md).
+
 # DBVORA STATUS — real offline Python focus 17/17 PASS; full 199 & Windows gates pending (2026-10-26 KST)
 
 > **Current authoritative checkpoint is the latest dated section at the bottom.** Historical table and earlier test totals below describe older commits, not current HEAD acceptance.
