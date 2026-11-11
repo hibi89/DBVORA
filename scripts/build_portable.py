@@ -35,6 +35,7 @@ _REQUIRED = {
     'dbvora/offline_selftest.py', 'dbvora/archive/dedup_plan.py', 'check_dbvora_windows.cmd',
     'check_dbvora_unix.sh', 'dbvora/archive/review_selftest.py',
     'check_dbvora_archive_windows.cmd', 'check_dbvora_archive_unix.sh',
+    'dbvora/archive/portable_verify.py', 'verify_dbvora_portable_windows.cmd', 'verify_dbvora_portable_unix.sh',
 }
 
 
@@ -104,7 +105,12 @@ def _contents(root: Path) -> dict[str, bytes]:
         'PORTABLE ARCHIVE RECOVERY CHECK (no customer path and no extra Python packages):\n'
         '  Windows: check_dbvora_archive_windows.cmd\n'
         '  Linux/macOS: sh check_dbvora_archive_unix.sh\n'
-        '  Or: python -m dbvora.archive.review_selftest\n'
+        '  Or: python -m dbvora.archive.review_selftest\n'        'EXTRACTED SOURCE INTEGRITY CHECK (unsigned manifest):\n'
+        '  Windows: verify_dbvora_portable_windows.cmd\n'
+        '  Linux/macOS: sh verify_dbvora_portable_unix.sh\n'
+        '  Or: python -m dbvora.archive.portable_verify\n'
+        '  This checks source SHA-256 only; NOT publisher authenticity/signature.\n'
+
         '  This generates and removes only temporary synthetic SQLite archives.\n'
         '  PASS is not proof of Windows NTFS/physical power-loss or customer readiness.\n'
         '  This does NOT certify NTFS durability or native browser opening.\n'
@@ -159,6 +165,18 @@ def _contents(root: Path) -> dict[str, bytes]:
         'if [ "$#" -ne 0 ]; then echo "No arguments: synthetic-only archive check" >&2; exit 2; fi\n'
         'cd "$(dirname "$0")"\n'
         'exec python3 -m dbvora.archive.review_selftest\n'
+    ).encode('ascii')
+    files['verify_dbvora_portable_windows.cmd'] = (
+        '@echo off\r\nsetlocal\r\ncd /d "%~dp0"\r\n'
+        'if not "%~1"=="" (echo No arguments: unsigned source check. 1>&2 & exit /b 2)\r\n'
+        'py -3.11 -B -m dbvora.archive.portable_verify\r\n'
+        'exit /b %ERRORLEVEL%\r\n'
+    ).encode('ascii')
+    files['verify_dbvora_portable_unix.sh'] = (
+        '#!/bin/sh\nset -eu\n'
+        'if [ "$#" -ne 0 ]; then echo "No arguments: unsigned source check" >&2; exit 2; fi\n'
+        'cd "$(dirname "$0")"\n'
+        'exec python3 -B -m dbvora.archive.portable_verify\n'
     ).encode('ascii')
     files['export_dbvora_map_windows.cmd'] = (
         '@echo off\r\nsetlocal\r\ncd /d "%~dp0"\r\n'
