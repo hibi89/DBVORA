@@ -73,6 +73,27 @@ def _indexes(indexes: Any) -> list[dict]:
     return result
 
 
+def _pg_statistics(value: Any) -> dict | None:
+    """Keep only catalog-derived statistics with explicit measured/estimate labels."""
+    if value is None:
+        return None
+    if type(value) is not dict or value.get('status') not in ('observed', 'unavailable'):
+        _fail('INVALID_PG_STATISTICS')
+    if value['status'] == 'unavailable':
+        if (set(value) != {'status', 'reason'} or value['reason'] not in
+                ('pg_statistics_unavailable', 'relation_not_in_statistics_view')):
+            _fail('INVALID_PG_STATISTICS')
+        return {'status': 'unavailable', 'reason': value['reason']}
+    fields = {'status', 'estimated_live_rows', 'estimated_dead_rows',
+              'heap_bytes', 'index_bytes', 'row_count_provenance', 'storage_provenance'}
+    if set(value) != fields or value['row_count_provenance'] != 'pg_stat_user_tables_estimate_not_exact' or value['storage_provenance'] != 'pg_relation_size_and_pg_indexes_size':
+        _fail('INVALID_PG_STATISTICS')
+    for name in ('estimated_live_rows', 'estimated_dead_rows', 'heap_bytes', 'index_bytes'):
+        if type(value[name]) is not int or not 0 <= value[name] <= 2**63 - 1:
+            _fail('INVALID_PG_STATISTICS')
+    return dict(value)
+
+
 def _relationship(src: dict, fk: dict, *, engine: str, table_keys: set[str]) -> dict | None:
     if type(fk) is not dict:
         _fail('INVALID_RELATIONSHIP')
@@ -151,9 +172,12 @@ def assemble_workspace(catalogs: list[dict]) -> dict:
             fks = table.get('foreign_keys')
             if type(fks) is not list or len(fks) > MAX_RELATIONSHIPS:
                 _fail('INVALID_RELATIONSHIP')
-            output_tables.append({'key': key, 'name': name, 'schema': schema,
-                                  'size_bytes': size, 'size_kind': 'pg_total_relation_size' if size is not None else 'unavailable',
-                                  'columns': columns, 'indexes': indexes})
+            normalized = {'key': key, 'name': name, 'schema': schema,
+                          'size_bytes': size, 'size_kind': 'pg_total_relation_size' if size is not None else 'unavailable',
+                          'columns': columns, 'indexes': indexes}
+            if engine == 'postgresql':
+                normalized['statistics'] = _pg_statistics(table.get('statistics'))
+            output_tables.append(normalized)
             for fk in fks:
                 edge = _relationship(table, fk, engine=engine, table_keys=keys)
                 if edge is not None:
@@ -181,7 +205,7 @@ _HTML = r'''<!doctype html>
 </style></head><body>
 <header><div><div class="tag">DBVORA · OFFLINE · READ ONLY</div><h1>Database Observatory</h1><div class="sub">SQLite + PostgreSQL 메타데이터 구조 탐색</div></div><div class="tag">LOCAL FILE · NO NETWORK</div></header>
 <section class="kpis"><div class="kpi"><span class="sub">DATABASES</span><strong id="db-count">—</strong></div><div class="kpi"><span class="sub">TABLES</span><strong id="table-count">—</strong></div><div class="kpi"><span class="sub">RELATIONSHIPS</span><strong id="edge-count">—</strong></div><div class="kpi"><span class="sub">CPU / RAM</span><strong>N/A</strong><small class="muted">DB별 측정 불가</small></div></section>
-<div class="layout"><section class="panel"><h2>Structure map</h2><label class="sub" for="search">테이블 검색</label><input id="search" type="search" autocomplete="off" placeholder="테이블 또는 스키마 검색"><div id="databases" aria-label="데이터베이스 노드"></div></section><section class="panel"><h2 id="selection">Select a table</h2><div class="sub" id="meta">노드를 클릭하면 컬럼·인덱스를 확인할 수 있습니다.</div><h2>Columns</h2><ul id="columns"></ul><h2>Indexes</h2><ul id="indexes"></ul><h2>Declared relationships</h2><ul id="relations"></ul></section></div>
+<div class="layout"><section class="panel"><h2>Structure map</h2><label class="sub" for="search">테이블 검색</label><input id="search" type="search" autocomplete="off" placeholder="테이블 또는 스키마 검색"><div id="databases" aria-label="데이터베이스 노드"></div></section><section class="panel"><h2 id="selection">Select a table</h2><div class="sub" id="meta">노드를 클릭하면 컬럼·인덱스를 확인할 수 있습니다.</div><h2>Estimated PostgreSQL statistics</h2><div class="sub" id="pg-stats">Optional statistics not collected</div><h2>Columns</h2><ul id="columns"></ul><h2>Indexes</h2><ul id="indexes"></ul><h2>Declared relationships</h2><ul id="relations"></ul></section></div>
 <footer>데이터 행·접속 정보·SQL 원문을 포함하지 않습니다. 선언된 DB 내부 관계만 표시하며 DB 사이 관계는 추론하지 않습니다. 백업 및 고객 서비스 출시 검증과는 별개입니다.</footer>
 <script type="application/json" id="catalog">__DBVORA_CATALOG_JSON__</script>
 <script>
@@ -195,6 +219,13 @@ function rows(id,items,fn){const area=$(id);clear(area);if(!items.length)area.ap
 function choose(db,table,button){for(const item of nodes)item.button.setAttribute('aria-pressed',String(item.button===button));
 $('selection').textContent=db.label+' / '+table.key;
 $('meta').textContent=db.engine.toUpperCase()+' · '+table.columns.length+' columns · '+table.indexes.length+' indexes · size '+(table.size_bytes===null?'unavailable':table.size_bytes.toLocaleString('en-US')+' bytes');
+const stats=table.statistics;
+$('pg-stats').textContent=stats&&stats.status==='observed'
+  ? 'Estimated live rows ≈'+stats.estimated_live_rows.toLocaleString('en-US')+
+    ' · dead rows ≈'+stats.estimated_dead_rows.toLocaleString('en-US')+
+    ' · measured heap '+stats.heap_bytes.toLocaleString('en-US')+' bytes'+
+    ' · measured indexes '+stats.index_bytes.toLocaleString('en-US')+' bytes'
+  : (db.engine==='postgresql'?'Not collected or unavailable (no fabricated zero)':'PostgreSQL only');
 rows('columns',table.columns,c=>c.name+' · '+c.type+(c.primary_key?' · PK':'')+(c.nullable?' · nullable':''));
 rows('indexes',table.indexes,i=>i.name+' ('+i.columns.map(c=>c===null?'expression':c).join(', ')+')'+(i.unique?' · unique':''));
 rows('relations',db.relationships.filter(r=>r.from===table.key||r.to===table.key),r=>r.from+' → '+r.to+' ['+r.evidence+']');}
@@ -219,6 +250,7 @@ def render_report(workspace: dict) -> str:
             'indexes': [{'name': i['name'], 'key_columns': i['columns'],
                          'unique': i['unique'], 'partial': i['partial']} for i in t['indexes']],
             'primary_key_columns': [c['name'] for c in t['columns'] if c['primary_key']],
+            'statistics': t.get('statistics'),
             'foreign_keys': [],  # relationships explicitly revalidated below
         } for t in db['tables']]
     } for db in workspace['databases']])
