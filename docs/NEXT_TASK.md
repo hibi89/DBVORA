@@ -1,3 +1,9 @@
+## 2026-11-13 KST — P1-09 핵심 PG 가시화·수동 최적화, P92 잠정 / 목표 P95 진행 중
+- PostgreSQL `pg_stat_user_tables` 추정 live/dead 행과 실측 heap/index 바이트는 기본 OFF, 사용자가 `--include-postgres-statistics` + PG network 동의한 경우에만 고정 SELECT로 수집. view/partition parent는 물리 사용량/통계 미측정 표시. 오프라인 HTML에 지표·조건별 **수동 검토**만, 자동 최적화/SQL 실행/DB 수정 없음.
+- GitHub 최신 feature branch에 `postgres_statistics.py`, `optimization_review.py` 신규 + `postgres_reader.py`, `mixed_cli.py`, `multi_engine_report.py` 및 새/기존 회귀 테스트 반영. 정확 PG stats module **격리 17 PASS**, optimization exact GitHub test **8 PASS**, full reader/PG stats/HTML+CLI integration/원본 전체 >=553 Python+Node/실PG TLS·Windows **NOT RUN**.
+- 내부 P0 24 + P1 12 + P2 20 + P3 19 + P4 17 = **92/100 잠정 기능범위**, 95 미달, 판매 RELEASE HOLD, 해총 DBVORA **[작업중] 유지**. 검증 92%라는 뜻 아님.
+- **Next:** full authorized private checkout → `python -m unittest discover -s tests -v` / `python -m scripts.verify_release_gate` + Node + real package ZIP + UI; 신규 `tests/test_postgres_statistics.py`, `tests/test_postgres_reader.py`, `tests/test_mixed_cli.py` 오류 수정; 별도 승인의 synthetic PG read-only verify-full + Windows3.11 NTFS 확인. [상세 P1-09](P1_09_PG_STATS_OPTIMIZATION_20261113.md).
+
 > **P4-05 보강 검증:** 정확 Git Blob `81694c7b623edbf94894a195a11f924c0a5a41f9`의 신설 원본 ZIP-gate 테스트 7/7 PASS(단 모의 build/trusted child), 신설 모듈 `7e08838eae1d9d40937a34b5d7ebe41e291f6dca` 정확 일치. **전체 553+ Python·Node/실 패키지 테스트는 미실행**, 85% 잠정·P95 미달/[작업중] 유지. 다음 검증은 전체 정본 `python -m scripts.verify_release_gate`.
 
 ## 2026-11-12 KST — P4-05 현재: 진짜 ZIP 통합 검증을 필수 게이트에 연결, P95 미달/85 유지
