@@ -74,7 +74,7 @@ def _array(value: Any, maximum: int) -> list[int]:
     return list(value)
 
 
-def inspect_catalog(connection: Any) -> dict:
+def inspect_catalog(connection: Any, *, include_statistics: bool = False) -> dict:
     """Read existing read-only PostgreSQL connection; return metadata only.
 
     Caller must already have an authorized connection with a read-only role.
@@ -82,6 +82,8 @@ def inspect_catalog(connection: Any) -> dict:
     """
     if getattr(connection, "read_only", None) is not True:
         raise PostgresInventoryError("READ_ONLY_CONNECTION_REQUIRED")
+    if type(include_statistics) is not bool:
+        raise PostgresInventoryError("INVALID_STATISTICS_OPTION")
     try:
         catalog = _rows(connection, TABLES, MAX_TABLES + 1)
         if len(catalog) > MAX_TABLES:
@@ -185,6 +187,16 @@ def inspect_catalog(connection: Any) -> dict:
                 if any(n not in target for n in remote_ids):
                     raise PostgresInventoryError("INVALID_CATALOG")
                 reference["to_columns"].extend(target[n] for n in remote_ids)
+        if include_statistics:
+            from dbvora.connectors.postgres_statistics import (
+                StatisticsError, collect_relation_statistics,
+            )
+            try:
+                statistics = collect_relation_statistics(connection, [oid for oid, _ in details])
+            except StatisticsError:
+                raise PostgresInventoryError("INVALID_STATISTICS") from None
+            for oid, table in details:
+                table["statistics"] = statistics[oid]
         return {"contract_version": "dbvora.pg_catalog.v1", "engine": "postgresql",
                 "inspection_mode": "read_only_metadata_only",
                 "observed_at": datetime.now(timezone.utc).isoformat(),
@@ -198,12 +210,15 @@ def inspect_catalog(connection: Any) -> dict:
         raise PostgresInventoryError("PG_CATALOG_QUERY_FAILED") from None
 
 
-def inspect_postgres(dsn: str, *, require_tls: bool = True) -> dict:
+def inspect_postgres(dsn: str, *, require_tls: bool = True,
+                     include_statistics: bool = False) -> dict:
     """User-initiated opt-in network call; not used during offline verification."""
     if type(dsn) is not str or not dsn or len(dsn) > 4096:
         raise PostgresInventoryError("INVALID_DSN")
     if require_tls is not True:
         raise PostgresInventoryError("TLS_REQUIRED")
+    if type(include_statistics) is not bool:
+        raise PostgresInventoryError("INVALID_STATISTICS_OPTION")
     try:
         import psycopg
     except ImportError:
@@ -212,7 +227,7 @@ def inspect_postgres(dsn: str, *, require_tls: bool = True) -> dict:
         with psycopg.connect(dsn, connect_timeout=5, sslmode="verify-full", autocommit=False,
                              options="-c statement_timeout=5000 -c lock_timeout=1000") as connection:
             connection.read_only = True
-            return inspect_catalog(connection)
+            return inspect_catalog(connection, include_statistics=include_statistics)
     except PostgresInventoryError:
         raise
     except Exception:
