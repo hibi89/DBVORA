@@ -94,11 +94,14 @@ class ExtractedPreviewTests(unittest.TestCase):
         with self.assertRaisesRegex(package.PortableVerifyError, 'UNSAFE_PACKAGE_ENTRY'):
             package.verify(self.root)
 
-    def test_manifested_python_cache_tolerated(self):
+    def test_manifested_source_cache_rejected_before_unsigned_pass(self):
+        # -B suppresses writes but still imports existing .pyc files.
         cache = self.root / 'dbvora/archive/__pycache__'
         cache.mkdir()
-        (cache / 'request_service.cpython-311.pyc').write_bytes(b'generated')
-        self.assertEqual(package.verify(self.root)['status'], 'PASS_UNSIGNED_EXTRACTED_CONTENTS_ONLY')
+        (cache / 'request_service.cpython-311.pyc').write_bytes(b'INERT-SYNTHETIC')
+        with self.assertRaisesRegex(
+                package.PortableVerifyError, 'PACKAGE_BYTECODE_PRESENT'):
+            package.verify(self.root)
 
     def test_foreign_cache_bytecode_rejected(self):
         cache = self.root / 'dbvora/archive/__pycache__'
@@ -110,7 +113,7 @@ class ExtractedPreviewTests(unittest.TestCase):
                 path.write_bytes(b'INERT-SYNTHETIC')
                 try:
                     with self.assertRaisesRegex(
-                            package.PortableVerifyError, 'UNLISTED_PACKAGE_SOURCE'):
+                            package.PortableVerifyError, 'PACKAGE_BYTECODE_PRESENT'):
                         package.verify(self.root)
                 finally:
                     path.unlink()
@@ -147,7 +150,7 @@ class ExtractedPreviewTests(unittest.TestCase):
         path.write_bytes(b'INERT-SYNTHETIC')
         try:
             with self.assertRaisesRegex(
-                    package.PortableVerifyError, 'UNLISTED_PACKAGE_SOURCE'):
+                    package.PortableVerifyError, 'PACKAGE_BYTECODE_PRESENT'):
                 package.verify(self.root)
         finally:
             path.unlink()
@@ -165,7 +168,7 @@ class ExtractedPreviewTests(unittest.TestCase):
 
     def test_unlisted_executable_sidecars_rejected(self):
         # Detect unmanifested native, startup and bytecode executables.
-        # A legitimate generated __pycache__/*.pyc is tested separately.
+        # Never accept extracted bytecode, even with a matching source name.
         for name in ('sitecustomize.pyc', 'hook.pth', 'run.cmd',
                      'run.ps1', 'dbvora/archive/hook.pyd',
                      'dbvora/archive/agent.so', 'dbvora/__pycache__/hook.py'):
@@ -174,8 +177,9 @@ class ExtractedPreviewTests(unittest.TestCase):
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(b'INERT-SYNTHETIC')
                 try:
-                    with self.assertRaisesRegex(
-                            package.PortableVerifyError, 'UNLISTED_PACKAGE_SOURCE'):
+                    code = ('PACKAGE_BYTECODE_PRESENT' if target.suffix == '.pyc'
+                            else 'UNLISTED_PACKAGE_SOURCE')
+                    with self.assertRaisesRegex(package.PortableVerifyError, code):
                         package.verify(self.root)
                 finally:
                     target.unlink()
