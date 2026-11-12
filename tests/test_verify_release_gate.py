@@ -50,6 +50,10 @@ class VerificationGateTests(unittest.TestCase):
                             'checks': 4, 'zip_sha256': 'a' * 64,
                             'ready_for_customer_data': False,
                             'signed': False, 'windows_ntfs_verified': False}), ''),
+            (0, json.dumps({'status': 'PASS_SYNTHETIC_PG_ONLY', 'checks': 6,
+                            'real_pg_connected': False,
+                            'ready_for_customer_data': False,
+                            'automatic_actions': False}), ''),
         ]
 
     def test_full_mocked_gate_synthetic_pass_not_customer_release(self):
@@ -57,7 +61,7 @@ class VerificationGateTests(unittest.TestCase):
             report = gate.verify()
         self.assertEqual(report['status'], 'PASS_SYNTHETIC_ENVIRONMENT_ONLY')
         self.assertFalse(report['ready_for_customer_data'])
-        self.assertEqual(len(report['steps']), 9)
+        self.assertEqual(len(report['steps']), 10)
 
     def test_incomplete_checkout_fails_before_execution(self):
         (self.root / 'dbvora/archive/safe_zip.py').unlink()
@@ -316,8 +320,8 @@ class VerificationGateTests(unittest.TestCase):
         ):
             answer = gate.verify()
         self.assertEqual(answer['status'], 'FAIL_CLOSED')
-        self.assertEqual(answer['steps'][-1]['step'], 'trusted_portable_zip_e2e')
-        self.assertEqual(answer['steps'][-1]['status'], 'FAIL')
+        self.assertEqual(answer['steps'][8]['step'], 'trusted_portable_zip_e2e')
+        self.assertEqual(answer['steps'][8]['status'], 'FAIL')
 
     def test_trusted_portable_gate_rejects_false_customer_release(self):
         responses = self.responses()
@@ -337,11 +341,49 @@ class VerificationGateTests(unittest.TestCase):
         with patch.object(gate, '_run', side_effect=responses), patch.object(
             gate.shutil, 'which', return_value='tool'
         ):
-            step = gate.verify()['steps'][-1]
+            step = gate.verify()['steps'][8]
         self.assertEqual(step['status'], 'FAIL')
         self.assertIsNone(step['zip_sha256'])
         self.assertNotIn('private', str(step))
 
+
+    def test_pg_synthetic_end_to_end_is_mandatory(self):
+        responses = self.responses()
+        current = json.loads(responses[8][1])
+        current['checks'] = 5
+        responses[8] = (0, json.dumps(current), '')
+        with patch.object(gate, '_run', side_effect=responses), patch.object(
+            gate.shutil, 'which', return_value='tool'
+        ):
+            result = gate.verify()
+        self.assertEqual(result['status'], 'FAIL_CLOSED')
+        self.assertEqual(result['steps'][-1]['step'], 'synthetic_pg_to_offline_html')
+        self.assertEqual(result['steps'][-1]['status'], 'FAIL')
+
+    def test_pg_gate_rejects_false_real_postgres_connection(self):
+        responses = self.responses()
+        current = json.loads(responses[8][1])
+        current['real_pg_connected'] = True
+        responses[8] = (0, json.dumps(current), '')
+        with patch.object(gate, '_run', side_effect=responses), patch.object(
+            gate.shutil, 'which', return_value='tool'
+        ):
+            result = gate.verify()
+        self.assertEqual(result['status'], 'FAIL_CLOSED')
+        self.assertEqual(result['steps'][-1]['status'], 'FAIL')
+
+    def test_pg_gate_rejects_automatic_actions_or_customer_claim(self):
+        for change in ('automatic_actions', 'ready_for_customer_data'):
+            with self.subTest(change=change):
+                responses = self.responses()
+                current = json.loads(responses[8][1])
+                current[change] = True
+                responses[8] = (0, json.dumps(current), '')
+                with patch.object(gate, '_run', side_effect=responses), patch.object(
+                    gate.shutil, 'which', return_value='tool'
+                ):
+                    result = gate.verify()
+                self.assertEqual(result['status'], 'FAIL_CLOSED')
 
 if __name__ == '__main__':
     unittest.main()
