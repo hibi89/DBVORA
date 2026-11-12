@@ -135,9 +135,16 @@ def verify(root: Path | None = None) -> dict:
             relative = path.relative_to(folder)
             if path.is_symlink():
                 raise PortableVerifyError('UNSAFE_PACKAGE_ENTRY')
-            if '__pycache__' in relative.parts or path.suffix == '.pyc':
+            # Bytecode is tolerated only inside Python's generated cache.
+            # A loose .pyc or an unlisted OS/startup script is executable
+            # material and must not be silently covered by an unsigned report.
+            if '__pycache__' in relative.parts and path.suffix == '.pyc':
                 continue
-            if path.is_file() and path.suffix in ('.py', '.js', '.html', '.css') and relative.as_posix() not in files:
+            executable = {'.py', '.pyc', '.pyw', '.pth', '.js', '.html',
+                          '.css', '.cmd', '.bat', '.ps1', '.sh', '.exe',
+                          '.dll', '.pyd', '.so', '.com', '.vbs'}
+            if (path.is_file() and path.suffix.lower() in executable
+                    and relative.as_posix() not in files):
                 raise PortableVerifyError('UNLISTED_PACKAGE_SOURCE')
         except PortableVerifyError:
             raise
