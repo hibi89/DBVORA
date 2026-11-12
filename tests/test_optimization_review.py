@@ -47,7 +47,7 @@ class OptimizationReviewTests(unittest.TestCase):
                      sample(live=0, dead=0, heap=1, indexes=33 * 1024**2)):
             with self.subTest(data=data):
                 output = review_statistics(data)
-                if data["indexes"] == 33 * 1024**2:
+                if data["index_bytes"] == 33 * 1024**2:
                     self.assertIn("REVIEW_INDEX_ALLOCATION",
                                   [x["code"] for x in output["rules"]])
                 else:
