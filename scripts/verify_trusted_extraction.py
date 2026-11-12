@@ -48,18 +48,20 @@ def main(argv: list[str] | None = None) -> int:
         parser.add_argument("--extracted", required=True)
         args = parser.parse_args(argv)
         result = check(Path(args.extracted))
-    except ValueError as error:
-        result = {"status": "FAIL_CLOSED", "error_code": str(error),
-                  "customer_ready": False, "publisher_authenticity_verified": False}
     except Exception as error:
-        # The verifier uses stable error codes; never emit exceptions/paths.
-        code = str(error)
-        if code not in {
-            "INVALID_PACKAGE_ROOT", "UNSAFE_PACKAGE_ROOT", "PACKAGE_ROOT_UNAVAILABLE",
+        # Sanitise *every* error class, including ValueError, so a filesystem
+        # exception can never leak the supplied user path into stdout.
+        allowed = {
+            "INVALID_ARGUMENTS", "ABSOLUTE_PACKAGE_PATH_REQUIRED",
+            "PACKAGE_UNAVAILABLE", "SEPARATE_TRUSTED_CHECKOUT_REQUIRED",
+            "TRUSTED_VERIFIER_UNAVAILABLE", "INVALID_PACKAGE_ROOT",
+            "UNSAFE_PACKAGE_ROOT", "PACKAGE_ROOT_UNAVAILABLE",
             "UNSAFE_PACKAGE_ENTRY", "PACKAGE_ENTRY_CHANGED", "PACKAGE_ENTRY_UNAVAILABLE",
             "INVALID_PACKAGE_MANIFEST", "PACKAGE_TOO_LARGE", "PACKAGE_DIGEST_MISMATCH",
             "PACKAGE_ENTRY_LIMIT", "PACKAGE_BYTECODE_PRESENT", "UNLISTED_PACKAGE_SOURCE",
-        }:
+        }
+        code = str(error)
+        if code not in allowed:
             code = "TRUSTED_AUDIT_FAILURE"
         result = {"status": "FAIL_CLOSED", "error_code": code,
                   "customer_ready": False, "publisher_authenticity_verified": False}
