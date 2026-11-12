@@ -152,6 +152,24 @@ class PostgresCatalogTests(unittest.TestCase):
         with self.assertRaisesRegex(pg.PostgresInventoryError,'INVALID_CATALOG'):
             pg.inspect_catalog(c)
 
+    def test_view_and_partition_parent_have_no_fabricated_disk_size(self):
+        c = Connection(tables=[('public', 'physical', 1, 'r', 8192),
+                               ('public', 'logical_view', 3, 'v', None),
+                               ('public', 'partition_root', 4, 'p', None)])
+        report = pg.inspect_catalog(c)
+        self.assertEqual(report['tables'][0]['size_bytes'], 8192)
+        self.assertEqual(report['tables'][1]['size_bytes'], None)
+        self.assertEqual(report['tables'][1]['size_provenance'],
+                         'unavailable_not_storage_or_transient')
+        self.assertEqual(report['tables'][2]['size_bytes'], None)
+        self.assertIn("CASE WHEN c.relkind IN ('r', 'm')", c.calls[0][0])
+        self.assertTrue(all(sql.lstrip().startswith('SELECT ') for sql, _ in c.calls))
+
+    def test_unknown_relation_kind_never_promoted(self):
+        c = Connection(tables=[('public', 'unknown', 1, 'x', 1000)])
+        with self.assertRaisesRegex(pg.PostgresInventoryError, 'INVALID_CATALOG'):
+            pg.inspect_catalog(c)
+
     def test_tls_disable_rejected(self):
         with self.assertRaisesRegex(pg.PostgresInventoryError,'TLS_REQUIRED'):
             pg.inspect_postgres('host=localhost',require_tls=False)
