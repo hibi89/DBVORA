@@ -153,8 +153,13 @@ def verify(root: Path | None = None) -> dict:
                 raise PortableVerifyError('UNSAFE_PACKAGE_ENTRY')
             if path.is_file():
                 name = relative.as_posix()
-                if (name == 'MANIFEST.sha256.json' or name in files
-                        or _generated_cache(path, folder, files)):
+                if name == 'MANIFEST.sha256.json' or name in files:
+                    continue
+                if _generated_cache(path, folder, files):
+                    # A generated cache must be local regular content, never
+                    # a hardlink into unrelated material outside the package.
+                    if path.lstat().st_nlink != 1:
+                        raise PortableVerifyError('UNSAFE_PACKAGE_ENTRY')
                     continue
                 raise PortableVerifyError('UNLISTED_PACKAGE_SOURCE')
             if not path.is_dir():
