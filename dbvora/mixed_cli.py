@@ -36,6 +36,8 @@ def _parser():
                    help='Name of a local environment variable holding an authorized test PostgreSQL DSN')
     p.add_argument('--allow-postgres-network', action='store_true',
                    help='Explicitly authorize an outbound connection to a test PostgreSQL server')
+    p.add_argument('--include-postgres-statistics', action='store_true',
+                   help='Opt-in pg_stat_user_tables row estimates and relation/index allocation')
     p.add_argument('--output-dir', required=True, help='Existing absolute directory distinct from sources')
     p.add_argument('--synthetic-only', action='store_true', help='Confirm every input is synthetic test data')
     p.add_argument('--accept-unencrypted-metadata', action='store_true',
@@ -52,6 +54,8 @@ def run(argv=None) -> dict:
     if not 1 <= len(args.sqlite) + (args.postgres_dsn_env is not None) <= 8:
         raise ReportError('INVALID_DATABASE_COUNT')
     if args.postgres_dsn_env is None and args.allow_postgres_network:
+        raise ReportError('POSTGRES_NOT_CONFIGURED')
+    if args.postgres_dsn_env is None and args.include_postgres_statistics:
         raise ReportError('POSTGRES_NOT_CONFIGURED')
     if args.postgres_dsn_env is not None:
         if not _ENV_NAME.fullmatch(args.postgres_dsn_env):
@@ -88,7 +92,10 @@ def run(argv=None) -> dict:
         if not secret_dsn:
             raise ReportError('PG_DSN_UNAVAILABLE')
         # Only a deliberate invocation with BOTH flags can make a connection.
-        catalogs.append(inspect_postgres(secret_dsn))
+        if args.include_postgres_statistics:
+            catalogs.append(inspect_postgres(secret_dsn, include_statistics=True))
+        else:
+            catalogs.append(inspect_postgres(secret_dsn))
     return export_report(catalogs, destination)
 
 
