@@ -1,3 +1,8 @@
+## 2026-11-12 KST — P4-02 최신, 목표 P95 미달 (잠정 P85 / [작업중] 유지)
+- 추출된 개발자 ZIP의 미등록 `.pyc/.pth/.cmd/.bat/.ps1/.sh/.exe/.dll/.pyd/.so/.com/.vbs` 및 기존 소스 확장자는 무결성 검증 거부, 정상 생성 `__pycache__/*.pyc` 예외 유지. 소스 확인 런처 Python `-S -B`. 7개 단위 음성례 + 정본 ZIP 추출 subprocess 통합 회귀 2개 **커밋**, 전체 원본 미실행.
+- Linux 격리 재구성 로직 8/8 PASS는 원본 full suite PASS가 아님. 제품 85% 잠정 불변, RELEASE HOLD.
+- **Next:** exact remote HEAD→private complete checkout→`python -m scripts.verify_release_gate` (>=553 Python + Node)→`python -m scripts.build_portable` actual ZIP extract/real tests→native Windows3.11/NTFS/Edge file:// QA→owner-approved PG TLS. 실제 테스트 없으면 P95를 보고하지 말고 중앙 [작업중]을 그대로 둔다. 상세 [P4-02](P4_02_UNSIGNED_SIDECAR_GUARD_20261112.md).
+
 ## 2026-11-12 KST — P4-01 latest: 85 provisional engineering milestone, RELEASE HOLD
 - New owner-usable no-input local `python -m dbvora.archive.review_selftest` (actual ZIP/ZSTD restore/recovery ledger/HTML/replay/corruption **22 checks PASS**) and `python -B -m dbvora.archive.portable_verify` (unsigned extracted source SHA, path symlink checks). Developer ZIP build now includes Win/Unix check+verify launchers; avoids real customer DB paths, API and auto-actions.
 - Exact GitHub source/test blob parity, isolated Linux Python3.13.5 **87 PASS/0 FAIL/0 SKIP**, compileall PASS. 27-file *synthetic mini ZIP* from subset (not official builder) extracted: source SHA verification27 PASS, selftest ZIP/ZSTD22 PASS, tamper rejected. Chromium actual renderer static document 12/12 PASS, native file URL not verified.
