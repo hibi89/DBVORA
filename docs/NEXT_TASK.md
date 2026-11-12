@@ -1,3 +1,8 @@
+## 2026-11-12 KST — P4-03 최신: P95 미달, 85% 잠정 / 작업중 표식 유지
+- GitHub 정본의 추출 ZIP 검증은 모든 미등록 일반 파일(확장자 없는 파일 포함) 거부, 매니페스트에 등록된 소스의 CPython 생성 캐시만 허용, 외부 하드링크 캐시 거부로 강화. 테스트 파일에도 캐시/변조/추출 ZIP subprocess 회귀를 추가했으나 아직 정본 실행 **미검증**.
+- Python3.13.5 임시 폴더 재구성 규칙 **19 PASS/0 FAIL**, 전체 정본 >=553 Python + Node·실 제품 ZIP·Windows/PG는 **NOT RUN**. 현재 **85% 잠정**, P95 NOT MET, RELEASE HOLD. 중앙 [작업중] 제거 금지.
+- **바로 다음:** 승인된 전체 private checkout에서 `python -m scripts.verify_release_gate`, 전체 유닛/Node + `scripts.build_portable` 신 ZIP 무결성+독립 프로세스 회귀→Windows3.11 NTFS/실 Chromium file URL→별도 승인된 비운영 PG TLS. [P4-03 근거](P4_03_STRICT_EXTRACTED_MANIFEST_20261112.md).
+
 ## 2026-11-12 KST — P4-02 최신, 목표 P95 미달 (잠정 P85 / [작업중] 유지)
 - 추출된 개발자 ZIP의 미등록 `.pyc/.pth/.cmd/.bat/.ps1/.sh/.exe/.dll/.pyd/.so/.com/.vbs` 및 기존 소스 확장자는 무결성 검증 거부, 정상 생성 `__pycache__/*.pyc` 예외 유지. 소스 확인 런처 Python `-S -B`. 7개 단위 음성례 + 정본 ZIP 추출 subprocess 통합 회귀 2개 **커밋**, 전체 원본 미실행.
 - Linux 격리 재구성 로직 8/8 PASS는 원본 full suite PASS가 아님. 제품 85% 잠정 불변, RELEASE HOLD.
