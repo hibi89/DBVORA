@@ -110,6 +110,30 @@ class MixedCliTests(unittest.TestCase):
         self.assertNotIn('password', json.dumps(result))
         self.assertNotIn('secret', json.dumps(result))
 
+    def test_pg_statistics_requires_explicit_pg_configuration(self):
+        code, result = self.invoke(self.flags + ['--include-postgres-statistics'])
+        self.assertEqual(code, 2)
+        self.assertEqual(result['error']['code'], 'POSTGRES_NOT_CONFIGURED')
+        self.assertEqual(list(self.output.iterdir()), [])
+
+    def test_pg_statistics_passes_explicit_opt_in_only(self):
+        from dbvora.connectors.postgres_reader import inspect_catalog
+        from tests.test_postgres_reader import Connection
+        pg = inspect_catalog(Connection())
+        args = self.flags + ['--postgres-dsn-env', 'DBVORA_TEST_DSN',
+                             '--allow-postgres-network', '--include-postgres-statistics']
+        with patch.dict(os.environ, {'DBVORA_TEST_DSN': 'host=synthetic.invalid'}), \
+                patch.object(mixed_cli, 'inspect_postgres', return_value=pg) as connect:
+            code, _ = self.invoke(args)
+        self.assertEqual(code, 0)
+        connect.assert_called_once_with('host=synthetic.invalid', include_statistics=True)
+
+    def test_pg_statistics_without_network_ack_fails_before_connect(self):
+        code, result = self.invoke(self.flags + [
+            '--postgres-dsn-env', 'DBVORA_TEST_DSN', '--include-postgres-statistics'])
+        self.assertEqual(code, 2)
+        self.assertEqual(result['error']['code'], 'NETWORK_ACK_REQUIRED')
+
     def test_env_name_rejects_injected_argument(self):
         code, result = self.invoke(self.flags + ['--postgres-dsn-env', 'BAD/ENV',
                                                  '--allow-postgres-network'])
