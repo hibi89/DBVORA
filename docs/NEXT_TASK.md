@@ -1,3 +1,5 @@
+> **P4-05 보강 검증:** 정확 Git Blob `81694c7b623edbf94894a195a11f924c0a5a41f9`의 신설 원본 ZIP-gate 테스트 7/7 PASS(단 모의 build/trusted child), 신설 모듈 `7e08838eae1d9d40937a34b5d7ebe41e291f6dca` 정확 일치. **전체 553+ Python·Node/실 패키지 테스트는 미실행**, 85% 잠정·P95 미달/[작업중] 유지. 다음 검증은 전체 정본 `python -m scripts.verify_release_gate`.
+
 ## 2026-11-12 KST — P4-05 현재: 진짜 ZIP 통합 검증을 필수 게이트에 연결, P95 미달/85 유지
 - `scripts.portable_acceptance_gate`: full source developer ZIP→`verify_zip`→fresh extract→별도 trusted checkout `verify_trusted_extraction` pre-import→실제 패키지 synth archive selftest→temporary ZIP-file tamper fail-closed 검증 **코드 구현**. `verify_release_gate` 새 필수 `trusted_portable_zip_e2e` PASS 전에는 전체 PASS 불가.
 - Linux Python3.13.5 로컬 동일 신규 모듈/임시 실제 단일 파일 ZIP + 모의 원본 builder/trusted subprocess **5/5 scoped PASS**. 원본 전체 Python>=553+Node/실 `build_portable`/Windows3.11 NTFS·PG TLS·고객 검증 **NOT RUN**. 85% 잠정 불변, P95 미달, SALE RELEASE HOLD, [작업중] 유지.
