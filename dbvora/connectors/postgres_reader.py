@@ -197,11 +197,17 @@ def inspect_catalog(connection: Any, *, include_statistics: bool = False) -> dic
                 StatisticsError, collect_relation_statistics,
             )
             try:
-                statistics = collect_relation_statistics(connection, [oid for oid, _ in details])
+                # pg_stat_user_tables does not measure the view/partition
+                # parent as a physical child aggregation; never claim that
+                # zero is a measured size or exact row count for those.
+                physical = [oid for oid, table in details
+                            if table["relation_kind"] == "r"]
+                statistics = collect_relation_statistics(connection, physical)
             except StatisticsError:
                 raise PostgresInventoryError("INVALID_STATISTICS") from None
             for oid, table in details:
-                table["statistics"] = statistics[oid]
+                table["statistics"] = statistics.get(oid, {
+                    "status": "unavailable", "reason": "relation_not_in_statistics_view"})
         return {"contract_version": "dbvora.pg_catalog.v1", "engine": "postgresql",
                 "inspection_mode": "read_only_metadata_only",
                 "observed_at": datetime.now(timezone.utc).isoformat(),
