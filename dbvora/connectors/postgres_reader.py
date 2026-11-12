@@ -17,7 +17,9 @@ MAX_FOREIGN_KEYS = 300
 
 TABLES = """
 SELECT n.nspname, c.relname, c.oid::bigint, c.relkind,
-       pg_catalog.pg_total_relation_size(c.oid)
+       CASE WHEN c.relkind IN ('r', 'm')
+            THEN pg_catalog.pg_total_relation_size(c.oid)
+            ELSE NULL::bigint END
 FROM pg_catalog.pg_class AS c
 JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
 WHERE c.relkind IN ('r', 'p', 'v', 'm')
@@ -97,11 +99,13 @@ def inspect_catalog(connection: Any, *, include_statistics: bool = False) -> dic
             schema, name, oid, kind, size = item
             if (not all(type(v) is str and 1 <= len(v) <= 256 for v in (schema, name, kind))
                     or type(oid) is not int or oid <= 0 or oid in oids
-                    or type(size) is not int or size < 0):
+                    or (size is not None and (type(size) is not int or size < 0))):
                 raise PostgresInventoryError("INVALID_CATALOG")
             oids[oid] = schema, name
             result = {"schema": schema, "name": name, "relation_kind": kind,
-                      "size_bytes": size, "size_provenance": "pg_total_relation_size",
+                      "size_bytes": size,
+                      "size_provenance": "pg_total_relation_size" if size is not None
+                                         else "unavailable_not_storage_or_transient",
                       "columns": [], "primary_key_columns": [],
                       "indexes": [], "foreign_keys": []}
             tables.append(result)
