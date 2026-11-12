@@ -1,3 +1,15 @@
+## 2026-11-12 KST — DBVORA P4-02 / P95 목표 지속 (인수인계 10항)
+1. **목표/기술:** 기존 DBVORA 85% 잠정에서 P95 목표, Python3.11+ SQLite/ZIP/ZSTD/PG 메타데이터·로컬 포터블 ZIP 무결성; 고객 데이터 접근·원본 변경 금지.
+2. **완료/선택:** 압축 ZIP의 SHA 검사만 지속(A) vs 추출후 미등록 실행 코드/바이트코드 차단 및 Python `-S` 검증 런처(B) 비교, 비용·API 호출 없는 O(N) bounded(B) 선택. `portable_verify.py`, `build_portable.py` 코드 수정, 단위·실 ZIP 통합 회귀 코드 추가. 자동 복구, 고객 데이터, 원본 UI 변경 없음.
+3. **테스트:** Python3.13.5 OS 임시폴더 **재구성 규칙 8 PASS/0 FAIL**, GitHub 원격 코드/테스트 blob readback 확인. **정본 전체 Python >=553, Node, 공식 full ZIP 실제 실행, Windows, PG TLS, 고객 QA NOT RUN**. 신규 테스트는 GitHub에 등록됐지만 정본 실행 검증이 아니므로 PASS로 세지 않음.
+4. **상태:** 85% 잠정 그대로, **95% 미달**, 중앙 **[작업중] 유지**, RELEASE HOLD. 출시·성능·서명·재배포 권리 완료 아님.
+5. **오류/대안:** private original local git DNS 불가, CI workflow 없음/새 유료 CI 설정 승인 없음. 원격 GitHub 파일 패치 후 제한된 재구성 테스트; **완전 회귀는 불가**. 동일 장애에 무의미한 clone 재시도 금지. 승인된 full checkout 또는 Windows 개발 환경으로 전환.
+6. **저장소/브랜치/SHA:** `hibi89/DBVORA@feature/p0-db-map`; 기능 최종 커밋 `94e1b5ddeb36b9610b8106300fd38d5da07ba795`; 근거 `docs/P4_02_UNSIGNED_SIDECAR_GUARD_20261112.md`; 중앙 `hibi89/hackathon-command-center-2026@kmong-productization`; 최종 HEAD 문서 작업 후 재확인.
+7. **실행/배포:** 로컬 `python -m scripts.verify_release_gate` 및 `python -m scripts.build_portable` 정본 E2E 필요, Vercel/Production 미적용, 고객용 설치 파일 배포 없음.
+8. **보존/보안:** feature 브랜치 git history로 복구 가능, customer DB, 기존 archive, credentials, private source external copy, main/develop/Production 불변; unsigned hash manifest는 출처 인증이 아니다.
+9. **다음 우선순위:** 전체 원본 Python >=553 + Node + ZIP 패키지 출고경로→정본 Windows3.11/NTFS와 실제 browser `file://`→승인된 PG TLS/권리·고객 QA. 95% 변경은 증거 후, 100%/판매는 별도 승인. 마커 조기 제거 금지.
+10. **시간/기준:** 2026-11-12 KST; GitHub 원격 blob + Linux 격리 규칙 증거, 전체 원본 기능/실서비스 미검증. 문서 HEAD는 최종 리드백으로 확정.
+
 ## 2026-11-12 KST — P4-01 DBVORA 85% provisional engineering checkpoint (10-point handoff)
 1. Goal/tech: owner requires 85% for DBVORA local SQLite/PG visibility + ZIP/ZSTD archive/recovery, Python3.11+, portable offline HTML; no customer source/production action.
 2. Implemented/decisions: safe no-input portable ZIP/ZSTD archive selfcheck instead of automatic recovery; exact original ZIP/ZSTD restore to separate paths, SHA SQLite consistency, request ledger replay hold, independent catalog + static HTML, deliberate disposable artifact tamper fail-closed; source manifest extraction SHA validator, Windows/Linux local launchers, optional Chromium Korean report DOM probe. Ledger record-only connection switched to SQLite mode=rw to avoid recreation after file deletion race. No external API, paid CI or customer data.
