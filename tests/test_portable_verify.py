@@ -129,6 +129,19 @@ class ExtractedPreviewTests(unittest.TestCase):
                 finally:
                     path.unlink()
 
+    def test_cache_hardlink_rejected(self):
+        cache = self.root / 'dbvora/archive/__pycache__'
+        cache.mkdir()
+        source = self.root / 'dbvora/archive/request_service.py'
+        link = cache / 'request_service.cpython-311.pyc'
+        try:
+            link.hardlink_to(source)
+        except (OSError, NotImplementedError):
+            self.skipTest('hardlink unsupported')
+        with self.assertRaisesRegex(
+                package.PortableVerifyError, 'UNSAFE_PACKAGE_ENTRY'):
+            package.verify(self.root)
+
     def test_cache_not_exempt_outside_pycache(self):
         path = self.root / 'dbvora/archive/request_service.cpython-311.pyc'
         path.write_bytes(b'INERT-SYNTHETIC')
