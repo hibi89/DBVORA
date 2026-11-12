@@ -111,6 +111,23 @@ class ExtractedPreviewTests(unittest.TestCase):
         with self.assertRaisesRegex(package.PortableVerifyError, 'UNSAFE_PACKAGE_ENTRY'):
             package.verify(self.root)
 
+    def test_unlisted_executable_sidecars_rejected(self):
+        # Detect unmanifested native, startup and bytecode executables.
+        # A legitimate generated __pycache__/*.pyc is tested separately.
+        for name in ('sitecustomize.pyc', 'hook.pth', 'run.cmd',
+                     'run.ps1', 'dbvora/archive/hook.pyd',
+                     'dbvora/archive/agent.so', 'dbvora/__pycache__/hook.py'):
+            with self.subTest(name=name):
+                target = self.root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(b'INERT-SYNTHETIC')
+                try:
+                    with self.assertRaisesRegex(
+                            package.PortableVerifyError, 'UNLISTED_PACKAGE_SOURCE'):
+                        package.verify(self.root)
+                finally:
+                    target.unlink()
+
     def test_bad_name_rejected(self):
         for bad in ('../private.py', 'dbvora/./temp.py', 'dbvora/../sitecustomize.py',
                     'dbvora\\private.py', '/tmp/private.py', '.env', 'customer.sqlite'):
