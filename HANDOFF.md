@@ -1,3 +1,15 @@
+## 2026-11-13 KST — DBVORA P1-09: 핵심 PG 관제 기능, P92 잠정 / P95 목표 지속 (10항)
+1. **목표/용도·기술:** `hibi89/DBVORA@feature/p0-db-map`, 로컬 read-only SQLite/PG 구조·용량 관제 + ZIP/ZSTD 아카이브 및 무손실 복원. 사용자 내부 목표 P95, 변경 전 85% 잠정.
+2. **완료 기능·결정:** A 기존 PG 스키마 정적 조회 유지 vs B 선택형 PG statistics `n_live_tup/n_dead_tup`(추정) + `pg_relation_size`/index bytes(실측) + 오프라인 탐색/수동 검토, B 구현(0 외부 API 비용). logical view/partition parent 디스크 용량 허위표시 차단. `postgres_statistics.py`, `postgres_reader.py`, `mixed_cli.py`, `multi_engine_report.py`, `optimization_review.py`; 신규 및 기존 테스트 보강. 자동 최적화/SQL·DB 변경 없음.
+3. **시험 명령/수치:** Python3.13.5 Linux 격리 정확 PG stats module Git Blob `740033f65a3c`, 합성 bounded SELECT/non-network **17 PASS / 0 FAIL**. Optimization module `058a66eba05a` + 테스트 `3fb2478fd013` 실제 GitHub 원본 8/8 unittest PASS/0 FAIL/0 SKIP. **실제 기존 PG reader/HTML/CLI 및 새 stats 10 tests, full Python>=553+Node, PostgreSQL TLS actual/Windows/ZIP full acceptance 모두 NOT RUN**. 첫 optimization test 기대 dict 키 오류는 수정 후 동일 원본 SHA 실행 PASS.
+4. **완료/진행/대기:** 기능 범위 증대 P0 22→24, P1 8→12, P4 16→17 (P2 20/P3 19 불변): **P92 내부 기술범위 잠정**, 목표95 **미달**, **RELEASE HOLD**, 허브 DBVORA `[작업중]` 유지. 기술 범위 비율이지 검증/고객 승인률 아님.
+5. **실패 근거/Stop-Pivot:** 비공개 전체 checkout git DNS 불가; 정본 단일 파일 GitHub connector read/write + 원본 Git Blob 일치 scoped Linux 테스트. 무의미한 clone 재시도·유료 CI 생성 금지. 다음 full checkout 가능 환경에서 본래 unit/ZIP/Node 종단 검증으로 전환. 권한 없는 실제 PG 접속 금지.
+6. **저장소/브랜치/SHA·경로:** `hibi89/DBVORA@feature/p0-db-map`; PG stats 신설 `3c7e50e40673`, PG reader 범위 `8c7212c058df`, optimization source `07b1b2167667`, UI `90560524fe77`, newest reader regression `7881a384e8fc`, P1-09 증거 `docs/P1_09_PG_STATS_OPTIMIZATION_20261113.md`. 최종 HEAD 최신 GitHub readback 후 확인. 중앙 `hibi89/hackathon-command-center-2026@kmong-productization`, `docs/audits/KMONG_16_CURRENT_20261111.md`.
+7. **Production/실행·환경:** Python3.11+ 로컬 개발 preview, Python3.13.5 isolated verification, 권한된 PG 연결은 명시 플래그와 sslmode=verify-full. Vercel/Production 미적용. Windows NTFS·실 PG/TLS 미검증.
+8. **원본·백업/보안:** 원본 main/develop, 고객 DB·기존 아카이브, 토큰/.env, 사용권, 결제·환경변수·배포·외부 데이터 전송 불변, 일반 Git 히스토리 롤백 가능. 측정치/추천은 read-only/추정 구분, 고객 데이터 미사용.
+9. **다음 우선순위·승인:** 본래 전체 private checkout에서 `python -m scripts.verify_release_gate`와 새 PG integration unit/Chrome/ZIP; 승인된 **전용 합성 PG read-only TLS verify-full** 서버 실제 조회, native Windows3.11 NTFS·오프라인 HTML QA. 필요한 인증/네트워크·원본 수정·판매 승인은 사용자 사전 승인. P95 달성 검증 전 작업중 마커 삭제 금지.
+10. **갱신/범위:** 2026-11-13 KST, 원격 GitHub 코드+Git Blob 확인과 isolated Python3.13.5 scoped 17+8 PASS, real PostgreSQL/전체 원본/Windows/고객 미검증; 문서 기준 SHA는 작업종료 전 GitHub branch HEAD 재조회.
+
 > **P4-05 정확 테스트 사후 검증:** GitHub `tests/test_portable_acceptance_gate.py` 실제 Git Blob `81694c7b623edbf94894a195a11f924c0a5a41f9` = 로컬 7개 원본 unittest **7 PASS/0 FAIL/0 SKIP** (Linux Python3.13.5; 모의 builder/trusted child). 실 전체 ZIP·Windows/PG 확인 아님. 기술85% 잠정/P95 미달/[작업중]·판매 HOLD 유지. 업데이트 2026-11-12 KST.
 
 ## 2026-11-12 KST — DBVORA P4-05: P95 미달, 실 ZIP 검증 게이트 필수화 (10항)
