@@ -169,14 +169,14 @@ def _contents(root: Path) -> dict[str, bytes]:
     files['verify_dbvora_portable_windows.cmd'] = (
         '@echo off\r\nsetlocal\r\ncd /d "%~dp0"\r\n'
         'if not "%~1"=="" (echo No arguments: unsigned source check. 1>&2 & exit /b 2)\r\n'
-        'py -3.11 -B -m dbvora.archive.portable_verify\r\n'
+        'py -3.11 -S -B -m dbvora.archive.portable_verify\r\n'
         'exit /b %ERRORLEVEL%\r\n'
     ).encode('ascii')
     files['verify_dbvora_portable_unix.sh'] = (
         '#!/bin/sh\nset -eu\n'
         'if [ "$#" -ne 0 ]; then echo "No arguments: unsigned source check" >&2; exit 2; fi\n'
         'cd "$(dirname "$0")"\n'
-        'exec python3 -B -m dbvora.archive.portable_verify\n'
+        'exec python3 -S -B -m dbvora.archive.portable_verify\n'
     ).encode('ascii')
     files['export_dbvora_map_windows.cmd'] = (
         '@echo off\r\nsetlocal\r\ncd /d "%~dp0"\r\n'
