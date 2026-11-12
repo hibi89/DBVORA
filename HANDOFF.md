@@ -1,3 +1,15 @@
+## 2026-11-12 KST — DBVORA P4-03, 최종 95% 목표 진행 중 (10-point)
+1. **목표/정본:** 독립 DBVORA SQLite/PG 로컬 관제 + 안전 ZIP/ZSTD 복구; `hibi89/DBVORA@feature/p0-db-map`, 사용자 목표 P95.
+2. **결과/비교:** 기존 확장자별 검사(A) vs 매니페스트 명시 전체 파일+허용된 CPython 생성 캐시 검사(B); 낮은 O(N) 비용/안전성 때문에 B 선택. 추가 파일·외부 캐시·하드링크 거부, 정상 캐시는 호환. 단위 및 실제 full ZIP 서브프로세스 검증 회귀 **코드 추가(미실행)**.
+3. **검증:** Python3.13.5 격리 **재구성 규칙 19 PASS/0 FAIL**. 정확 원본 전체 >=553 Python + Node/실 ZIP 빌드/Windows/PG/고객 테스트 **미실행**. 원격 source/test 3파일 blob 및 SHA 재확인 후 보고.
+4. **단계:** 현재 **85% 잠정 유지**, 95% 미달, 판매/고객 데이터 **RELEASE HOLD**, 중앙 **[작업중] 보존**.
+5. **장애/전환:** private git 주소 DNS 실패로 full 원본 checkout 불가. 무의미한 반복 clone 금지; 원격 GitHub 최소 소스 수정+synthetic scoped validation, 다음 실제 full checkout에서 전체 검증; CI 비용/권한변경 없음.
+6. **GitHub:** 기능 최종 SHA `b1b80d52dc3c3461ba4ab8eb1ef7f12d6afd0a54`, 문서 `docs/P4_03_STRICT_EXTRACTED_MANIFEST_20261112.md`, hub `hibi89/hackathon-command-center-2026@kmong-productization`. 최종 문서/허브 HEAD 원격 확인.
+7. **환경/배포:** Linux Python3.13.5 격리, 실제 고객 Windows 없음. Vercel/Production N/A, 빌드·판매 ZIP 배포 없음.
+8. **안전/복원:** 정상 Git 히스토리로 롤백 가능. customer database, archive originals, keys, main/develop, paywall, releases, other projects untouched. Unsigned SHA does not authenticate publisher.
+9. **다음 우선순위:** full `python -m scripts.verify_release_gate` >=553+Node→실 `scripts.build_portable` ZIP/EXE 없는 portable 경로→Windows3.11 NTFS/file URL→사용자 승인 PG TLS·상용권리 검수. 근거 없이 P95 또는 배포 성공 표시 금지.
+10. **일시/범위:** 2026-11-12 KST, GitHub 코드·문서 / 독립 Linux temporary rule test; 원본 전체·Windows·고객 미검증.
+
 ## 2026-11-12 KST — DBVORA P4-02 / P95 목표 지속 (인수인계 10항)
 1. **목표/기술:** 기존 DBVORA 85% 잠정에서 P95 목표, Python3.11+ SQLite/ZIP/ZSTD/PG 메타데이터·로컬 포터블 ZIP 무결성; 고객 데이터 접근·원본 변경 금지.
 2. **완료/선택:** 압축 ZIP의 SHA 검사만 지속(A) vs 추출후 미등록 실행 코드/바이트코드 차단 및 Python `-S` 검증 런처(B) 비교, 비용·API 호출 없는 O(N) bounded(B) 선택. `portable_verify.py`, `build_portable.py` 코드 수정, 단위·실 ZIP 통합 회귀 코드 추가. 자동 복구, 고객 데이터, 원본 UI 변경 없음.
