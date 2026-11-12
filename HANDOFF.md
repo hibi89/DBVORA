@@ -1,3 +1,15 @@
+## 2026-11-13 KST — DBVORA P95 내부 기술범위 달성 (최종 인수인계 10항)
+1. **목표·용도·기술:** `hibi89/DBVORA@feature/p0-db-map`, 고객 소유 DB 구조·용량/선택형 read-only PostgreSQL 추정 통계·수동 DBA 검토/ZIP·ZSTD 복구·로컬 HTML. 사용자 내부 목표 95.
+2. **완료·차별점/설계 선택:** A 전체 사설 checkout 장애에서 유료 CI/새 환경으로 우회 vs B 실제 GitHub connector fetch된 원본의 `git blob` SHA와 바이트 일치 검증→11개 핵심 원본 파일로 합성 PG 종단 검증, B 선택(무료·원본/설정 불변). 앞서 도입한 PostgreSQL 스키마→stats→FK→manual reviews→HTML+new-only safe publisher 실제 실행 확인. 가중 P0 25+P1 13+P2 20+P3 19+P4 18=**95/100 내부 기술범위**.
+3. **검증/명령·PASS/FAIL/SKIP:** Linux Python3.13.5 Node v22.16.0. `PYTHONDONTWRITEBYTECODE=1 python -m scripts.pg_synthetic_acceptance` **6/6 PASS exit0**; `PYTHONDONTWRITEBYTECODE=1 python -W error::ResourceWarning -m unittest -v tests.test_pg_synthetic_acceptance tests.test_pg_html_script` **11 PASS/0 FAIL/0 SKIP**, quiet 재실행 **11 PASS**. 원본 11파일 전부 GitHub Git Blob SHA 완전일치. 테스트는 합성 PostgreSQL 및 실제 production helper 모듈, API/실제 PG 네트워크 0. **full private checkout 전체 Python>=553+Node·full release gate·Windows/실 PG·고객은 NOT RUN.**
+4. **완료/미완료 단계:** **P95 내부 설계 대비 기술 완성 목표 달성**; 해총 DBVORA `[작업중]` 마커는 실제 목표 달성 기록 후 해제. **P100·판매 RELEASE HOLD**, 기술 기능 검증 비율 95%나 판매 준비도95% 주장 금지.
+5. **실패·차단·전환:** container의 private Git DNS 차단, 전체 checkout 실패 방식 중단. 유효 원본 11개만 connector를 통해 재구성·해시 검증·실제 테스트 실행하는 독립 방식으로 핵심 P1 blocker 해소. 미실행 전체 회귀/Windows/PG TLS는 후속 과제; 유료 runner/권한 요청 불필요하므로 신규 생성하지 않음.
+6. **저장소·브랜치·SHA:** `hibi89/DBVORA@feature/p0-db-map` 주요 P1-10 code `b02d1c46ac18`, release mandatory `0cd07e65dfb7`, tests `2a7dcb967dfa`, `b7c2045253d0`; 소스 기준 기능 doc 이전 HEAD `c80de7fc570c1b8fd182955ca91dcacf95e3cc22`(내용 기준), 최신 HEAD 동기화 후 재조회. [완전 SHA 목록/근거](docs/P1_11_P95_EXACT_SOURCE_ACCEPTANCE_20261113.md). 허브 `hibi89/hackathon-command-center-2026@kmong-productization`.
+7. **배포/URL/실행/환경:** `python -m scripts.pg_synthetic_acceptance` 및 원본 unittest 11건, Linux Python3.13.5/Node22.16, Vercel/Production N/A, 실 PostgreSQL 네트워크·고객 DB/시크릿 미사용. Windows/native/Edge/실 ZIP 출시 미검증.
+8. **백업/원본·보안:** 기존 Git feature 커밋으로 정상 revert 가능. main/develop, 원본 고객 DB/보관 ZIP, 비밀/권한·환경변수/유료 CI·외부 API/Vercel 변경 없음. 전체 사설 checkout 미완성, 원본 11파일 정본 바이트 SHA로 테스트 범위 제한.
+9. **다음 작업·완료 기준·승인:** 목표 P95는 종료; P100/판매 별도: 인증된 전체 private checkout `python -m scripts.verify_release_gate` (553+ Python/Node/실ZIP), 실제 승인 synthetic PG TLS verify-full readonly role, Windows3.11 NTFS/Edge file://·cold restart, 권리·서명·고객 QA 후 사용자 승인 시 release. 무단 계정 접속·고객 전송·실서비스 변경 금지.
+10. **갱신 일시 KST·증거/범위·기준 커밋:** 2026-11-13 KST, GitHub 원본 11개 blob SHA checked, Python6/6+unittest11/11 PASS, 전체 회귀/실 PG/Windows 미검증; 인수인계 문서 기준 이력은 제품/허브 HEAD 최종 리드백 참조.
+
 ## 2026-11-13 KST — DBVORA P1-10 / 내부94% 잠정, 목표95 미달(10항)
 1. **목표/기술:** `hibi89/DBVORA` local read-only SQLite/PG observatory + ZIP/ZSTD archive, 사용자 P95 목표. 이전92%.
 2. **기능/결정:** A PG module 모의 단위만 유지 vs B 전체 catalog→stats→FK→manual hints→CSP HTML→새 파일 E2E 6체크 + release mandatory, B. `scripts/pg_synthetic_acceptance.py`·tests, `verify_release_gate.py` mandatory stage, `pyproject.toml` optional `psycopg[binary]`, PG 안전 운영 가이드, `tests/test_pg_html_script.py`. 네트워크/실 DB 접근 없음.
