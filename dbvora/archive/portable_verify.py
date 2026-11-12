@@ -19,6 +19,10 @@ MAX_MEMBERS = 100
 MAX_FILE_BYTES = 2 * 1024 * 1024
 MAX_TOTAL_BYTES = 16 * 1024 * 1024
 _DIGEST = re.compile(r'[0-9a-f]{64}\Z', re.ASCII)
+_EXECUTABLE_SUFFIXES = frozenset({
+    '.py', '.pyc', '.pyw', '.pth', '.js', '.html', '.css', '.cmd',
+    '.bat', '.ps1', '.sh', '.exe', '.dll', '.pyd', '.so', '.com', '.vbs',
+})
 _ROOT_FILES = {'scripts/build_portable.py', 'pyproject.toml', 'README_PORTABLE.txt',
                'run_dbvora_windows.cmd', 'run_dbvora_unix.sh',
                'check_dbvora_windows.cmd', 'check_dbvora_unix.sh',
@@ -140,10 +144,7 @@ def verify(root: Path | None = None) -> dict:
             # material and must not be silently covered by an unsigned report.
             if '__pycache__' in relative.parts and path.suffix == '.pyc':
                 continue
-            executable = {'.py', '.pyc', '.pyw', '.pth', '.js', '.html',
-                          '.css', '.cmd', '.bat', '.ps1', '.sh', '.exe',
-                          '.dll', '.pyd', '.so', '.com', '.vbs'}
-            if (path.is_file() and path.suffix.lower() in executable
+            if (path.is_file() and path.suffix.lower() in _EXECUTABLE_SUFFIXES
                     and relative.as_posix() not in files):
                 raise PortableVerifyError('UNLISTED_PACKAGE_SOURCE')
         except PortableVerifyError:
