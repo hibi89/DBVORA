@@ -1,3 +1,15 @@
+## 2026-11-12 KST — DBVORA P4-04 / P95 미달·실제 원본 소스 검증(10-point)
+1. **목표·스택:** Python3.11+ DBVORA 읽기전용 SQLite/PG + ZIP/ZSTD 아카이브 독립 상품, 소유자 P95 지시. 기존 85% 잠정.
+2. **구현/판단:** `-S -B`도 캐시 import 가능함을 합성 CPython bytecode로 재현. 옵션 A 캐시 이름만 허용 vs B 완전 차단 + 별도 신뢰된 체크아웃에 둔 `verify_trusted_extraction.py`; B 선택. 원본 ZIP에서 코드 import하기 전 감사, 비신뢰 `PYTHONPATH` 무시, 경로 겹침 차단, 오류 메시지 제한. 증거 문서 `docs/P4_04_TRUSTED_PREIMPORT_AUDIT_20261112.md`.
+3. **시험:** 기능+테스트 Git Blob **4개 동일** (`d8d3e67b28f3`, `56693b25a387`, `8430914e997d`, `f7acd1840aee`). Linux Python3.13.5 진짜 GitHub 원본 unit/test **27 PASS/0 FAIL/0 SKIP** + GitHub 미수록 격리 추가7 PASS. 최초 원본 테스트 1 subtest FAIL은 캐시 오류코드 기대 차이, 수정 후 전체 PASS. 실제 full repo Python>=553/Node/공식 ZIP/Windows/PG **NOT RUN**.
+4. **상태:** **85% 잠정 유지**, P95 **미달**, 판매/배포 **RELEASE HOLD**. 중앙 DBVORA **[작업중] 유지**. 테스트 통과율을 완성률로 환산 금지.
+5. **오류/전환:** 컨테이너 GitHub DNS 불능으로 private full checkout 불가. 원격 GitHub 정확 4파일만 수동 재구성/Blob 검증·로컬 실행, full CI 미실행. 새 유료 CI/권한 변경·같은 clone 실패 반복 금지. 별도 소유자 승인된 전체 checkout/네이티브 Windows로 전환 필요.
+6. **저장소·SHA:** `hibi89/DBVORA@feature/p0-db-map`, 캐시 차단 기능 `968206b6c979`, 신뢰된 검사기 `8d4199c62491`, 테스트 수정 `7204a0b12bdd`, 문서 `docs/P4_04_TRUSTED_PREIMPORT_AUDIT_20261112.md`; GitHub HEAD는 본 문서 커밋 뒤 재조회. 중앙 `hibi89/hackathon-command-center-2026@kmong-productization`.
+7. **Production·환경:** 로컬 Linux Python3.13.5 정확4파일/합성 디렉터리만. Windows 네이티브/고객/PG TLS 미실행, Vercel 미적용. `python -I -S -B /trusted/DBVORA/scripts/verify_trusted_extraction.py --extracted /separate/fresh` (두 경로 모두 신뢰·새 경로 조건).
+8. **백업·보안:** main/develop 고객 DB/비밀/원본 ZIP/다른 상품·권한/과금 변경 없음, Git 이력 정상 복구 가능. 신뢰된 원본 체크아웃에 대한 사전 신원 보증 필요, unsigned manifest는 출처 신뢰를 증명하지 않음.
+9. **다음 우선순위:** 비공개 전체 checkout Python >=553 + Node + 진짜 빌더 ZIP 추출 검증/새 trusted auditor → Windows3.11 NTFS browser/file:// 재시작 복구 → 별도 승인된 PG read-only TLS·권리/사용자 인수. P95 근거 생기기 전 마커 제거 금지.
+10. **갱신/증거범위:** 2026-11-12 KST, Python3.13.5 exact Git blobs 4 + local 27/27 + scoped 7/7. GitHub 코드 문서/허브 최종 HEAD 확인 후 기록. 배포 미적용·판매 HOLD.
+
 ## 2026-11-12 KST — DBVORA P4-03, 최종 95% 목표 진행 중 (10-point)
 1. **목표/정본:** 독립 DBVORA SQLite/PG 로컬 관제 + 안전 ZIP/ZSTD 복구; `hibi89/DBVORA@feature/p0-db-map`, 사용자 목표 P95.
 2. **결과/비교:** 기존 확장자별 검사(A) vs 매니페스트 명시 전체 파일+허용된 CPython 생성 캐시 검사(B); 낮은 O(N) 비용/안전성 때문에 B 선택. 추가 파일·외부 캐시·하드링크 거부, 정상 캐시는 호환. 단위 및 실제 full ZIP 서브프로세스 검증 회귀 **코드 추가(미실행)**.
