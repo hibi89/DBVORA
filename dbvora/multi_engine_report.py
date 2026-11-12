@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from dbvora.archive.safe_zip import ArchiveError, _directory, _publish_new, _staging_file
+from dbvora.optimization_review import review_statistics
 
 MAX_DATABASES = 8
 MAX_TABLES = 2000
@@ -177,6 +178,7 @@ def assemble_workspace(catalogs: list[dict]) -> dict:
                           'columns': columns, 'indexes': indexes}
             if engine == 'postgresql':
                 normalized['statistics'] = _pg_statistics(table.get('statistics'))
+                normalized['optimization_review'] = review_statistics(normalized['statistics'])
             output_tables.append(normalized)
             for fk in fks:
                 edge = _relationship(table, fk, engine=engine, table_keys=keys)
@@ -205,7 +207,7 @@ _HTML = r'''<!doctype html>
 </style></head><body>
 <header><div><div class="tag">DBVORA · OFFLINE · READ ONLY</div><h1>Database Observatory</h1><div class="sub">SQLite + PostgreSQL 메타데이터 구조 탐색</div></div><div class="tag">LOCAL FILE · NO NETWORK</div></header>
 <section class="kpis"><div class="kpi"><span class="sub">DATABASES</span><strong id="db-count">—</strong></div><div class="kpi"><span class="sub">TABLES</span><strong id="table-count">—</strong></div><div class="kpi"><span class="sub">RELATIONSHIPS</span><strong id="edge-count">—</strong></div><div class="kpi"><span class="sub">CPU / RAM</span><strong>N/A</strong><small class="muted">DB별 측정 불가</small></div></section>
-<div class="layout"><section class="panel"><h2>Structure map</h2><label class="sub" for="search">테이블 검색</label><input id="search" type="search" autocomplete="off" placeholder="테이블 또는 스키마 검색"><div id="databases" aria-label="데이터베이스 노드"></div></section><section class="panel"><h2 id="selection">Select a table</h2><div class="sub" id="meta">노드를 클릭하면 컬럼·인덱스를 확인할 수 있습니다.</div><h2>Estimated PostgreSQL statistics</h2><div class="sub" id="pg-stats">Optional statistics not collected</div><h2>Columns</h2><ul id="columns"></ul><h2>Indexes</h2><ul id="indexes"></ul><h2>Declared relationships</h2><ul id="relations"></ul></section></div>
+<div class="layout"><section class="panel"><h2>Structure map</h2><label class="sub" for="search">테이블 검색</label><input id="search" type="search" autocomplete="off" placeholder="테이블 또는 스키마 검색"><div id="databases" aria-label="데이터베이스 노드"></div></section><section class="panel"><h2 id="selection">Select a table</h2><div class="sub" id="meta">노드를 클릭하면 컬럼·인덱스를 확인할 수 있습니다.</div><h2>Estimated PostgreSQL statistics</h2><div class="sub" id="pg-stats">Optional statistics not collected</div><h2>Optimization review · manual only</h2><div class="sub" id="pg-review">No actions taken</div><h2>Columns</h2><ul id="columns"></ul><h2>Indexes</h2><ul id="indexes"></ul><h2>Declared relationships</h2><ul id="relations"></ul></section></div>
 <footer>데이터 행·접속 정보·SQL 원문을 포함하지 않습니다. 선언된 DB 내부 관계만 표시하며 DB 사이 관계는 추론하지 않습니다. 백업 및 고객 서비스 출시 검증과는 별개입니다.</footer>
 <script type="application/json" id="catalog">__DBVORA_CATALOG_JSON__</script>
 <script>
@@ -226,6 +228,10 @@ $('pg-stats').textContent=stats&&stats.status==='observed'
     ' · measured heap '+stats.heap_bytes.toLocaleString('en-US')+' bytes'+
     ' · measured indexes '+stats.index_bytes.toLocaleString('en-US')+' bytes'
   : (db.engine==='postgresql'?'Not collected or unavailable (no fabricated zero)':'PostgreSQL only');
+const review=table.optimization_review;
+$('pg-review').textContent=review&&review.rules.length
+  ? review.rules.map(x=>x.label).join(' · ')+' · estimates are not confirmed waste'
+  : 'No evidence-based action; no automatic SQL or storage savings claim';
 rows('columns',table.columns,c=>c.name+' · '+c.type+(c.primary_key?' · PK':'')+(c.nullable?' · nullable':''));
 rows('indexes',table.indexes,i=>i.name+' ('+i.columns.map(c=>c===null?'expression':c).join(', ')+')'+(i.unique?' · unique':''));
 rows('relations',db.relationships.filter(r=>r.from===table.key||r.to===table.key),r=>r.from+' → '+r.to+' ['+r.evidence+']');}
