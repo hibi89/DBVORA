@@ -94,11 +94,50 @@ class ExtractedPreviewTests(unittest.TestCase):
         with self.assertRaisesRegex(package.PortableVerifyError, 'UNSAFE_PACKAGE_ENTRY'):
             package.verify(self.root)
 
-    def test_pycache_ignored_but_not_code(self):
-        cache = self.root / 'dbvora/__pycache__'
+    def test_manifested_python_cache_tolerated(self):
+        cache = self.root / 'dbvora/archive/__pycache__'
         cache.mkdir()
-        (cache / 'x.cpython-311.pyc').write_bytes(b'generated')
+        (cache / 'request_service.cpython-311.pyc').write_bytes(b'generated')
         self.assertEqual(package.verify(self.root)['status'], 'PASS_UNSIGNED_EXTRACTED_CONTENTS_ONLY')
+
+    def test_foreign_cache_bytecode_rejected(self):
+        cache = self.root / 'dbvora/archive/__pycache__'
+        cache.mkdir()
+        for name in ('foreign.cpython-311.pyc', 'request_service.pypy310.pyc',
+                     'request_service.cpython-311.opt-99.pyc'):
+            with self.subTest(name=name):
+                path = cache / name
+                path.write_bytes(b'INERT-SYNTHETIC')
+                try:
+                    with self.assertRaisesRegex(
+                            package.PortableVerifyError, 'UNLISTED_PACKAGE_SOURCE'):
+                        package.verify(self.root)
+                finally:
+                    path.unlink()
+
+    def test_unmanifested_non_executable_sidecars_rejected(self):
+        for name in ('INJECTED_NO_EXTENSION', 'unexpected.ini', 'subfolder/readme.txt',
+                     '.hidden_marker'):
+            with self.subTest(name=name):
+                path = self.root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'INERT-SYNTHETIC')
+                try:
+                    with self.assertRaisesRegex(
+                            package.PortableVerifyError, 'UNLISTED_PACKAGE_SOURCE'):
+                        package.verify(self.root)
+                finally:
+                    path.unlink()
+
+    def test_cache_not_exempt_outside_pycache(self):
+        path = self.root / 'dbvora/archive/request_service.cpython-311.pyc'
+        path.write_bytes(b'INERT-SYNTHETIC')
+        try:
+            with self.assertRaisesRegex(
+                    package.PortableVerifyError, 'UNLISTED_PACKAGE_SOURCE'):
+                package.verify(self.root)
+        finally:
+            path.unlink()
 
     def test_cache_symlink_rejected_before_ignored_bytecode(self):
         cache = self.root / 'dbvora/__pycache__'
