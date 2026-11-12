@@ -45,6 +45,8 @@ class PostgresStatsTests(unittest.TestCase):
         self.assertIn('not_exact', data[11]['row_count_provenance'])
         self.assertEqual(data[12]['status'], 'unavailable')
         self.assertEqual(conn.calls[0][1], ([11, 12], 301))
+        self.assertIn('relid::bigint = ANY(%s::bigint[])', conn.calls[0][0])
+        self.assertEqual(conn.calls[0][0].count('%s'), 2)
 
     def test_empty_scope_and_readwrite_refusal_do_not_query(self):
         conn = Fake([])
