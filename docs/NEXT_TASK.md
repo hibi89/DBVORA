@@ -1,3 +1,8 @@
+## 2026-11-12 KST — P4-05 현재: 진짜 ZIP 통합 검증을 필수 게이트에 연결, P95 미달/85 유지
+- `scripts.portable_acceptance_gate`: full source developer ZIP→`verify_zip`→fresh extract→별도 trusted checkout `verify_trusted_extraction` pre-import→실제 패키지 synth archive selftest→temporary ZIP-file tamper fail-closed 검증 **코드 구현**. `verify_release_gate` 새 필수 `trusted_portable_zip_e2e` PASS 전에는 전체 PASS 불가.
+- Linux Python3.13.5 로컬 동일 신규 모듈/임시 실제 단일 파일 ZIP + 모의 원본 builder/trusted subprocess **5/5 scoped PASS**. 원본 전체 Python>=553+Node/실 `build_portable`/Windows3.11 NTFS·PG TLS·고객 검증 **NOT RUN**. 85% 잠정 불변, P95 미달, SALE RELEASE HOLD, [작업중] 유지.
+- **Next:** full authenticated checkout, execute `python -m scripts.verify_release_gate` and record all PASS/FAIL/SKIP, including trusted ZIP gate SHA. No Windows/manual owner action until necessary. Then Windows3.11 Native/NTFS/Edge file://, separately approved sandbox PG TLS and rights. [P4-05 report](P4_05_TRUSTED_ZIP_RELEASE_GATE_20261112.md).
+
 ## 2026-11-12 KST — P4-04 최신: 정확 원본 unit27 PASS, 목표 P95 미달/85 잠정
 - Python `-S -B`는 기존 `.pyc`를 읽으므로 추출 코드 내부 실행 전 검증만으로는 안전성 입증 불가. 모든 bytecode 캐시 거부, 별도 신뢰된 원본 checkout의 `scripts/verify_trusted_extraction.py`로 **먼저** extracted ZIP을 파일만 검사하는 안전경로 신규 구현. 합성 로컬 Python3.13.5 GitHub exact source/test **27 PASS**, 추가 독립7 PASS(원본 full suite 아님), Git Blob 4개 일치.
 - 비공개 원본 전체 Python >=553+Node·신 ZIP 실제 빌드 및 원본 통합 테스트·Windows3.11/NTFS Edge/file://·실 PostgreSQL read-only TLS/고객 권리 검수 **미실행**. 현재 85% 잠정 고정, P95 목표 미달, RELEASE HOLD, 해총 DBVORA [작업중] 유지.
