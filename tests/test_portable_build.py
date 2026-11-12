@@ -153,7 +153,10 @@ class PortableTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0, result.stderr)
                     report = json.loads(result.stdout)
                     self.assertEqual(report['status'], 'FAIL_CLOSED')
-                    self.assertEqual(report['error_code'], 'UNLISTED_PACKAGE_SOURCE')
+                    expected_code = ('PACKAGE_BYTECODE_PRESENT'
+                                     if injected.suffix == '.pyc'
+                                     else 'UNLISTED_PACKAGE_SOURCE')
+                    self.assertEqual(report['error_code'], expected_code)
                 finally:
                     injected.unlink()
 
@@ -179,9 +182,31 @@ class PortableTests(unittest.TestCase):
                     self.assertNotEqual(result.returncode, 0, result.stderr)
                     report = json.loads(result.stdout)
                     self.assertEqual(report['status'], 'FAIL_CLOSED')
-                    self.assertEqual(report['error_code'], 'UNLISTED_PACKAGE_SOURCE')
+                    expected_code = ('PACKAGE_BYTECODE_PRESENT'
+                                     if path.suffix == '.pyc'
+                                     else 'UNLISTED_PACKAGE_SOURCE')
+                    self.assertEqual(report['error_code'], expected_code)
                 finally:
                     path.unlink()
+
+    def test_preexisting_cache_rejected_even_with_source_name(self):
+        # A .pyc matching a packaged source must not earn a PASS result.
+        archive = pack.build(self.folder)
+        destination = self.folder / 'same_name_cache'
+        destination.mkdir()
+        with zipfile.ZipFile(archive) as zipped:
+            zipped.extractall(destination)
+        cache = destination / 'dbvora/archive/__pycache__'
+        cache.mkdir()
+        (cache / 'portable_verify.cpython-311.pyc').write_bytes(b'INERT-SYNTHETIC')
+        result = subprocess.run(
+            [sys.executable, '-S', '-B', '-m', 'dbvora.archive.portable_verify'],
+            cwd=destination, env=dict(os.environ, PYTHONPATH=''),
+            capture_output=True, text=True, timeout=15, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        parsed = json.loads(result.stdout)
+        self.assertEqual(parsed['status'], 'FAIL_CLOSED')
+        self.assertEqual(parsed['error_code'], 'PACKAGE_BYTECODE_PRESENT')
 
     def test_verifier_launchers_disable_site_hooks(self):
         archive = pack.build(self.folder)
