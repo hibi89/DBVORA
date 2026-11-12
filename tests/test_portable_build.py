@@ -157,6 +157,32 @@ class PortableTests(unittest.TestCase):
                 finally:
                     injected.unlink()
 
+    def test_extracted_package_requires_full_manifested_file_set(self):
+        archive = pack.build(self.folder)
+        destination = self.folder / 'strict_extract'
+        destination.mkdir()
+        with zipfile.ZipFile(archive) as zipped:
+            zipped.extractall(destination)
+        env = dict(os.environ, PYTHONPATH='')
+        for injected in ('EXTRA_NO_EXTENSION', 'unknown.userfile',
+                         'dbvora/archive/__pycache__/unlisted.cpython-311.pyc'):
+            with self.subTest(injected=injected):
+                path = destination / injected
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'INERT-SYNTHETIC')
+                try:
+                    result = subprocess.run(
+                        [sys.executable, '-S', '-B', '-m',
+                         'dbvora.archive.portable_verify'],
+                        cwd=destination, env=env, capture_output=True,
+                        text=True, timeout=15, check=False)
+                    self.assertNotEqual(result.returncode, 0, result.stderr)
+                    report = json.loads(result.stdout)
+                    self.assertEqual(report['status'], 'FAIL_CLOSED')
+                    self.assertEqual(report['error_code'], 'UNLISTED_PACKAGE_SOURCE')
+                finally:
+                    path.unlink()
+
     def test_verifier_launchers_disable_site_hooks(self):
         archive = pack.build(self.folder)
         with zipfile.ZipFile(archive) as zipped:
