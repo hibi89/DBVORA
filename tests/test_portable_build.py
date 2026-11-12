@@ -130,6 +130,41 @@ class PortableTests(unittest.TestCase):
         self.assertEqual(evidence['status'], 'FAIL_CLOSED')
         self.assertEqual(evidence['error_code'], 'PACKAGE_DIGEST_MISMATCH')
 
+    def test_extracted_package_rejects_unlisted_executable_sidecars(self):
+        # Exercise the actual built ZIP and the verifier subprocess, not a
+        # synthetic manifest-only stand-in. No customer data is used.
+        archive = pack.build(self.folder)
+        destination = self.folder / 'sidecar_probe'
+        destination.mkdir()
+        with zipfile.ZipFile(archive) as zipped:
+            zipped.extractall(destination)
+        for sidecar in ('unknown.cmd', 'startup.pth', 'untrusted.pyc',
+                        'dbvora/archive/injected.pyd'):
+            with self.subTest(sidecar=sidecar):
+                injected = destination / sidecar
+                injected.parent.mkdir(parents=True, exist_ok=True)
+                injected.write_bytes(b'INERT-SYNTHETIC')
+                try:
+                    result = subprocess.run(
+                        [sys.executable, '-S', '-B', '-m',
+                         'dbvora.archive.portable_verify'],
+                        cwd=destination, env=dict(os.environ, PYTHONPATH=''),
+                        capture_output=True, text=True, timeout=15, check=False)
+                    self.assertNotEqual(result.returncode, 0, result.stderr)
+                    report = json.loads(result.stdout)
+                    self.assertEqual(report['status'], 'FAIL_CLOSED')
+                    self.assertEqual(report['error_code'], 'UNLISTED_PACKAGE_SOURCE')
+                finally:
+                    injected.unlink()
+
+    def test_verifier_launchers_disable_site_hooks(self):
+        archive = pack.build(self.folder)
+        with zipfile.ZipFile(archive) as zipped:
+            windows = zipped.read('verify_dbvora_portable_windows.cmd')
+            unix = zipped.read('verify_dbvora_portable_unix.sh')
+        self.assertIn(b'py -3.11 -S -B -m dbvora.archive.portable_verify', windows)
+        self.assertIn(b'python3 -S -B -m dbvora.archive.portable_verify', unix)
+
     def test_determinism_rebuild_in_new_folder(self):
         a = pack.build(self.folder)
         bdir = self.folder / 'second'
