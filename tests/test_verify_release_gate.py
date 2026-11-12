@@ -45,6 +45,10 @@ class VerificationGateTests(unittest.TestCase):
                             'offline_html_written': True, 'source_unchanged': True,
                             'customer_ready': False, 'exactly_once_verified': False,
                             'power_loss_verified': False, 'windows_ntfs_verified': False}), ''),
+            (0, json.dumps({'status': 'PASS_SYNTHETIC_PORTABLE_ONLY',
+                            'checks': 4, 'zip_sha256': 'a' * 64,
+                            'ready_for_customer_data': False,
+                            'signed': False, 'windows_ntfs_verified': False}), ''),
         ]
 
     def test_full_mocked_gate_synthetic_pass_not_customer_release(self):
@@ -52,7 +56,7 @@ class VerificationGateTests(unittest.TestCase):
             report = gate.verify()
         self.assertEqual(report['status'], 'PASS_SYNTHETIC_ENVIRONMENT_ONLY')
         self.assertFalse(report['ready_for_customer_data'])
-        self.assertEqual(len(report['steps']), 8)
+        self.assertEqual(len(report['steps']), 9)
 
     def test_incomplete_checkout_fails_before_execution(self):
         (self.root / 'dbvora/archive/safe_zip.py').unlink()
@@ -286,8 +290,8 @@ class VerificationGateTests(unittest.TestCase):
         ):
             report = gate.verify()
         self.assertEqual(report['status'], 'FAIL_CLOSED')
-        self.assertEqual(report['steps'][-1]['step'], 'synthetic_recovery_review')
-        self.assertEqual(report['steps'][-1]['status'], 'FAIL')
+        self.assertEqual(report['steps'][7]['step'], 'synthetic_recovery_review')
+        self.assertEqual(report['steps'][7]['status'], 'FAIL')
 
     def test_recovery_review_gate_rejects_customer_ready_claim(self):
         responses = self.responses()
@@ -300,6 +304,43 @@ class VerificationGateTests(unittest.TestCase):
             report = gate.verify()
         self.assertEqual(report['status'], 'FAIL_CLOSED')
         self.assertFalse(report['ready_for_customer_data'])
+
+    def test_trusted_portable_zip_gate_is_mandatory(self):
+        responses = self.responses()
+        reports = json.loads(responses[7][1])
+        reports["checks"] = 3
+        responses[7] = (0, json.dumps(reports), '')
+        with patch.object(gate, '_run', side_effect=responses), patch.object(
+            gate.shutil, 'which', return_value='tool'
+        ):
+            answer = gate.verify()
+        self.assertEqual(answer['status'], 'FAIL_CLOSED')
+        self.assertEqual(answer['steps'][-1]['step'], 'trusted_portable_zip_e2e')
+        self.assertEqual(answer['steps'][-1]['status'], 'FAIL')
+
+    def test_trusted_portable_gate_rejects_false_customer_release(self):
+        responses = self.responses()
+        report = json.loads(responses[7][1])
+        report["ready_for_customer_data"] = True
+        responses[7] = (0, json.dumps(report), '')
+        with patch.object(gate, '_run', side_effect=responses), patch.object(
+            gate.shutil, 'which', return_value='tool'
+        ):
+            self.assertEqual(gate.verify()['status'], 'FAIL_CLOSED')
+
+    def test_trusted_portable_gate_rejects_bad_digest(self):
+        responses = self.responses()
+        report = json.loads(responses[7][1])
+        report["zip_sha256"] = 'C:\\\\private\\\\file.zip'
+        responses[7] = (0, json.dumps(report), '')
+        with patch.object(gate, '_run', side_effect=responses), patch.object(
+            gate.shutil, 'which', return_value='tool'
+        ):
+            step = gate.verify()['steps'][-1]
+        self.assertEqual(step['status'], 'FAIL')
+        self.assertIsNone(step['zip_sha256'])
+        self.assertNotIn('private', str(step))
+
 
 if __name__ == '__main__':
     unittest.main()
