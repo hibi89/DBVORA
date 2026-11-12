@@ -1,3 +1,5 @@
+> **P4-05 정확 테스트 사후 검증:** GitHub `tests/test_portable_acceptance_gate.py` 실제 Git Blob `81694c7b623edbf94894a195a11f924c0a5a41f9` = 로컬 7개 원본 unittest **7 PASS/0 FAIL/0 SKIP** (Linux Python3.13.5; 모의 builder/trusted child). 실 전체 ZIP·Windows/PG 확인 아님. 기술85% 잠정/P95 미달/[작업중]·판매 HOLD 유지. 업데이트 2026-11-12 KST.
+
 ## 2026-11-12 KST — DBVORA P4-05: P95 미달, 실 ZIP 검증 게이트 필수화 (10항)
 1. **목표/기술:** `hibi89/DBVORA@feature/p0-db-map`, Python3.11+ 로컬 DB 관제/ZIP·ZSTD/PG-readonly 상품, 현재85% 내부 잠정→목표95%.
 2. **결정/구현:** A 기존 선택적 trusted audit vs B 필수 릴리스 gate ZIP build/extract/trusted audit/selftest/tamper(HOLD) 비교, B 선정. 신규 `scripts/portable_acceptance_gate.py`, `tests/test_portable_acceptance_gate.py`, 기존 `scripts/verify_release_gate.py` 및 tests 수정. 외부API/고객 DB/기존 원본 아카이브 변경 없음.
