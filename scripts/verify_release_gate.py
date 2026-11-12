@@ -64,6 +64,8 @@ REQUIRED = (
     "dbvora/archive/portable_verify.py", "tests/test_portable_verify.py",
     "scripts/recovery_review_gate.py", "tests/test_recovery_review_gate.py",
     "dbvora/mixed_cli.py", "tests/test_mixed_cli.py",
+    "scripts/verify_trusted_extraction.py", "tests/test_trusted_extraction.py",
+    "scripts/portable_acceptance_gate.py", "tests/test_portable_acceptance_gate.py",
 )
 
 
@@ -261,6 +263,35 @@ def verify():
                                 ("passed", "skipped_no_local_codec") else "failed",
                             "error_code": "NONE" if recovery_ok else
                                 _safe_code(recovery.get("error_code"), "RECOVERY_REVIEW_GATE_FAILED")})
+
+    # Mandatory real developer ZIP builder/extraction, separately trusted
+    # pre-import audit, isolated synthetic archive self-test and tamper rejection.
+    # This is NOT Windows durability, customer data approval or publisher signing.
+    code, out, _ = _run([sys.executable, "-m", "scripts.portable_acceptance_gate"], timeout=240)
+    try:
+        portable = json.loads(out)
+    except (ValueError, TypeError):
+        portable = {}
+    portable_checks = portable.get("checks", 0)
+    portable_digest = portable.get("zip_sha256")
+    portable_ok = (
+        code == 0 and portable.get("status") == "PASS_SYNTHETIC_PORTABLE_ONLY"
+        and type(portable_checks) is int and portable_checks >= 4
+        and portable.get("ready_for_customer_data") is False
+        and portable.get("signed") is False
+        and portable.get("windows_ntfs_verified") is False
+        and isinstance(portable_digest, str)
+        and re.fullmatch(r"[0-9a-f]{64}", portable_digest) is not None
+    )
+    report["steps"].append({
+        "step": "trusted_portable_zip_e2e",
+        "status": "PASS" if portable_ok else "FAIL",
+        "checks": portable_checks if type(portable_checks) is int else 0,
+        "exit_code": code if type(code) is int else -1,
+        "zip_sha256": portable_digest if portable_ok else None,
+        "error_code": "NONE" if portable_ok else
+            _safe_code(portable.get("error_code"), "PORTABLE_GATE_FAILED"),
+    })
 
     if all(step["status"] == "PASS" for step in report["steps"]):
         report["status"] = "PASS_SYNTHETIC_ENVIRONMENT_ONLY"
