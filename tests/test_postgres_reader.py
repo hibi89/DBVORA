@@ -165,6 +165,23 @@ class PostgresCatalogTests(unittest.TestCase):
         self.assertIn("CASE WHEN c.relkind IN ('r', 'm')", c.calls[0][0])
         self.assertTrue(all(sql.lstrip().startswith('SELECT ') for sql, _ in c.calls))
 
+    def test_optional_statistics_do_not_fabricate_view_or_parent_metrics(self):
+        conn = Connection(tables=[('public', 'physical', 1, 'r', 8192),
+                                  ('public', 'view', 3, 'v', None),
+                                  ('public', 'partition', 4, 'p', None)])
+        original = conn.data
+        def query(sql, params):
+            if 'FROM pg_catalog.pg_stat_user_tables' in sql:
+                self.assertEqual(params[0], [1])
+                return [(1, 10, 0, 4096, 4096)]
+            return original(sql, params)
+        conn.data = query
+        result = pg.inspect_catalog(conn, include_statistics=True)
+        self.assertEqual(result['tables'][0]['statistics']['estimated_live_rows'], 10)
+        self.assertEqual(result['tables'][1]['statistics']['status'], 'unavailable')
+        self.assertEqual(result['tables'][2]['statistics']['status'], 'unavailable')
+        self.assertTrue(all(sql.lstrip().startswith('SELECT ') for sql, _ in conn.calls))
+
     def test_unknown_relation_kind_never_promoted(self):
         c = Connection(tables=[('public', 'unknown', 1, 'x', 1000)])
         with self.assertRaisesRegex(pg.PostgresInventoryError, 'INVALID_CATALOG'):
