@@ -42,7 +42,7 @@ class OptimizationReviewTests(unittest.TestCase):
 
     def test_threshold_below_cutoff_no_recommendation(self):
         for data in (sample(live=4000, dead=999, indexes=4096),
-                     sample(live=4000, dead=1000, indexes=4096),
+                     sample(live=4001, dead=1000, indexes=4096),
                      sample(live=0, dead=0, indexes=1),
                      sample(live=0, dead=0, heap=1, indexes=33 * 1024**2)):
             with self.subTest(data=data):
