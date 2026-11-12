@@ -1,3 +1,8 @@
+## 2026-11-12 KST — P4-04 최신: 정확 원본 unit27 PASS, 목표 P95 미달/85 잠정
+- Python `-S -B`는 기존 `.pyc`를 읽으므로 추출 코드 내부 실행 전 검증만으로는 안전성 입증 불가. 모든 bytecode 캐시 거부, 별도 신뢰된 원본 checkout의 `scripts/verify_trusted_extraction.py`로 **먼저** extracted ZIP을 파일만 검사하는 안전경로 신규 구현. 합성 로컬 Python3.13.5 GitHub exact source/test **27 PASS**, 추가 독립7 PASS(원본 full suite 아님), Git Blob 4개 일치.
+- 비공개 원본 전체 Python >=553+Node·신 ZIP 실제 빌드 및 원본 통합 테스트·Windows3.11/NTFS Edge/file://·실 PostgreSQL read-only TLS/고객 권리 검수 **미실행**. 현재 85% 잠정 고정, P95 목표 미달, RELEASE HOLD, 해총 DBVORA [작업중] 유지.
+- **Next mandatory:** private full original source environment→`python -m scripts.verify_release_gate`→real `scripts.build_portable` ZIP→새 경로 추출→별도 trusted script `python -I -S -B /trusted/DBVORA/scripts/verify_trusted_extraction.py --extracted /fresh/absolute/folder`→Windows native 소유자 QA→승인된 PG TLS. 원본 SHA 및 PASS/FAIL/SKIP·ZIP SHA 기록, 실패시 STOP/PIVOT. [상세 P4-04](P4_04_TRUSTED_PREIMPORT_AUDIT_20261112.md).
+
 ## 2026-11-12 KST — P4-03 최신: P95 미달, 85% 잠정 / 작업중 표식 유지
 - GitHub 정본의 추출 ZIP 검증은 모든 미등록 일반 파일(확장자 없는 파일 포함) 거부, 매니페스트에 등록된 소스의 CPython 생성 캐시만 허용, 외부 하드링크 캐시 거부로 강화. 테스트 파일에도 캐시/변조/추출 ZIP subprocess 회귀를 추가했으나 아직 정본 실행 **미검증**.
 - Python3.13.5 임시 폴더 재구성 규칙 **19 PASS/0 FAIL**, 전체 정본 >=553 Python + Node·실 제품 ZIP·Windows/PG는 **NOT RUN**. 현재 **85% 잠정**, P95 NOT MET, RELEASE HOLD. 중앙 [작업중] 제거 금지.
