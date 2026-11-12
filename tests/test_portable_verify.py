@@ -177,7 +177,8 @@ class ExtractedPreviewTests(unittest.TestCase):
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(b'INERT-SYNTHETIC')
                 try:
-                    code = ('PACKAGE_BYTECODE_PRESENT' if target.suffix == '.pyc'
+                    code = ('PACKAGE_BYTECODE_PRESENT'
+                            if target.suffix == '.pyc' or '__pycache__' in target.parts
                             else 'UNLISTED_PACKAGE_SOURCE')
                     with self.assertRaisesRegex(package.PortableVerifyError, code):
                         package.verify(self.root)
