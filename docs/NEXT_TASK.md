@@ -1,3 +1,9 @@
+## 2026-11-13 KST — DBVORA P95 내부 범위 달성 / 판매 P100 게이트 진행 대기
+- GitHub 원본 11개 소스/테스트/pyproject Git Blob SHA **모두 일치**하는 최소 실제 원본 세트 Linux Python3.13.5로 실행. `python -m scripts.pg_synthetic_acceptance` **6/6 PASS(exit0)**, `python -W error::ResourceWarning -m unittest -v tests.test_pg_synthetic_acceptance tests.test_pg_html_script` **11 PASS/0 FAIL/0 SKIP** + quiet repeat PASS. 진짜 PG reader/statistics/FK/manual hints/offline HTML/원본 safe_zip new-only file publish 포함; 데이터는 합성 전용, external network/real PG/customer 없음. [P1-11 원본11 SHA·완료 증거](P1_11_P95_EXACT_SOURCE_ACCEPTANCE_20261113.md).
+- 내부 가중 P0 **25/25**+P1 **13/15**+P2 **20/20**+P3 **19/20**+P4 **18/20**=**95/100 내부 설계 대비 기능 목표** 달성. 중앙 DBVORA `[작업중]` 목표 달성 후 해제. **판매 RELEASE HOLD, P100 아님**.
+- **다음(사용자 별도 목표 P100/출시)**: 전체 인증된 private repo checkout에서 모든 Python>=553/Node/실 ZIP `python -m scripts.verify_release_gate` 수행, 안전한 synthetic PG read-only TLS 실제 서버 + Win3.11 NTFS/브라우저/전원 재시작 QA + 법적 권리/서명/고객 인수. 개인 인증·유료CI·원본/Production 수정은 사전 승인.
+- Linux source-specific actual E2E PASS와 **full checkout 전체 회귀 미검증**을 혼동 금지. 무단 출시/고객 연결 금지.
+
 ## 2026-11-13 KST — P1-10 오프라인 PG 통합 검증 게이트 신규 / 94% 잠정·P95 미달
 - Actual code: `scripts.pg_synthetic_acceptance` 6 check PG catalog→stats→FK→DBA hints→CSP HTML→temp file SHA; mandatory release `synthetic_pg_to_offline_html`. Fail-close release tests; `tests/test_pg_synthetic_acceptance.py`, `tests/test_pg_html_script.py`, optional PG extra + guide. No external DB or API used.
 - Verified exact-source output: GitHub HTML `multi_engine_report.py` JS 3074 char FNV `88ecd396` parity, Node22 syntax+interaction/search/hints PASS; `pyproject.toml` SHA `080af800601fff0177eedbfbf58aeb3b2664c36a` parity Python3.13.5 TOML PASS. **New complete PG E2E itself and full original suite UNRUN**. Weighted internal P0 25 P1 12 P2 20 P3 19 P4 18 = **94/100 provisional**, P95 unmet, Release HOLD, central [작업중] keep.
