@@ -98,6 +98,7 @@ def inspect_catalog(connection: Any, *, include_statistics: bool = False) -> dic
                 raise PostgresInventoryError("INVALID_CATALOG")
             schema, name, oid, kind, size = item
             if (not all(type(v) is str and 1 <= len(v) <= 256 for v in (schema, name, kind))
+                    or kind not in ('r', 'p', 'v', 'm')
                     or type(oid) is not int or oid <= 0 or oid in oids
                     or (size is not None and (type(size) is not int or size < 0))):
                 raise PostgresInventoryError("INVALID_CATALOG")
