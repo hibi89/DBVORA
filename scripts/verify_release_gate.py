@@ -66,6 +66,9 @@ REQUIRED = (
     "dbvora/mixed_cli.py", "tests/test_mixed_cli.py",
     "scripts/verify_trusted_extraction.py", "tests/test_trusted_extraction.py",
     "scripts/portable_acceptance_gate.py", "tests/test_portable_acceptance_gate.py",
+    "dbvora/connectors/postgres_statistics.py", "tests/test_postgres_statistics.py",
+    "dbvora/optimization_review.py", "tests/test_optimization_review.py",
+    "scripts/pg_synthetic_acceptance.py", "tests/test_pg_synthetic_acceptance.py",
 )
 
 
@@ -291,6 +294,30 @@ def verify():
         "zip_sha256": portable_digest if portable_ok else None,
         "error_code": "NONE" if portable_ok else
             _safe_code(portable.get("error_code"), "PORTABLE_GATE_FAILED"),
+    })
+
+    # Real local production module integration, but ONLY a synthetic PostgreSQL
+    # catalog cursor. Never a network connection or customer-readiness claim.
+    code, out, _ = _run([sys.executable, "-m", "scripts.pg_synthetic_acceptance"], timeout=90)
+    try:
+        pg_end_to_end = json.loads(out)
+    except (ValueError, TypeError):
+        pg_end_to_end = {}
+    pg_count = pg_end_to_end.get("checks")
+    pg_ok = (
+        code == 0 and pg_end_to_end.get("status") == "PASS_SYNTHETIC_PG_ONLY"
+        and type(pg_count) is int and pg_count >= 6
+        and pg_end_to_end.get("real_pg_connected") is False
+        and pg_end_to_end.get("ready_for_customer_data") is False
+        and pg_end_to_end.get("automatic_actions") is False
+    )
+    report["steps"].append({
+        "step": "synthetic_pg_to_offline_html",
+        "status": "PASS" if pg_ok else "FAIL",
+        "checks": pg_count if type(pg_count) is int else 0,
+        "exit_code": code if type(code) is int else -1,
+        "error_code": "NONE" if pg_ok else
+            _safe_code(pg_end_to_end.get("error_code"), "PG_SYNTHETIC_GATE_FAILED"),
     })
 
     if all(step["status"] == "PASS" for step in report["steps"]):
