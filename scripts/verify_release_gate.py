@@ -69,6 +69,7 @@ REQUIRED = (
     "dbvora/connectors/postgres_statistics.py", "tests/test_postgres_statistics.py",
     "dbvora/optimization_review.py", "tests/test_optimization_review.py",
     "scripts/pg_synthetic_acceptance.py", "tests/test_pg_synthetic_acceptance.py",
+    "tests/test_pg_html_script.py",
 )
 
 
