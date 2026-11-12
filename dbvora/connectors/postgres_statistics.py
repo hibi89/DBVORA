@@ -15,7 +15,7 @@ SELECT s.relid::bigint, s.n_live_tup::bigint, s.n_dead_tup::bigint,
        pg_catalog.pg_relation_size(s.relid)::bigint,
        pg_catalog.pg_indexes_size(s.relid)::bigint
 FROM pg_catalog.pg_stat_user_tables AS s
-WHERE s.relid = ANY(%s)
+WHERE s.relid::bigint = ANY(%s::bigint[])
 ORDER BY s.relid LIMIT %s
 """
 
