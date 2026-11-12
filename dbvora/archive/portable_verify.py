@@ -19,10 +19,10 @@ MAX_MEMBERS = 100
 MAX_FILE_BYTES = 2 * 1024 * 1024
 MAX_TOTAL_BYTES = 16 * 1024 * 1024
 _DIGEST = re.compile(r'[0-9a-f]{64}\Z', re.ASCII)
-_EXECUTABLE_SUFFIXES = frozenset({
-    '.py', '.pyc', '.pyw', '.pth', '.js', '.html', '.css', '.cmd',
-    '.bat', '.ps1', '.sh', '.exe', '.dll', '.pyd', '.so', '.com', '.vbs',
-})
+# Only cache bytecode for a manifest-listed Python source is tolerated.
+# Arbitrary .pyc files are not safely attributable to the unsigned bundle.
+_CACHE_TAG = re.compile(r'([A-Za-z_][A-Za-z0-9_]*)\.cpython-[0-9]+(?:\.opt-[012])?\.pyc\Z',
+                        re.ASCII)
 _ROOT_FILES = {'scripts/build_portable.py', 'pyproject.toml', 'README_PORTABLE.txt',
                'run_dbvora_windows.cmd', 'run_dbvora_unix.sh',
                'check_dbvora_windows.cmd', 'check_dbvora_unix.sh',
@@ -98,6 +98,17 @@ def _read_regular(root: Path, name: str, max_bytes: int) -> bytes:
         raise PortableVerifyError('PACKAGE_ENTRY_UNAVAILABLE') from None
 
 
+def _generated_cache(path: Path, folder: Path, files: dict) -> bool:
+    """Permit CPython's cache only when its corresponding .py is manifested."""
+    if path.parent.name != '__pycache__' or path.suffix != '.pyc':
+        return False
+    match = _CACHE_TAG.fullmatch(path.name)
+    if match is None:
+        return False
+    source = path.parent.parent / (match.group(1) + '.py')
+    return source.relative_to(folder).as_posix() in files
+
+
 def verify(root: Path | None = None) -> dict:
     """Internal optional root is only for tests; CLI accepts no external root."""
     folder = root if root is not None else Path(__file__).absolute().parents[2]
@@ -128,8 +139,9 @@ def verify(root: Path | None = None) -> dict:
         bytes_on_disk = _read_regular(folder, name, MAX_FILE_BYTES)
         if len(bytes_on_disk) != size or hashlib.sha256(bytes_on_disk).hexdigest() != sha:
             raise PortableVerifyError('PACKAGE_DIGEST_MISMATCH')
-    # Reject unexpected additional executable source files, while tolerating
-    # Python's generated __pycache__ bytecode and platform resource metadata.
+    # Fail closed on every unmanifested regular file, including extensionless
+    # scripts, platform metadata and native loaders. This is an extracted ZIP
+    # integrity gate, so unrelated files must not be mixed into that folder.
     visited = 0
     for path in folder.rglob('*'):
         visited += 1
@@ -139,14 +151,14 @@ def verify(root: Path | None = None) -> dict:
             relative = path.relative_to(folder)
             if path.is_symlink():
                 raise PortableVerifyError('UNSAFE_PACKAGE_ENTRY')
-            # Bytecode is tolerated only inside Python's generated cache.
-            # A loose .pyc or an unlisted OS/startup script is executable
-            # material and must not be silently covered by an unsigned report.
-            if '__pycache__' in relative.parts and path.suffix == '.pyc':
-                continue
-            if (path.is_file() and path.suffix.lower() in _EXECUTABLE_SUFFIXES
-                    and relative.as_posix() not in files):
+            if path.is_file():
+                name = relative.as_posix()
+                if (name == 'MANIFEST.sha256.json' or name in files
+                        or _generated_cache(path, folder, files)):
+                    continue
                 raise PortableVerifyError('UNLISTED_PACKAGE_SOURCE')
+            if not path.is_dir():
+                raise PortableVerifyError('UNSAFE_PACKAGE_ENTRY')
         except PortableVerifyError:
             raise
         except (OSError, ValueError):
