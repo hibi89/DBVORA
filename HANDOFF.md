@@ -1,3 +1,15 @@
+## 2026-11-12 KST — DBVORA P4-05: P95 미달, 실 ZIP 검증 게이트 필수화 (10항)
+1. **목표/기술:** `hibi89/DBVORA@feature/p0-db-map`, Python3.11+ 로컬 DB 관제/ZIP·ZSTD/PG-readonly 상품, 현재85% 내부 잠정→목표95%.
+2. **결정/구현:** A 기존 선택적 trusted audit vs B 필수 릴리스 gate ZIP build/extract/trusted audit/selftest/tamper(HOLD) 비교, B 선정. 신규 `scripts/portable_acceptance_gate.py`, `tests/test_portable_acceptance_gate.py`, 기존 `scripts/verify_release_gate.py` 및 tests 수정. 외부API/고객 DB/기존 원본 아카이브 변경 없음.
+3. **테스트/범위:** 로컬 Linux Python3.13.5 Git SHA 동일 신규 게이트 모듈 + 임시 실제 한 파일 ZIP/모의 builder·trusted child 조건 **5 PASS, 0 FAIL**, py_compile PASS. 7개 테스트 원격 체크인, release-gate 판정 테스트 추가(전체 미실행). 원본 full >=553 Python+Node/원본 전체 ZIP builder+trusted audit/Windows/PG/customer 테스트 **NOT RUN**. 사전 P4-04 실제 소스 unit 27 PASS는 *이전 기능 SHA*에 대한 범위 증거.
+4. **완료/진행/차단:** 필수 검증 게이트 코드·단위 테스트 저장 완료, 통합 실실행 및 Windows 인수 미확인. **85% 잠정 유지, P95 미달, RELEASE HOLD**, 중앙 `[작업중]` 보존.
+5. **오류/전환:** 사설 전체 Git checkout DNS 실패; 동일 clone 재시도 금지. 인증 GitHub connector 파일단위 갱신 + 로컬 한 파일 ZIP stub으로 판단 검증. 전체 원본 QA는 환경 차단, 유료 CI 신규 구축 승인 없음. 다음 완전 체크아웃 환경에서 본문 테스트 실행.
+6. **저장소/브랜치/SHA/경로:** `hibi89/DBVORA@feature/p0-db-map`; 기능 `99a47bc82bbf`, release 필수화 `5f992036bf20`, tests `ff14d4dc3dd6`/`a1e4578a6ca6`, 근거 `docs/P4_05_TRUSTED_ZIP_RELEASE_GATE_20261112.md`. HEAD는 문서 반영후 최종 재확인. 중앙 `hibi89/hackathon-command-center-2026@kmong-productization`.
+7. **실행/Production:** 전체 원본에서 `python -m scripts.verify_release_gate` 단일 진입. Vercel/Production **N/A**, Windows Native QA/실고객 ZIP/서명 **NOT RUN**. Linux3.13.5, Node22 local installed.
+8. **원본/백업/보안:** feature 히스토리 원본 백업·git revert 가능; 원본 customer DB/backup/main/develop/비밀·권한·과금·Vercel unchanged, 생성물은 OS temp 자동 제거. unsigned SHA는 공급자 인증 불가.
+9. **다음 작업:** authorized full checkout→원본 테스트 >=553 Python·Node + 새 4체크 실 ZIP gate→Windows NTFS/file:// & restart→별도 승인된 read-only PostgreSQL TLS/권리·고객 인수. 검증 불가 상태에서 P95 해제 금지.
+10. **갱신 KST:** 2026-11-12 KST, GitHub 원격 코드/로컬 isolated 5조건 QA 범위, 전체/판매 미검증. 중앙 최신 SHA/문서 일치 확인 필요.
+
 ## 2026-11-12 KST — DBVORA P4-04 / P95 미달·실제 원본 소스 검증(10-point)
 1. **목표·스택:** Python3.11+ DBVORA 읽기전용 SQLite/PG + ZIP/ZSTD 아카이브 독립 상품, 소유자 P95 지시. 기존 85% 잠정.
 2. **구현/판단:** `-S -B`도 캐시 import 가능함을 합성 CPython bytecode로 재현. 옵션 A 캐시 이름만 허용 vs B 완전 차단 + 별도 신뢰된 체크아웃에 둔 `verify_trusted_extraction.py`; B 선택. 원본 ZIP에서 코드 import하기 전 감사, 비신뢰 `PYTHONPATH` 무시, 경로 겹침 차단, 오류 메시지 제한. 증거 문서 `docs/P4_04_TRUSTED_PREIMPORT_AUDIT_20261112.md`.
