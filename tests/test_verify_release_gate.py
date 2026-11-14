@@ -54,6 +54,13 @@ class VerificationGateTests(unittest.TestCase):
                             'real_pg_connected': False,
                             'ready_for_customer_data': False,
                             'automatic_actions': False}), ''),
+            (0, json.dumps({'status': 'PASS_SYNTHETIC_INCREMENTAL_CLI_ONLY',
+                            'checks': 7, 'source_unchanged': True,
+                            'independent_restore_verified': True,
+                            'second_generation_reused_chunks': True,
+                            'tampered_chunk_rejected': True,
+                            'customer_ready': False, 'power_loss_verified': False,
+                            'automatic_deletion': False}), ''),
         ]
 
     def test_full_mocked_gate_synthetic_pass_not_customer_release(self):
@@ -61,7 +68,7 @@ class VerificationGateTests(unittest.TestCase):
             report = gate.verify()
         self.assertEqual(report['status'], 'PASS_SYNTHETIC_ENVIRONMENT_ONLY')
         self.assertFalse(report['ready_for_customer_data'])
-        self.assertEqual(len(report['steps']), 10)
+        self.assertEqual(len(report['steps']), 11)
 
     def test_incomplete_checkout_fails_before_execution(self):
         (self.root / 'dbvora/archive/safe_zip.py').unlink()
@@ -357,8 +364,8 @@ class VerificationGateTests(unittest.TestCase):
         ):
             result = gate.verify()
         self.assertEqual(result['status'], 'FAIL_CLOSED')
-        self.assertEqual(result['steps'][-1]['step'], 'synthetic_pg_to_offline_html')
-        self.assertEqual(result['steps'][-1]['status'], 'FAIL')
+        self.assertEqual(result['steps'][-2]['step'], 'synthetic_pg_to_offline_html')
+        self.assertEqual(result['steps'][-2]['status'], 'FAIL')
 
     def test_pg_gate_rejects_false_real_postgres_connection(self):
         responses = self.responses()
@@ -384,6 +391,30 @@ class VerificationGateTests(unittest.TestCase):
                 ):
                     result = gate.verify()
                 self.assertEqual(result['status'], 'FAIL_CLOSED')
+
+    def test_incremental_cli_mandatory_gate_rejects_missing_reuse(self):
+        responses = self.responses()
+        report = json.loads(responses[9][1])
+        report['second_generation_reused_chunks'] = False
+        responses[9] = (0, json.dumps(report), '')
+        with patch.object(gate, '_run', side_effect=responses), patch.object(
+                gate.shutil, 'which', return_value='tool'):
+            result = gate.verify()
+        self.assertEqual(result['status'], 'FAIL_CLOSED')
+        self.assertEqual(result['steps'][-1]['step'], 'synthetic_incremental_cli_roundtrip')
+        self.assertEqual(result['steps'][-1]['status'], 'FAIL')
+
+    def test_incremental_cli_gate_rejects_any_claim_of_customer_ready(self):
+        responses = self.responses()
+        report = json.loads(responses[9][1])
+        report['customer_ready'] = True
+        responses[9] = (0, json.dumps(report), '')
+        with patch.object(gate, '_run', side_effect=responses), patch.object(
+                gate.shutil, 'which', return_value='tool'):
+            result = gate.verify()
+        self.assertEqual(result['status'], 'FAIL_CLOSED')
+        self.assertEqual(result['steps'][-1]['status'], 'FAIL')
+
 
 if __name__ == '__main__':
     unittest.main()
