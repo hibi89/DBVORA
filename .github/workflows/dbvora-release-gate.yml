@@ -51,6 +51,10 @@ jobs:
         with:
           node-version: "22"
       - name: Install local UI requirements only (no PG credentials)
-        run: python -m pip install --disable-pip-version-check -e ".[ui]"
+        run: python -m pip install --disable-pip-version-check -e ".[ui,test]"
       - name: Execute full fail-closed release gate (synthetic only)
         run: python -m scripts.verify_release_gate
+      - name: Diagnose synthetic-only failures without changing release verdict
+        if: failure()
+        continue-on-error: true
+        run: python -m unittest -v tests.test_api tests.test_request_ledger tests.test_durability

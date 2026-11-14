@@ -13,6 +13,8 @@ dependencies = []
 ui = ["fastapi>=0.110,<1", "uvicorn>=0.27,<1"]
 # PostgreSQL driver is OFF by default; install only for owner-authorized TLS scans.
 postgres = ["psycopg[binary]>=3.2,<4"]
+# TestClient uses httpx; keep dev-only dependency out of customer core install.
+test = ["httpx>=0.27,<1"]
 
 [tool.setuptools.packages.find]
 include = ["dbvora*"]
