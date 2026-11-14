@@ -9,6 +9,8 @@ on:
       - "dbvora/web/**"
       - "dbvora/connectors/**"
       - "dbvora/inventory.py"
+      - "dbvora/workspace.py"
+      - "dbvora/serve.py"
       - "tests/fixtures/**"
       - "scripts/browser_http_e2e.py"
       - ".github/workflows/dbvora-browser-http-e2e.yml"

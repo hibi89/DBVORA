@@ -4,6 +4,8 @@
 const $ = (id) => document.getElementById(id);
 const SVG = 'http://www.w3.org/2000/svg';
 let inventory = null;
+let workspace = null;
+let selectedDatabase = null;
 let selected = null;
 let nodeElements = new Map();
 let edgeByTable = new Map();
@@ -77,7 +79,8 @@ function inspect(tableName) {
     const controller = new AbortController();
     const deadline = setTimeout(() => controller.abort(), 8000);
     try {
-      const response = await fetch('/api/table-storage?table=' + encodeURIComponent(table.name), {
+      const dbQuery = workspace ? '&database=' + encodeURIComponent(selectedDatabase) : '';
+      const response = await fetch('/api/table-storage?table=' + encodeURIComponent(table.name) + dbQuery, {
         cache: 'no-store', credentials: 'same-origin', signal: controller.signal
       });
       if (!response.ok) throw new Error('measurement_unavailable');
@@ -212,7 +215,58 @@ function applyFilter() {
   drawEdges();
 }
 
+// Multi-workspace relationships are scoped by DB identity, never joined by
+// shared table name. Only the active DB's cards/SVG paths are rendered.
+function showWorkspaceDatabase(dbId) {
+  if (!workspace) return;
+  const database = workspace.databases.find((db) => db.db_id === dbId);
+  if (!database) return;
+  if (selectedDatabase !== dbId) selected = null;
+  selectedDatabase = dbId;
+  const localLinks = workspace.relationships.filter((link) =>
+    link.database_id === dbId && link.evidence === 'declared_foreign_key' &&
+    link.target_in_inventory === true);
+  renderSingle({...database, relationships: localLinks});
+  for (const button of $('database-list').children) {
+    button.setAttribute('aria-pressed', button.dataset.dbId === dbId ? 'true' : 'false');
+  }
+}
+
 function render(data) {
+  if (data?.contract_version === 'p0-03.workspace.v1') {
+    if (!Array.isArray(data.databases) || data.databases.length < 2 ||
+        !Array.isArray(data.relationships)) throw new Error('Invalid workspace metadata');
+    workspace = data;
+    $('database-selector').hidden = false;
+    $('workspace-summary').textContent =
+      `${data.database_count} DB · ${data.table_count} 테이블 · 합계 ${formatBytes(data.total_main_db_size_bytes)}`;
+    const chooser = $('database-list');
+    clear(chooser);
+    for (const db of data.databases) {
+      const button = el('button', 'database-choice');
+      button.type = 'button';
+      button.dataset.dbId = db.db_id;
+      button.setAttribute('aria-label', db.label + ' 데이터베이스 선택');
+      button.append(el('strong', '', db.label), el('span', '', `${db.tables.length} 테이블 · ${formatBytes(db.size_bytes)}`));
+      button.addEventListener('click', () => showWorkspaceDatabase(db.db_id));
+      chooser.append(button);
+    }
+    if (!data.databases.some((db) => db.db_id === selectedDatabase)) {
+      selectedDatabase = null;
+      selected = null;
+    }
+    showWorkspaceDatabase(selectedDatabase || data.databases[0].db_id);
+  } else if (data?.contract_version === 'p0-01.v1') {
+    workspace = null;
+    selectedDatabase = null;
+    $('database-selector').hidden = true;
+    renderSingle(data);
+  } else {
+    throw new Error('Unsupported inventory metadata');
+  }
+}
+
+function renderSingle(data) {
   inventory = data;
   $('size').textContent = formatBytes(data.size_bytes);
   $('tables-count').textContent = String(data.tables.length);

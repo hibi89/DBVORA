@@ -48,6 +48,7 @@ def run(*, screenshots=None):
               "local_http": False, "ready_for_customer_data": False,
               "power_loss_verified": False, "checks": [], "screenshots": []}
     proc = None
+    multi_proc = None
     try:
         folder = Path(screenshots) if screenshots else None
         if folder is not None:
@@ -744,6 +745,102 @@ def run(*, screenshots=None):
                             and bad_http == [503, 422],
                             "CATALOG_LIMIT_RECOVERY_FAILED")
                     result["checks"].append("sqlite_catalog_recovery_no_source_mutation")
+
+                    # A second, independent localhost server gets exactly two
+                    # test-owned databases via process argv, never from HTTP.
+                    first = create_fixture(Path(temp) / 'workspace_first.sqlite')
+                    second = Path(temp) / 'workspace_second.sqlite'
+                    with closing(sqlite3.connect(second)) as con:
+                        con.executescript("""
+                            CREATE TABLE warehouses(id INTEGER PRIMARY KEY);
+                            CREATE TABLE shipments(id INTEGER PRIMARY KEY,
+                                warehouse_id INTEGER REFERENCES warehouses(id));
+                            INSERT INTO warehouses VALUES (1);
+                            INSERT INTO shipments VALUES (2, 1);
+                        """)
+                    source_before = (digest(first), digest(second))
+                    with socket.socket() as sock:
+                        sock.bind(('127.0.0.1', 0))
+                        multi_port = sock.getsockname()[1]
+                    multi_base = f'http://127.0.0.1:{multi_port}'
+                    multi_startup = (
+                        "import sys,uvicorn;from dbvora.api import create_app;"
+                        "p=int(sys.argv[3]);"
+                        "uvicorn.run(create_app([sys.argv[1],sys.argv[2]],port=p),"
+                        "host='127.0.0.1',port=p,log_level='error',access_log=False)")
+                    multi_proc = subprocess.Popen(
+                        [sys.executable, '-B', '-c', multi_startup,
+                         str(first), str(second), str(multi_port)],
+                        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                        env={**os.environ, 'PYTHONIOENCODING': 'utf-8'})
+                    for _ in range(60):
+                        if multi_proc.poll() is not None:
+                            raise GateError('MULTI_LOCAL_SERVER_EXITED')
+                        try:
+                            if http_code(multi_base + '/health') == 200:
+                                break
+                        except (OSError, URLError):
+                            pass
+                        time.sleep(0.2)
+                    else:
+                        raise GateError('MULTI_LOCAL_SERVER_STARTUP_FAILED')
+                    multi_page = browser.new_page(viewport={"width": 1280, "height": 850})
+                    multi_errors = []
+                    multi_page.on('pageerror', lambda exc: multi_errors.append('JS_ERROR'))
+                    multi_page.goto(multi_base + '/', wait_until='networkidle', timeout=30000)
+                    multi_page.wait_for_function(
+                        "() => document.querySelector('#tables-count').textContent === '3'"
+                        " && document.querySelectorAll('#database-list button').length === 2",
+                        timeout=15000)
+                    require(multi_page.locator('#workspace-summary').inner_text().startswith('2 DB · 5 테이블')
+                            and multi_page.locator('#database-selector').is_visible()
+                            and multi_page.locator('#edges path').count() == 1,
+                            'MULTI_WORKSPACE_INITIAL_UI')
+                    multi_page.locator('#database-list button').nth(1).click()
+                    require(multi_page.locator('#tables-count').inner_text() == '2'
+                            and multi_page.locator('#edges path').count() == 1
+                            and multi_page.locator('#database-list button').nth(1).get_attribute(
+                                'aria-pressed') == 'true', 'MULTI_DATABASE_SWITCH_FAILED')
+                    multi_page.locator('#tables button.table-node').filter(
+                        has_text='shipments').click()
+                    require(multi_page.locator('.detail-heading h3').inner_text() == 'shipments'
+                            and multi_page.locator('#edges path.active').count() == 1,
+                            'MULTI_DATABASE_INSPECTOR_WRONG')
+                    multi_page.locator('.storage-measure').click()
+                    multi_page.wait_for_function(
+                        "() => document.querySelector('.storage-status').textContent"
+                        ".includes('할당된 B-tree') || document.querySelector('.storage-status')"
+                        ".textContent.includes('측정 불가')", timeout=15000)
+                    multi_page.locator('#table-filter').fill('SHIPMENTS')
+                    multi_page.locator('#refresh').click()
+                    multi_page.wait_for_function(
+                        "() => !document.querySelector('#refresh').disabled"
+                        " && document.querySelector('#error').hidden", timeout=30000)
+                    require(multi_page.locator('#database-list button').nth(1).get_attribute(
+                                'aria-pressed') == 'true'
+                            and multi_page.locator('#tables button.table-node:visible').count() == 1
+                            and multi_page.locator('.detail-heading h3').inner_text() == 'shipments',
+                            'MULTI_REFRESH_SELECTION_NOT_PRESERVED')
+                    multi_page.locator('#table-filter').fill('')
+                    multi_page.locator('#database-list button').first.click()
+                    require(multi_page.locator('#tables-count').inner_text() == '3'
+                            and multi_page.locator('#edges path').count() == 1
+                            and multi_page.locator('button.table-node').count() == 3
+                            and not multi_errors, 'MULTI_SWITCH_BACK_FAILED')
+                    result['checks'].append('multi_live_two_databases_isolated_navigation')
+                    multi_page.set_viewport_size({'width': 390, 'height': 844})
+                    multi_page.wait_for_timeout(200)
+                    require(not multi_page.evaluate(
+                        "() => document.documentElement.scrollWidth > window.innerWidth + 1"),
+                        'MULTI_MOBILE_OVERFLOW')
+                    require(http_code(multi_base + '/api/inventory', headers={
+                        'Origin': 'https://attacker.invalid'}) == 403
+                            and http_code(multi_base + '/api/inventory', method='POST') == 405
+                            and source_before == (digest(first), digest(second)),
+                            'MULTI_SOURCE_OR_SECURITY_FAILED')
+                    result['checks'].append('multi_live_mobile_security_and_source_unchanged')
+                    multi_page.close()
                 finally:
                     browser.close()
             require(http_code(base + "/api/inventory", headers={
@@ -759,6 +856,13 @@ def run(*, screenshots=None):
     except Exception:
         result["error_code"] = "BROWSER_OR_ENVIRONMENT_ERROR"
     finally:
+        if multi_proc is not None and multi_proc.poll() is None:
+            multi_proc.terminate()
+            try:
+                multi_proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                multi_proc.kill()
+                multi_proc.wait(timeout=5)
         if proc is not None and proc.poll() is None:
             proc.terminate()
             try:
