@@ -248,6 +248,13 @@ def verify() -> dict:
                     raise AssertionError('SAME_NAME_DATABASE_NODES_NOT_SCOPED')
                 if 'user-declared / unverified' not in page.locator('#cross-database-links').inner_text():
                     raise AssertionError('CROSS_DATABASE_LINK_NOT_MARKED_UNVERIFIED')
+                model = json.loads(page.locator('#catalog').text_content())
+                declared = model.get('declared_cross_database_links', [])
+                if (len(declared) != 1 or declared[0].get('evidence') != 'user_declared_unverified'
+                        or declared[0].get('verified') is not False
+                        or declared[0].get('from_db_id') != 1 or declared[0].get('to_db_id') != 2
+                        or model.get('cross_database_edges_verified') != 0):
+                    raise AssertionError('MIXED_LINK_EVIDENCE_SCOPE_INVALID')
                 page.locator('#cross-database-links button').click()
                 if page.locator('#selection').inner_text() != 'Database 2 / public.users':
                     raise AssertionError('CROSS_DATABASE_LINK_SELECTED_WRONG_COLLIDING_TABLE')

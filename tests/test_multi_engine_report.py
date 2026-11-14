@@ -215,7 +215,7 @@ class MultiEngineTests(unittest.TestCase):
             'to_db': 2, 'to_schema': 'public', 'to_table': 'accounts', 'to_column': 'id',
         }
         for patch in ({'from_db': 2}, {'to_db': 1}, {'from_db': True},
-                      {'to_schema': 'public'}, {'to_column': 'missing'},
+                      {'from_schema': 'public'}, {'to_column': 'missing'},
                       {'to_table': 'missing'}, {'to_schema': None}):
             with self.subTest(patch=patch), self.assertRaises(ReportError):
                 assemble_workspace([sqlite_catalog, self.pg], declared_links=[{**valid, **patch}])
