@@ -31,14 +31,14 @@
 | 게이트 | Ubuntu 24.04 | Windows 2025 |
 |---|---|---|
 | [실제 Chromium #43576063961](https://github.com/hibi89/DBVORA/actions/runs/43576063961) | 17/17 PASS | 17/17 PASS |
-| [전체 릴리스 #43576063937](https://github.com/hibi89/DBVORA/actions/runs/43576063937) | Python710 PASS·FAIL0·SKIP0·필수12/12 PASS | **현재 결과 확인 대기** |
+| [전체 릴리스 #43576063937](https://github.com/hibi89/DBVORA/actions/runs/43576063937) | Python710 PASS·FAIL0·SKIP0·필수12/12 PASS | Python710 발견·709PASS·0FAIL·1 POSIX-only SKIP·필수12/12 PASS |
 | [설계 증거 #43576064144](https://github.com/hibi89/DBVORA/actions/runs/43576064144) | SUCCESS | workflow 단위 SUCCESS |
 
 Chromium 양 OS 모두 `PASS_SYNTHETIC_HTTP_BROWSER_ONLY`. 성공한 단일 호출 샘플: Linux API72.292ms/browser ready203.113ms; Windows API94ms/browser ready187ms. 일반 고객 PC의 성능·연속 24시간 메모리 안전성 보증 아님.
 
 ## 잔여 작업 및 HOLD
 
-- Windows 전체 릴리스 결과·정확 SHA 확인 후 STATUS/HANDOFF/NEXT_TASK 및 해총 중앙 원장에 확정 증거 반영.
+- Windows 전체 릴리스도 동일한 정확 소스 SHA에서 성공. 제품 STATUS/HANDOFF/NEXT_TASK 및 해총 원장에 확정 증거를 연결한다.
 - 별도 브라우저 프로세스 장기 스트레스·실 고객 Win10/11 PC 검증, API 연결 손실/지연(503 외), P3 **별도 프로세스** CAS 경합, 물리 정전 복원은 미검증.
 - 고객 실DB·백업·고객 로컬경로·환경변수·토큰·상업 배포·main/develop 변경 없음.
 - 실서비스/유료/사용자 기기/사용권·최종 100점 수용에는 추가 승인 필요. 크몽 상품 등록은 현재 범위 밖.
