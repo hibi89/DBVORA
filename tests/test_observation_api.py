@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 from dbvora.api import create_app
+from dbvora.inventory import inspect_sqlite
 from dbvora.errors import InventoryError
 from dbvora.observation_ledger import append_observation
 from tests.fixtures.make_sqlite import create_fixture
@@ -19,7 +20,7 @@ class ObservationApiTests(unittest.TestCase):
         self.addCleanup(self.tmp.cleanup)
         self.source = create_fixture(Path(self.tmp.name) / "source.sqlite")
         self.ledger = Path(self.tmp.name) / "ledger.sqlite"
-        self.db_id = hashlib.sha256(str(self.source).encode("utf-8")).hexdigest()[:24]
+        self.db_id = inspect_sqlite(self.source)["db_id"]
 
     def client(self, enabled=True):
         return TestClient(create_app(self.source, port=8765,

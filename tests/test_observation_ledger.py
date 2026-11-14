@@ -1,5 +1,6 @@
 """Synthetic-only acceptance for explicit local observation persistence."""
 import sqlite3
+from contextlib import closing
 import tempfile
 import unittest
 from pathlib import Path
@@ -49,8 +50,9 @@ class LedgerTest(unittest.TestCase):
 
     def test_detects_tampering_before_next_write(self):
         self.append("2026-11-14T01:00:00Z", 1024)
-        with sqlite3.connect(self.path) as conn:
+        with closing(sqlite3.connect(self.path)) as conn:
             conn.execute("UPDATE observations SET size_bytes=999 WHERE db_id='synthetic_db'")
+            conn.commit()
         with self.assertRaisesRegex(ObservationError, "integrity"):
             read_observations(self.path, db_id="synthetic_db")
         with self.assertRaisesRegex(ObservationError, "integrity"):
@@ -74,9 +76,10 @@ class LedgerTest(unittest.TestCase):
         self.assertFalse(self.path.exists())
 
     def test_refuses_existing_non_ledger_database_without_modifying_it(self):
-        with sqlite3.connect(self.path) as conn:
+        with closing(sqlite3.connect(self.path)) as conn:
             conn.execute("CREATE TABLE customer_data(value TEXT)")
             conn.execute("INSERT INTO customer_data VALUES ('synthetic-only')")
+            conn.commit()
         before = self.path.read_bytes()
         with self.assertRaisesRegex(ObservationError, "not a DBVORA observation ledger"):
             self.append("2026-11-14T01:00:00Z", 1024)
