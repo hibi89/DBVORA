@@ -187,6 +187,7 @@ def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], 
                 'CATALOG_LIMIT': 'The PostgreSQL catalog exceeds the safe display limit.',
                 'INVALID_CATALOG': 'PostgreSQL returned an invalid catalog response.',
                 'PG_CONNECTION_FAILED': 'PostgreSQL TLS verification or connection failed. Check the server certificate and availability.',
+                'PG_PERMISSION_DENIED': 'PostgreSQL metadata permission is insufficient. Check read-only catalog access and retry.',
                 'PG_CATALOG_QUERY_FAILED': 'The read-only PostgreSQL catalog query failed.',
             }
             status = 503 if exc.code == 'DRIVER_UNAVAILABLE' else 502 if exc.code.startswith('PG_') else 422
@@ -217,6 +218,7 @@ def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], 
                 'INVALID_CATALOG': 'PostgreSQL returned an invalid catalog response.',
                 'INVALID_STATISTICS': 'PostgreSQL returned invalid statistics.',
                 'PG_CONNECTION_FAILED': 'PostgreSQL TLS verification or connection failed. Check the server certificate and availability.',
+                'PG_PERMISSION_DENIED': 'PostgreSQL metadata permission is insufficient. Check read-only catalog access and retry.',
                 'PG_CATALOG_QUERY_FAILED': 'The read-only PostgreSQL statistics query failed.',
             }
             status = 503 if exc.code == 'DRIVER_UNAVAILABLE' else 502 if exc.code.startswith('PG_') else 422

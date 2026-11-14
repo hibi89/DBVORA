@@ -123,6 +123,17 @@ class PostgresCatalogTests(unittest.TestCase):
         self.assertEqual(exc.exception.code,'PG_CATALOG_QUERY_FAILED')
         self.assertNotIn('secret',str(exc.exception))
 
+    def test_catalog_permission_denied_is_classified_without_driver_details(self):
+        class PermissionDenied(RuntimeError):
+            sqlstate = "42501"
+        c = Connection()
+        c.data = lambda *_: (_ for _ in ()).throw(PermissionDenied("permission denied password=secret"))
+        with self.assertRaises(pg.PostgresInventoryError) as exc:
+            pg.inspect_catalog(c)
+        self.assertEqual(exc.exception.code, "PG_PERMISSION_DENIED")
+        self.assertNotIn("secret", str(exc.exception))
+        self.assertNotIn("permission denied", str(exc.exception))
+
     def test_driver_unavailable_safe(self):
         with patch.dict('sys.modules',{'psycopg':None}):
             with self.assertRaisesRegex(pg.PostgresInventoryError,'DRIVER_UNAVAILABLE'):

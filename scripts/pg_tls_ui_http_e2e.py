@@ -32,12 +32,35 @@ def free_port() -> int:
         return int(sock.getsockname()[1])
 
 
-def start_server(database: Path, dsn: str, port: int) -> subprocess.Popen:
+def start_server(database: Path, dsn: str, port: int, *,
+                 permission_denied_once: bool = False) -> subprocess.Popen:
     env = os.environ.copy()
     env['DBVORA_POSTGRES_DSN'] = dsn
+    if permission_denied_once:
+        # Test-only API seam: simulate SQLSTATE 42501 once without changing
+        # PostgreSQL roles/grants, then use the real verified-TLS connection.
+        startup = (
+            "import os,sys,uvicorn\n"
+            "import dbvora.api as api\n"
+            "from dbvora.connectors.postgres_reader import PostgresInventoryError\n"
+            "real_inspect = api.inspect_postgres\n"
+            "permission_failure_pending = True\n"
+            "def inspect_with_one_permission_error(*args, **kwargs):\n"
+            " global permission_failure_pending\n"
+            " if permission_failure_pending:\n"
+            "  permission_failure_pending = False\n"
+            "  raise PostgresInventoryError('PG_PERMISSION_DENIED')\n"
+            " return real_inspect(*args, **kwargs)\n"
+            "api.inspect_postgres = inspect_with_one_permission_error\n"
+            "port = int(sys.argv[2])\n"
+            "app = api.create_app(sys.argv[1], port=port, postgres_dsn=os.environ.get('DBVORA_POSTGRES_DSN'))\n"
+            "uvicorn.run(app, host='127.0.0.1', port=port, log_level='error', access_log=False)\n"
+        )
+        command = [sys.executable, '-B', '-c', startup, str(database), str(port)]
+    else:
+        command = [sys.executable, '-m', 'dbvora.serve', '--db', str(database), '--port', str(port)]
     proc = subprocess.Popen(
-        [sys.executable, '-m', 'dbvora.serve', '--db', str(database), '--port', str(port)],
-        cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+        command, cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
     )
     try:
         for _ in range(100):
@@ -138,7 +161,7 @@ def verify() -> dict:
                 page.keyboard.press('Enter')
                 page.locator('#postgres-status').filter(has_text='TLS 인증 또는 PostgreSQL 연결에 실패했습니다').wait_for(timeout=15000)
                 body = page.locator('body').inner_text()
-                if len(pg_requests) != 1 or dsn in body or bad_ca in body:
+                if len(pg_requests) != 1 or dsn in body or bad_ca in body or str(database) in body:
                     raise AssertionError('TLS_FAILURE_LEAK_OR_REQUEST_COUNT')
                 if CANARY in body:
                     raise AssertionError('SYNTHETIC_ROW_LEAK_ON_TLS_FAILURE')
@@ -148,7 +171,7 @@ def verify() -> dict:
         finally:
             stop_server(wrong_server)
 
-        good_server = start_server(database, dsn, port)
+        good_server = start_server(database, dsn, port, permission_denied_once=True)
         try:
             with sync_playwright() as playwright:
                 browser = playwright.chromium.launch()
@@ -162,9 +185,32 @@ def verify() -> dict:
                 page.goto('http://127.0.0.1:' + str(port) + '/', wait_until='domcontentloaded')
                 if pg_requests:
                     raise AssertionError('POSTGRES_LOOKUP_MUST_BE_EXPLICIT_AFTER_RESTART')
+                with page.expect_response(lambda response: response.url.endswith('/api/postgres')) as denied:
+                    page.locator('#postgres-load').click()
+                denied_response = denied.value
+                denied_payload = denied_response.json()
+                page.locator('#postgres-status').filter(
+                    has_text='PostgreSQL 메타데이터 조회 권한이 부족합니다').wait_for(timeout=15000)
+                denied_json = json.dumps(denied_payload, sort_keys=True)
+                denied_body = page.locator('body').inner_text()
+                if (denied_response.status != 502
+                        or denied_payload.get('error', {}).get('code') != 'PG_PERMISSION_DENIED'
+                        or len(pg_requests) != 1
+                        or dsn in denied_json or bad_ca in denied_json or str(database) in denied_json
+                        or CANARY in denied_json or dsn in denied_body or bad_ca in denied_body
+                        or str(database) in denied_body or CANARY in denied_body
+                        or page.locator('#postgres-load').is_disabled()):
+                    raise AssertionError('POSTGRES_PERMISSION_FAILURE_NOT_RECOVERABLE_OR_SANITIZED')
+                checks.append('permission_error_safe_retry_recovery')
                 page.locator('#postgres-load').focus()
-                page.keyboard.press('Enter')
+                with page.expect_response(lambda response: response.url.endswith('/api/postgres')) as recovered:
+                    page.keyboard.press('Enter')
+                recovered_response = recovered.value
+                if recovered_response.status != 200:
+                    raise AssertionError('POSTGRES_PERMISSION_RETRY_DID_NOT_RECOVER')
                 page.locator('#postgres-status').filter(has_text='TLS 검증').wait_for(timeout=15000)
+                if len(pg_requests) != 2:
+                    raise AssertionError('POSTGRES_RECOVERY_REQUEST_COUNT')
                 names = page.locator('#postgres-table-list button').all_text_contents()
                 if not {'public.users', 'public.events', 'public.event_view'}.issubset(set(names)):
                     raise AssertionError('SYNTHETIC_CATALOG_MISSING')
@@ -173,8 +219,9 @@ def verify() -> dict:
                 body = page.locator('body').inner_text()
                 if 'user_id' not in detail or 'public.users' not in detail:
                     raise AssertionError('POSTGRES_DETAIL_MISSING_FK_METADATA')
-                if CANARY in body or 'synthetic-user.invalid' in body or dsn in body:
-                    raise AssertionError('POSTGRES_ROW_OR_DSN_LEAK')
+                if (CANARY in body or 'synthetic-user.invalid' in body or dsn in body
+                        or bad_ca in body or str(database) in body):
+                    raise AssertionError('POSTGRES_ROW_DSN_OR_PATH_LEAK')
                 if stats_requests or not page.locator('#postgres-stats-load').is_visible():
                     raise AssertionError('STATISTICS_LOOKUP_MUST_BE_EXPLICIT')
                 stats_responses = []

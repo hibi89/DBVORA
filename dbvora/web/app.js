@@ -622,6 +622,7 @@ const POSTGRES_UI_ERRORS = {
   POSTGRES_DISABLED: 'PostgreSQL 서버 설정이 없습니다. 로컬 서버 환경변수 DBVORA_POSTGRES_DSN을 확인하세요.',
   POSTGRES_CONFIG_INVALID: '서버 측 PostgreSQL 설정을 확인할 수 없습니다.',
   PG_CONNECTION_FAILED: 'TLS 인증 또는 PostgreSQL 연결에 실패했습니다. 서버 인증서와 연결 상태를 확인하세요.',
+  PG_PERMISSION_DENIED: 'PostgreSQL 메타데이터 조회 권한이 부족합니다. 읽기 전용 카탈로그 권한을 확인한 뒤 다시 시도하세요.',
   DRIVER_UNAVAILABLE: '선택적 PostgreSQL 드라이버가 설치되지 않았습니다.',
   CATALOG_LIMIT: '안전한 표시 한도를 넘는 PostgreSQL 카탈로그입니다.',
   INVALID_CATALOG: 'PostgreSQL 카탈로그 응답을 검증할 수 없습니다.',

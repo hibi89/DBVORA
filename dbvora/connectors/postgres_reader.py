@@ -61,6 +61,12 @@ class PostgresInventoryError(Exception):
         super().__init__(code)
 
 
+def _is_permission_denied(error: Exception) -> bool:
+    """Identify PostgreSQL SQLSTATE 42501 without retaining driver details."""
+    return (getattr(error, "sqlstate", None) == "42501" or
+            getattr(error, "pgcode", None) == "42501")
+
+
 def _rows(connection: Any, statement: str, *args: object) -> list:
     # No caller-provided SQL or interpolated identifiers, only literal SELECT.
     with closing(connection.cursor()) as cursor:
@@ -217,8 +223,9 @@ def inspect_catalog(connection: Any, *, include_statistics: bool = False) -> dic
                 "ready_for_customer_data": False}
     except PostgresInventoryError:
         raise
-    except Exception:
-        raise PostgresInventoryError("PG_CATALOG_QUERY_FAILED") from None
+    except Exception as exc:
+        code = "PG_PERMISSION_DENIED" if _is_permission_denied(exc) else "PG_CATALOG_QUERY_FAILED"
+        raise PostgresInventoryError(code) from None
 
 
 def inspect_postgres(dsn: str, *, require_tls: bool = True,
@@ -241,5 +248,6 @@ def inspect_postgres(dsn: str, *, require_tls: bool = True,
             return inspect_catalog(connection, include_statistics=include_statistics)
     except PostgresInventoryError:
         raise
-    except Exception:
-        raise PostgresInventoryError("PG_CONNECTION_FAILED") from None
+    except Exception as exc:
+        code = "PG_PERMISSION_DENIED" if _is_permission_denied(exc) else "PG_CONNECTION_FAILED"
+        raise PostgresInventoryError(code) from None

@@ -98,6 +98,20 @@ class PostgreSQLApiTests(unittest.TestCase):
         self.assertNotIn('NEVER_RETURN_THIS', response.text)
         self.assertNotIn('SYNTHETIC_ROW_MUST_NEVER_BE_EXPORTED', response.text)
 
+    def test_permission_failure_is_classified_for_recoverable_ui(self):
+        dsn = 'host=synthetic.invalid password=NEVER_RETURN_THIS sslrootcert=/private/runner/certs/NEVER_RETURN_CA.pem'
+        with patch('dbvora.api.inspect_postgres',
+                   side_effect=PostgresInventoryError('PG_PERMISSION_DENIED')):
+            with self.client(dsn) as client:
+                response = client.get('/api/postgres')
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(response.json()['error']['code'], 'PG_PERMISSION_DENIED')
+        self.assertIn('permission', response.json()['error']['message'].lower())
+        self.assertNotIn(dsn, response.text)
+        self.assertNotIn('NEVER_RETURN_THIS', response.text)
+        self.assertNotIn('NEVER_RETURN_CA.pem', response.text)
+        self.assertNotIn('/private/runner/certs', response.text)
+
     def test_connection_failure_is_sanitized_for_recoverable_ui(self):
         dsn = 'host=synthetic.invalid password=NEVER_RETURN_THIS sslrootcert=/private/runner/certs/NEVER_RETURN_CA.pem'
         with patch('dbvora.api.inspect_postgres',
