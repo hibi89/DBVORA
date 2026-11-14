@@ -73,6 +73,7 @@ REQUIRED = (
     "dbvora/archive/incremental_cas.py", "tests/test_incremental_cas.py",
     "dbvora/incremental_cli.py", "tests/test_incremental_cli.py",
     "dbvora/archive/compressed_cas.py", "tests/test_compressed_cas.py",
+    "tests/test_compressed_cas_failures.py",
     "scripts/incremental_cli_gate.py",
     "scripts/benchmark_synthetic_archives.py", "tests/test_benchmark_synthetic_archives.py",
 )
