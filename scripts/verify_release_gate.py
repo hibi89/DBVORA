@@ -76,6 +76,7 @@ REQUIRED = (
     "tests/test_compressed_cas_failures.py",
     "tests/test_cas_abrupt_process.py", "tests/test_weekly_synthetic.py",
     "dbvora/archive/daily_synthetic.py", "tests/test_daily_synthetic.py",
+    "dbvora/process_resources.py", "tests/test_process_resources.py",
     "scripts/incremental_cli_gate.py",
     "scripts/benchmark_synthetic_archives.py", "tests/test_benchmark_synthetic_archives.py",
 )
