@@ -3,16 +3,20 @@
 import hashlib
 from contextlib import closing
 import json
+import os
 from pathlib import Path
 import sqlite3
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from dbvora.errors import InventoryError
 from dbvora.connectors.sqlite_reader import read_only_connection
 from dbvora.inventory import inspect_sqlite
+from dbvora import inventory as inventory_module
+from dbvora.metrics import observed_file_size
 from tests.fixtures.make_sqlite import create_fixture
 
 
@@ -74,6 +78,41 @@ class InventoryTests(unittest.TestCase):
         before = self.fingerprint()
         inspect_sqlite(self.path)
         self.assertEqual(before, self.fingerprint())
+
+    def test_same_size_mtime_replacement_fails_size_observation(self):
+        before = self.path.stat()
+        old_identity = (before.st_dev, before.st_ino, before.st_ctime_ns)
+        replacement = Path(self.temp.name) / "same_size.sqlite"
+        replacement.write_bytes(self.path.read_bytes())
+        os.utime(replacement, ns=(before.st_atime_ns, before.st_mtime_ns))
+        os.replace(replacement, self.path)  # Disposable synthetic fixture only.
+        os.utime(self.path, ns=(before.st_atime_ns, before.st_mtime_ns))
+        after = self.path.stat()
+        self.assertEqual((after.st_size, after.st_mtime_ns),
+                         (before.st_size, before.st_mtime_ns))
+        self.assertNotEqual((after.st_dev, after.st_ino, after.st_ctime_ns),
+                            old_identity)
+        with self.assertRaises(InventoryError) as caught:
+            observed_file_size(self.path, before.st_size, before.st_mtime_ns,
+                               old_identity)
+        self.assertEqual(caught.exception.code, "CHANGED_DURING_READ")
+
+    def test_replacement_at_end_of_scan_refuses_stale_inventory(self):
+        before = self.fingerprint()
+        replacement = Path(self.temp.name) / "swap.sqlite"
+        replacement.write_bytes(self.path.read_bytes())
+        original = observed_file_size
+        def substitute(*args):
+            prior = self.path.stat()
+            os.replace(replacement, self.path)
+            os.utime(self.path, ns=(prior.st_atime_ns, prior.st_mtime_ns))
+            return original(*args)
+        with patch.object(inventory_module, "observed_file_size",
+                          side_effect=substitute):
+            with self.assertRaises(InventoryError) as caught:
+                inspect_sqlite(self.path)
+        self.assertEqual(caught.exception.code, "CHANGED_DURING_READ")
+        self.assertEqual(self.fingerprint(), before)
 
     def test_rejects_relative_path_without_echoing_path(self):
         with self.assertRaises(InventoryError) as ctx:

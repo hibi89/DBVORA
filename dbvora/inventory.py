@@ -3,6 +3,7 @@
 import hashlib
 from pathlib import Path
 import sqlite3
+import stat
 
 from dbvora.connectors.sqlite_reader import read_only_connection, validate_path
 from dbvora.errors import InventoryError
@@ -90,6 +91,15 @@ def inspect_sqlite(path: str | Path) -> dict:
     Raises InventoryError with a path-free message when validation fails.
     """
     checked_path, initial_size, initial_mtime_ns = validate_path(path)
+    try:
+        initial_stat = checked_path.lstat()
+    except OSError:
+        raise InventoryError("CHANGED_DURING_READ", "Database changed during inspection.") from None
+    if (not stat.S_ISREG(initial_stat.st_mode)
+            or initial_stat.st_size != initial_size
+            or initial_stat.st_mtime_ns != initial_mtime_ns):
+        raise InventoryError("CHANGED_DURING_READ", "Database changed during inspection.")
+    initial_identity = (initial_stat.st_dev, initial_stat.st_ino, initial_stat.st_ctime_ns)
     tables = []
     relationships = []
     try:
@@ -122,7 +132,8 @@ def inspect_sqlite(path: str | Path) -> dict:
         raise
     except sqlite3.Error:
         raise InventoryError("DB_READ_FAILED", "Cannot read the SQLite schema safely.") from None
-    measurement = observed_file_size(checked_path, initial_size, initial_mtime_ns)
+    measurement = observed_file_size(checked_path, initial_size, initial_mtime_ns,
+                                     initial_identity)
     return {
         "contract_version": "p0-01.v1",
         "db_id": hashlib.sha256(str(checked_path).encode("utf-8")).hexdigest()[:24],
