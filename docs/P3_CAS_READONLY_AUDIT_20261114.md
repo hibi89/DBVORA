@@ -1,3 +1,6 @@
+## Cross-OS verification 2026-11-14 KST
+[GitHub Actions #43555133875](https://github.com/hibi89/DBVORA/actions/runs/43555133875) exact SHA `fdbf9ed34b932d220220fd1b13abb616389a37ea` Ubuntu688PASS/0FAIL, Windows687PASS/1 named POSIX SKIP/0FAIL, 12 mandatory stages per OS. Windows DirEntry.stat st_nlink inconsistency corrected with os.lstat. No owner filesystem/physical interruption/storage-failure guarantee; only actual synthetic temporary files were examined. Source-archive SHA `3edcfa008318454fffc5775731599250520142b6e636b0b7e00d15d2b732ed74` (63-files) [preview #43555133878](https://github.com/hibi89/DBVORA/actions/runs/43555133878).
+
 # DBVORA synthetic compressed CAS v2 read-only audit (2026-11-14 KST)
 
 Problem: aborting a new generation before manifest publication can leave unreferenced staged or immutable compressed files. An automatic collector risks erasing a still-needed generation. The previous design preserves all old files by default.
