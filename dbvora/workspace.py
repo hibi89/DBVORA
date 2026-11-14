@@ -15,7 +15,8 @@ MAX_DATABASES = 8
 MAX_TOTAL_TABLES = 2000
 
 
-def inspect_workspace(db_paths: list[str | Path], *, declared_links: list[dict] | None = None) -> dict:
+def inspect_workspace(db_paths: list[str | Path], *, declared_links: list[dict] | None = None,
+                      measure_table_storage: bool = True) -> dict:
     if not isinstance(db_paths, (list, tuple)) or not 2 <= len(db_paths) <= MAX_DATABASES:
         raise InventoryError("INVALID_DATABASE_COUNT", "Select between 2 and 8 distinct SQLite databases.")
     members = []
@@ -30,7 +31,12 @@ def inspect_workspace(db_paths: list[str | Path], *, declared_links: list[dict] 
             raise InventoryError("DUPLICATE_DATABASE", "Select distinct SQLite files.")
         seen.add(stable_id)
         tables = inventory["tables"]
-        measured_storage = collect_table_storage(Path(user_path), inventory["size_bytes"], tables)
+        # Live HTTP multi-DB browsing must not trigger an expensive dbstat
+        # scan on each refresh. Offline HTML defaults to its existing behavior.
+        measured_storage = (collect_table_storage(Path(user_path), inventory["size_bytes"], tables)
+                            if measure_table_storage else
+                            {"status": "unavailable", "reason": "opt_in_required",
+                             "scope": "not_measured_on_live_workspace_refresh", "tables": {}})
         for table in tables:
             table["storage"] = measured_storage["tables"].get(table["name"], {"status": "unavailable", "reason": measured_storage.get("reason", "btree_not_measurable")})
         total_tables += len(tables)

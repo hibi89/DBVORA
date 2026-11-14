@@ -8,12 +8,13 @@ from dbvora.errors import InventoryError
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description='DBVORA local read-only database map')
-    parser.add_argument('--db', required=True, help='Absolute path to a database you selected')
+    parser.add_argument('--db', required=True, action='append',
+                        help='Absolute local SQLite path; repeat 2–8 times for live workspace')
     parser.add_argument('--port', default=8765, type=int)
     args = parser.parse_args(argv)
     try:
         from dbvora.api import create_app
-        app = create_app(args.db, port=args.port)
+        app = create_app(args.db[0] if len(args.db) == 1 else args.db, port=args.port)
     except (InventoryError, ValueError) as exc:
         message = exc.message if isinstance(exc, InventoryError) else 'Invalid server port.'
         print(json.dumps({'error': {'code': 'STARTUP_FAILED', 'message': message}}), file=sys.stderr)
