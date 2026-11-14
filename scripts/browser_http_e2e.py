@@ -999,7 +999,16 @@ def run(*, screenshots=None):
                 "Host": "attacker.invalid"}) == 403, "HOST_POLICY_FAILED")
             require(http_code(base + "/api/inventory", method="POST") == 405,
                     "WRITE_METHOD_POLICY_FAILED")
+            # A browser that re-resolves an attacker hostname to loopback still
+            # sends the attacker's Host and Origin. Simulate that request over
+            # the live loopback socket; no external DNS or host is contacted.
+            require(http_code(base + "/api/inventory", headers={
+                "Host": "attacker.invalid",
+                "Origin": "http://attacker.invalid",
+                "Sec-Fetch-Site": "same-origin",
+            }) == 403, "DNS_REBINDING_SIMULATION_FAILED")
             result["checks"].append("host_origin_method_guards")
+            result["checks"].append("simulated_dns_rebinding_host_origin_rejected")
         result["status"] = "PASS_SYNTHETIC_HTTP_BROWSER_ONLY"
     except GateError as exc:
         result["error_code"] = str(exc)
