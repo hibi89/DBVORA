@@ -29,8 +29,8 @@
 
 - Exact source full gate: https://github.com/hibi89/DBVORA/actions/runs/43576862756
 - Ubuntu24.04: **712 discovered, 712 PASS, 0 FAIL, 0 SKIP; 12/12 mandatory steps PASS**.
-- Windows2025: **in progress at initial evidence write; do not label PASS until the exact job/log verifies the results**.
-- Final blueprint evidence gate: https://github.com/hibi89/DBVORA/actions/runs/43576863080 (confirm exact conclusion before release decision).
+- Windows2025: **712 discovered, 711 PASS, 0 FAIL, 1 named POSIX-only SKIP; 12/12 mandatory steps PASS**. The only skip is `test_review_html.ReviewHtmlTests.test_created_report_is_mode_0600_on_posix`.
+- Final blueprint evidence gate: https://github.com/hibi89/DBVORA/actions/runs/43576863080 **SUCCESS** (policy/evidence only; not customer acceptance).
 - Latest real Chromium 17/17 per OS remains independently verified on earlier exact source `d5780ceece92f28508712aa2cdd2a6228c7e137c`; this change affects only Python tests, not frontend.
 
 ## Explicit exclusions
