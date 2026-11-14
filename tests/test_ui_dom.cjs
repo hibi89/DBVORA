@@ -61,7 +61,7 @@ setImmediate(async () => {
     assert.equal(storageFetches, 0, 'dbstat must never scan automatically');
     const getMeasure = () => ids.detail.children.flatMap(root => {
       const items = [];
-      const walk = node => { if (node.className.includes('storage-measure')) items.push(node);
+      const walk = node => { if (node.className.split(/\s+/).includes('storage-measure')) items.push(node);
                              node.children.forEach(walk); };
       walk(root); return items;
     })[0];
