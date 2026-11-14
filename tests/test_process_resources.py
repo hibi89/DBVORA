@@ -1,6 +1,7 @@
 """Actual local process, OS RAM and local volume provenance tests."""
 from __future__ import annotations
 from contextlib import redirect_stderr, redirect_stdout
+import copy
 import io
 import json
 from pathlib import Path
@@ -39,6 +40,92 @@ class ProcessResourcesTests(unittest.TestCase):
         else:
             self.assertIsNone(report["resident_bytes"])
             self.assertEqual(report["source"], "unavailable")
+
+    def test_real_two_samples_compare_local_process_only(self):
+        before = p.observe(self.root)
+        sum(x * x for x in range(40000))
+        after = p.observe(self.root)
+        trend = p.compare_local_samples(before, after)
+        self.assertEqual(trend["contract"], p.TREND_CONTRACT)
+        self.assertEqual(trend["status"], "measured_two_samples_only_no_forecast", trend)
+        self.assertGreater(trend["elapsed_ns"], 0)
+        self.assertGreaterEqual(trend["process_cpu_delta_ns"], 0)
+        self.assertIsNone(trend["database_server_cpu_percent"])
+        self.assertIsNone(trend["database_server_ram_bytes"])
+        self.assertEqual(trend["scope"], "same_python_process_only_not_database_server")
+        self.assertFalse(trend["ready_for_customer_data"])
+        self.assertNotIn(str(self.root), str(trend))
+        if trend["resident_ram_status"] == "measured":
+            self.assertIs(type(trend["resident_ram_delta_bytes"]), int)
+        else:
+            self.assertIsNone(trend["resident_ram_delta_bytes"])
+
+    def test_two_sample_calculation_uses_raw_cpu_and_memory_deltas_not_percent(self):
+        first = p.observe(self.root)
+        second = copy.deepcopy(first)
+        second["sample_monotonic_ns"] += 1_000_000_000
+        second["process_cpu_time_ns"] += 125_000_000
+        first["ram"] = {"status": "measured", "resident_bytes": 400_000,
+                        "source": "linux_proc_self_statm_resident_bytes",
+                        "scope": "current_python_process_not_database_server"}
+        second["ram"] = {**first["ram"], "resident_bytes": 398_000}
+        trend = p.compare_local_samples(first, second)
+        self.assertEqual(trend["status"], "measured_two_samples_only_no_forecast", trend)
+        self.assertEqual(trend["elapsed_ns"], 1_000_000_000)
+        self.assertEqual(trend["process_cpu_delta_ns"], 125_000_000)
+        self.assertEqual(trend["resident_ram_delta_bytes"], -2_000)
+        self.assertNotIn("process_cpu_percent", trend)
+
+    def test_different_process_or_session_cannot_form_trend(self):
+        first = p.observe(self.root)
+        second = copy.deepcopy(first)
+        second["sample_monotonic_ns"] += 1
+        second["process_id"] += 1
+        self.assertEqual(p.compare_local_samples(first, second)["reason"],
+                         "different_python_process")
+        second["process_id"] = first["process_id"]
+        second["process_instance_id"] = "a" * 32 if first["process_instance_id"] != "a" * 32 else "b" * 32
+        self.assertEqual(p.compare_local_samples(first, second)["reason"],
+                         "different_python_process")
+
+    def test_invalid_time_or_cpu_counter_never_creates_false_trend(self):
+        first = p.observe(self.root)
+        later = copy.deepcopy(first)
+        self.assertEqual(p.compare_local_samples(first, later)["reason"],
+                         "non_increasing_monotonic_clock")
+        later["sample_monotonic_ns"] += 1
+        later["process_cpu_time_ns"] -= 1
+        self.assertEqual(p.compare_local_samples(first, later)["reason"],
+                         "process_cpu_counter_decreased")
+        later["process_cpu_time_ns"] = True
+        self.assertEqual(p.compare_local_samples(first, later)["reason"],
+                         "invalid_or_legacy_observation")
+
+    def test_missing_identity_legacy_and_untrusted_fields_unavailable(self):
+        a = p.observe(self.root)
+        b = copy.deepcopy(a)
+        b["sample_monotonic_ns"] += 1
+        a.pop("process_instance_id")
+        trend = p.compare_local_samples(a, b)
+        self.assertEqual(trend["status"], "unavailable")
+        self.assertIsNone(trend["process_cpu_delta_ns"])
+        a = p.observe(self.root)
+        a["database_server_cpu_percent"] = 88
+        self.assertEqual(p.compare_local_samples(a, b)["reason"],
+                         "invalid_or_legacy_observation")
+
+    def test_missing_ram_sample_stays_unavailable_while_cpu_delta_valid(self):
+        a = p.observe(self.root)
+        b = copy.deepcopy(a)
+        b["sample_monotonic_ns"] += 100
+        b["process_cpu_time_ns"] += 12
+        b["ram"] = {"status": "unavailable", "resident_bytes": None, "source": "unavailable",
+                    "scope": "current_python_process_not_database_server"}
+        trend = p.compare_local_samples(a, b)
+        self.assertEqual(trend["status"], "measured_two_samples_only_no_forecast")
+        self.assertEqual(trend["process_cpu_delta_ns"], 12)
+        self.assertEqual(trend["resident_ram_status"], "unavailable")
+        self.assertIsNone(trend["resident_ram_delta_bytes"])
 
     def test_relative_missing_and_symlink_paths_are_rejected(self):
         for path in (".", str(self.root / "missing")):
