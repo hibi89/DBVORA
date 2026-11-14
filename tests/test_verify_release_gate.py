@@ -61,6 +61,16 @@ class VerificationGateTests(unittest.TestCase):
                             'tampered_chunk_rejected': True,
                             'customer_ready': False, 'power_loss_verified': False,
                             'automatic_deletion': False}), ''),
+            (0, json.dumps({'status': 'PASS_SYNTHETIC_STORAGE_COMPARISON_ONLY',
+                            'checks': 9, 'same_synthetic_workload': True,
+                            'both_generations_restored': True,
+                            'second_generation_reused_blocks': True,
+                            'source_unchanged_during_archiving': True,
+                            'no_universal_compression_claim': True,
+                            'ready_for_customer_data': False,
+                            'metrics': {'two_zip_archives_bytes': 10,
+                                        'cas_total_stored_bytes': 20,
+                                        'cas_minus_zip_bytes': 10}}), ''),
         ]
 
     def test_full_mocked_gate_synthetic_pass_not_customer_release(self):
@@ -68,7 +78,7 @@ class VerificationGateTests(unittest.TestCase):
             report = gate.verify()
         self.assertEqual(report['status'], 'PASS_SYNTHETIC_ENVIRONMENT_ONLY')
         self.assertFalse(report['ready_for_customer_data'])
-        self.assertEqual(len(report['steps']), 11)
+        self.assertEqual(len(report['steps']), 12)
 
     def test_incomplete_checkout_fails_before_execution(self):
         (self.root / 'dbvora/archive/safe_zip.py').unlink()
@@ -401,8 +411,8 @@ class VerificationGateTests(unittest.TestCase):
                 gate.shutil, 'which', return_value='tool'):
             result = gate.verify()
         self.assertEqual(result['status'], 'FAIL_CLOSED')
-        self.assertEqual(result['steps'][-1]['step'], 'synthetic_incremental_cli_roundtrip')
-        self.assertEqual(result['steps'][-1]['status'], 'FAIL')
+        self.assertEqual(result['steps'][-2]['step'], 'synthetic_incremental_cli_roundtrip')
+        self.assertEqual(result['steps'][-2]['status'], 'FAIL')
 
     def test_incremental_cli_gate_rejects_any_claim_of_customer_ready(self):
         responses = self.responses()
@@ -413,7 +423,31 @@ class VerificationGateTests(unittest.TestCase):
                 gate.shutil, 'which', return_value='tool'):
             result = gate.verify()
         self.assertEqual(result['status'], 'FAIL_CLOSED')
+        self.assertEqual(result['steps'][-2]['status'], 'FAIL')
+
+
+    def test_size_comparison_requires_real_two_generation_restore(self):
+        responses = self.responses()
+        measured = json.loads(responses[10][1])
+        measured['both_generations_restored'] = False
+        responses[10] = (0, json.dumps(measured), '')
+        with patch.object(gate, '_run', side_effect=responses), patch.object(
+                gate.shutil, 'which', return_value='tool'):
+            result = gate.verify()
+        self.assertEqual(result['status'], 'FAIL_CLOSED')
+        self.assertEqual(result['steps'][-1]['step'], 'synthetic_archive_size_comparison')
         self.assertEqual(result['steps'][-1]['status'], 'FAIL')
+
+    def test_size_comparison_does_not_accept_falsified_savings_claim(self):
+        responses = self.responses()
+        measured = json.loads(responses[10][1])
+        measured['metrics']['cas_minus_zip_bytes'] = -10000000
+        responses[10] = (0, json.dumps(measured), '')
+        with patch.object(gate, '_run', side_effect=responses), patch.object(
+                gate.shutil, 'which', return_value='tool'):
+            result = gate.verify()
+        self.assertEqual(result['status'], 'FAIL_CLOSED')
+        self.assertIsNone(result['steps'][-1]['metrics'])
 
 
 if __name__ == '__main__':

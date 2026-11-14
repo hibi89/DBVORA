@@ -73,6 +73,7 @@ REQUIRED = (
     "dbvora/archive/incremental_cas.py", "tests/test_incremental_cas.py",
     "dbvora/incremental_cli.py", "tests/test_incremental_cli.py",
     "scripts/incremental_cli_gate.py",
+    "scripts/benchmark_synthetic_archives.py", "tests/test_benchmark_synthetic_archives.py",
 )
 
 
@@ -356,6 +357,42 @@ def verify():
         "exit_code": code if type(code) is int else -1,
         "error_code": "NONE" if inc_ok else
             _safe_code(incremental.get("error_code"), "INCREMENTAL_CLI_GATE_FAILED"),
+    })
+
+    # Same two exact synthetic SQLite generations: compare actually stored
+    # ZIP/CAS bytes and independently restore both formats (no universal claim).
+    code, out, _ = _run([sys.executable, "-m", "scripts.benchmark_synthetic_archives"], timeout=180)
+    try:
+        sizes = json.loads(out)
+    except (ValueError, TypeError):
+        sizes = {}
+    metrics = sizes.get("metrics", {})
+    benchmark_ok = (
+        code == 0 and sizes.get("status") == "PASS_SYNTHETIC_STORAGE_COMPARISON_ONLY"
+        and type(sizes.get("checks")) is int and sizes["checks"] >= 9
+        and sizes.get("same_synthetic_workload") is True
+        and sizes.get("both_generations_restored") is True
+        and sizes.get("second_generation_reused_blocks") is True
+        and sizes.get("source_unchanged_during_archiving") is True
+        and sizes.get("no_universal_compression_claim") is True
+        and sizes.get("ready_for_customer_data") is False
+        and isinstance(metrics, dict)
+        and type(metrics.get("two_zip_archives_bytes")) is int
+        and metrics["two_zip_archives_bytes"] > 0
+        and type(metrics.get("cas_total_stored_bytes")) is int
+        and metrics["cas_total_stored_bytes"] > 0
+        and type(metrics.get("cas_minus_zip_bytes")) is int
+        and metrics["cas_minus_zip_bytes"] == (
+            metrics["cas_total_stored_bytes"] - metrics["two_zip_archives_bytes"])
+    )
+    report["steps"].append({
+        "step": "synthetic_archive_size_comparison",
+        "status": "PASS" if benchmark_ok else "FAIL",
+        "checks": sizes.get("checks", 0) if type(sizes.get("checks")) is int else 0,
+        "exit_code": code if type(code) is int else -1,
+        "metrics": metrics if benchmark_ok else None,
+        "error_code": "NONE" if benchmark_ok else
+            _safe_code(sizes.get("error_code"), "SYNTHETIC_BENCHMARK_GATE_FAILED"),
     })
 
     if all(step["status"] == "PASS" for step in report["steps"]):
