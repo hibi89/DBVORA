@@ -56,6 +56,14 @@ class LedgerTest(unittest.TestCase):
         with self.assertRaisesRegex(ObservationError, "integrity"):
             self.append("2026-11-14T01:01:00Z", 2048)
 
+    def test_read_does_not_create_or_modify_ledger(self):
+        self.assertEqual(read_observations(self.path, db_id="synthetic_db"), [])
+        self.assertFalse(self.path.exists())
+        self.append("2026-11-14T01:00:00Z", 1024)
+        before = self.path.read_bytes()
+        self.assertEqual(len(read_observations(self.path, db_id="synthetic_db")), 1)
+        self.assertEqual(self.path.read_bytes(), before)
+
     def test_rejects_bad_metadata(self):
         for db, at, size in [("postgres://secret", "2026-11-14T01:00:00Z", 1),
                              ("synthetic_db", "2026-11-14T01:00:00", 1),
