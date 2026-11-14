@@ -26,6 +26,24 @@ class PortableTests(unittest.TestCase):
         self.assertEqual(check['status'], 'PASS_UNSIGNED_SOURCE_INTEGRITY_ONLY')
         self.assertFalse(check['ready_for_customer_data'])
         self.assertFalse(check['signed'])
+        self.assertEqual(check['source_commit'], 'UNPINNED_LOCAL_SOURCE')
+
+    def test_build_records_commit_and_includes_contracts(self):
+        source_commit = 'a' * 40
+        archive = pack.build(self.folder, source_commit=source_commit)
+        result = pack.verify_zip(archive)
+        self.assertEqual(result['source_commit'], source_commit)
+        with zipfile.ZipFile(archive) as zipped:
+            manifest = json.loads(zipped.read('MANIFEST.sha256.json'))
+            self.assertEqual(manifest['source_commit'], source_commit)
+            self.assertTrue(pack._CONTRACT_FILES.issubset(zipped.namelist()))
+            readme = zipped.read('README_PORTABLE.txt').decode('utf-8')
+            self.assertIn('all versioned JSON schemas are included', readme)
+
+    def test_invalid_source_commit_is_refused_without_output(self):
+        with self.assertRaisesRegex(pack.PortableError, 'INVALID_SOURCE_COMMIT'):
+            pack.build(self.folder, source_commit='not-a-commit')
+        self.assertEqual(list(self.folder.glob('dbvora-dev-preview-*.zip')), [])
 
     def test_bundle_has_explicit_allowlist_and_no_customer_db(self):
         file = pack.build(self.folder)

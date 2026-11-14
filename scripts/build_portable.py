@@ -24,6 +24,17 @@ MAX_FILE_BYTES = 2 * 1024 * 1024
 MAX_TOTAL_BYTES = 16 * 1024 * 1024
 _STAMP = (2020, 1, 1, 0, 0, 0)
 _ALLOWED_SUFFIXES = {'.py', '.js', '.html', '.css'}
+_CONTRACT_FILES = {
+    'contracts/README.md', 'contracts/dbvora-error-v1.schema.json',
+    'contracts/dbvora.local-observation.v1.schema.json',
+    'contracts/dbvora.local-table-storage.v1.schema.json',
+    'contracts/dbvora.multi_engine_offline.v1.schema.json',
+    'contracts/dbvora.pg_catalog.v1.schema.json',
+    'contracts/dbvora.pg_statistics.v1.schema.json',
+    'contracts/p0-01.v1.schema.json',
+    'contracts/p0-03.workspace.v1.schema.json',
+}
+_SOURCE_COMMIT = re.compile(r'(?:[0-9a-f]{40}|UNPINNED_LOCAL_SOURCE)\Z', re.ASCII)
 _REQUIRED = {
     'dbvora/__init__.py', 'dbvora/__main__.py', 'dbvora/serve.py',
     'dbvora/api.py', 'dbvora/archive/safe_zip.py',
@@ -36,7 +47,7 @@ _REQUIRED = {
     'check_dbvora_unix.sh', 'dbvora/archive/review_selftest.py',
     'check_dbvora_archive_windows.cmd', 'check_dbvora_archive_unix.sh',
     'dbvora/archive/portable_verify.py', 'verify_dbvora_portable_windows.cmd', 'verify_dbvora_portable_unix.sh',
-}
+} | _CONTRACT_FILES
 
 
 class PortableError(Exception):
@@ -95,6 +106,8 @@ def _contents(root: Path) -> dict[str, bytes]:
             files[name] = _read_safe(source)
     files['scripts/build_portable.py'] = _read_safe(root / 'scripts' / 'build_portable.py')
     files['pyproject.toml'] = _read_safe(root / 'pyproject.toml')
+    for name in sorted(_CONTRACT_FILES):
+        files[name] = _read_safe(root / name)
     files['README_PORTABLE.txt'] = (
         'DBVORA LOCAL DEVELOPER PREVIEW (unsigned / no customer readiness)\n'
         'This is a source ZIP, NOT a standalone installer or bundled Python.\n'
@@ -113,6 +126,9 @@ def _contents(root: Path) -> dict[str, bytes]:
         '  Linux/macOS: sh verify_dbvora_portable_unix.sh\n'
         '  Or: python -m dbvora.archive.portable_verify\n'
         '  This checks source SHA-256 only; NOT publisher authenticity/signature.\n'
+        'CONTRACTS: contracts/README.md and all versioned JSON schemas are included.\n'
+        'MANIFEST source_commit is the CI revision; local builds use UNPINNED_LOCAL_SOURCE.\n'
+        'This unsigned field provides traceability only, not publisher authentication.\n'
 
         '  This generates and removes only temporary synthetic SQLite archives.\n'
         '  PASS is not proof of Windows NTFS/physical power-loss or customer readiness.\n'
@@ -211,11 +227,14 @@ def _member(name: str, payload: bytes) -> tuple[zipfile.ZipInfo, bytes]:
     return item, payload
 
 
-def _zip_bytes(root: Path) -> bytes:
+def _zip_bytes(root: Path, source_commit: str = 'UNPINNED_LOCAL_SOURCE') -> bytes:
     import io
+    if not isinstance(source_commit, str) or not _SOURCE_COMMIT.fullmatch(source_commit):
+        raise PortableError('INVALID_SOURCE_COMMIT')
     source = _contents(root)
     manifest = {
         'format': 'dbvora-portable-dev-v1', 'unsigned': True,
+        'source_commit': source_commit,
         'files': {name: {'sha256': hashlib.sha256(data).hexdigest(), 'bytes': len(data)}
                   for name, data in sorted(source.items())},
     }
@@ -247,7 +266,12 @@ def verify_zip(archive: Path) -> dict:
             if sum(i.file_size for i in infos) > MAX_TOTAL_BYTES:
                 raise PortableError('TOO_LARGE')
             parsed = json.loads(zf.read('MANIFEST.sha256.json'))
-            if parsed.get('format') != 'dbvora-portable-dev-v1' or parsed.get('unsigned') is not True:
+            if (not isinstance(parsed, dict)
+                    or set(parsed) != {'format', 'unsigned', 'source_commit', 'files'}
+                    or parsed.get('format') != 'dbvora-portable-dev-v1'
+                    or parsed.get('unsigned') is not True
+                    or not isinstance(parsed.get('source_commit'), str)
+                    or not _SOURCE_COMMIT.fullmatch(parsed['source_commit'])):
                 raise PortableError('INVALID_MANIFEST')
             catalog = parsed.get('files')
             if not isinstance(catalog, dict) or set(catalog) != set(names) - {'MANIFEST.sha256.json'}:
@@ -268,12 +292,16 @@ def verify_zip(archive: Path) -> dict:
                 if hashlib.sha256(zf.read(info)).hexdigest() != digest:
                     raise PortableError('CHECKSUM_MISMATCH')
         return {'status': 'PASS_UNSIGNED_SOURCE_INTEGRITY_ONLY', 'files': len(catalog),
+                'source_commit': parsed['source_commit'],
                 'ready_for_customer_data': False, 'signed': False}
     except (OSError, ValueError, TypeError, zipfile.BadZipFile, KeyError, RuntimeError):
         raise PortableError('INVALID_ARCHIVE') from None
 
 
-def build(output: Path, *, root: Path = ROOT) -> Path:
+def build(output: Path, *, root: Path = ROOT,
+          source_commit: str = 'UNPINNED_LOCAL_SOURCE') -> Path:
+    if not isinstance(source_commit, str) or not _SOURCE_COMMIT.fullmatch(source_commit):
+        raise PortableError('INVALID_SOURCE_COMMIT')
     if not output.is_absolute() or output.is_symlink() or not output.is_dir():
         raise PortableError('INVALID_OUTPUT')
     if any(p.is_symlink() for p in (output, *output.parents)):
@@ -282,7 +310,7 @@ def build(output: Path, *, root: Path = ROOT) -> Path:
     archive = output / archive_name
     if archive.exists() or archive.is_symlink():
         raise PortableError('ALREADY_EXISTS')
-    data = _zip_bytes(root)
+    data = _zip_bytes(root, source_commit)
     # Stage and verify before publishing under an exclusive new name.
     fd, staging = tempfile.mkstemp(prefix='.dbvora-bundle-', suffix='.part', dir=output)
     staged = Path(staging)
@@ -308,10 +336,12 @@ def main(argv=None) -> int:
     modes = parser.add_mutually_exclusive_group(required=True)
     modes.add_argument('--output', help='Existing absolute directory for new ZIP')
     modes.add_argument('--verify', help='Existing archive to independently verify')
+    parser.add_argument('--source-commit', default='UNPINNED_LOCAL_SOURCE',
+                        help='Exact 40-character CI commit SHA; local default is unpinned')
     args = parser.parse_args(argv)
     try:
         if args.output:
-            path = build(Path(args.output))
+            path = build(Path(args.output), source_commit=args.source_commit)
             report = verify_zip(path)
             report['archive_name'] = path.name
             report['sha256'] = hashlib.sha256(path.read_bytes()).hexdigest()

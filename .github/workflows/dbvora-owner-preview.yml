@@ -6,6 +6,7 @@ on:
       - feature/p0-db-map
     paths:
       - "dbvora/**"
+      - "contracts/**"
       - "scripts/build_portable.py"
       - "pyproject.toml"
       - ".github/workflows/dbvora-owner-preview.yml"
@@ -35,7 +36,7 @@ jobs:
       - name: Create source-only ZIP with manifest (synthetic tools)
         run: |
           mkdir -p "$GITHUB_WORKSPACE/dist"
-          python -m scripts.build_portable --output "$GITHUB_WORKSPACE/dist" > "$GITHUB_WORKSPACE/dist/unsigned-build-report.json"
+          python -m scripts.build_portable --output "$GITHUB_WORKSPACE/dist" --source-commit "$GITHUB_SHA" > "$GITHUB_WORKSPACE/dist/unsigned-build-report.json"
       - name: Verify fresh ZIP and manifest independently
         run: |
           python - <<'PY'
@@ -52,7 +53,9 @@ jobs:
           assert evidence["signed"] is False
           assert build["sha256"] == hashlib.sha256(archive.read_bytes()).hexdigest()
           assert build["status"] == "PASS_UNSIGNED_SOURCE_INTEGRITY_ONLY"
-          print(json.dumps({"status":"PASS_UNSIGNED_OWNER_PREVIEW_ONLY", "zip_sha256":build["sha256"], "files":evidence["files"], "source_commit":"${{ github.sha }}", "ready_for_customer_data":False}, sort_keys=True))
+          assert evidence["source_commit"] == "${{ github.sha }}"
+          assert build["source_commit"] == "${{ github.sha }}"
+          print(json.dumps({"status":"PASS_UNSIGNED_OWNER_PREVIEW_ONLY", "zip_sha256":build["sha256"], "files":evidence["files"], "source_commit":evidence["source_commit"], "ready_for_customer_data":False}, sort_keys=True))
           PY
       - name: Run packaged synthetic-only no-dependency self-check
         run: python -m dbvora.offline_selftest

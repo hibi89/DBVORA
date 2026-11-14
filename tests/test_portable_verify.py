@@ -27,7 +27,8 @@ class ExtractedPreviewTests(unittest.TestCase):
             files[name] = {'sha256': hashlib.sha256(dest.read_bytes()).hexdigest(),
                            'bytes': dest.stat().st_size}
         (self.root / 'MANIFEST.sha256.json').write_text(json.dumps({
-            'format': 'dbvora-portable-dev-v1', 'unsigned': True, 'files': files}), encoding='utf-8')
+            'format': 'dbvora-portable-dev-v1', 'unsigned': True,
+            'source_commit': 'UNPINNED_LOCAL_SOURCE', 'files': files}), encoding='utf-8')
 
     def test_valid_explicit_unsigned_manifest(self):
         result = package.verify(self.root)
@@ -35,6 +36,23 @@ class ExtractedPreviewTests(unittest.TestCase):
         self.assertFalse(result['signed'])
         self.assertFalse(result['publisher_authenticity_verified'])
         self.assertFalse(result['customer_ready'])
+        self.assertEqual(result['source_commit'], 'UNPINNED_LOCAL_SOURCE')
+
+    def test_manifest_source_commit_sha_is_reported(self):
+        p = self.root / 'MANIFEST.sha256.json'
+        data = json.loads(p.read_text())
+        data['source_commit'] = 'b' * 40
+        p.write_text(json.dumps(data))
+        result = package.verify(self.root)
+        self.assertEqual(result['source_commit'], 'b' * 40)
+
+    def test_manifest_invalid_source_commit_rejected(self):
+        p = self.root / 'MANIFEST.sha256.json'
+        data = json.loads(p.read_text())
+        data['source_commit'] = 'main'
+        p.write_text(json.dumps(data))
+        with self.assertRaisesRegex(package.PortableVerifyError, 'INVALID_PACKAGE_MANIFEST'):
+            package.verify(self.root)
 
     def test_source_bytes_tamper_detected(self):
         target = self.root / 'dbvora/archive/request_service.py'

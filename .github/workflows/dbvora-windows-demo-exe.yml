@@ -60,6 +60,22 @@ jobs:
           if ($source.Contains('SYNTHETIC_ROW_CONTENT_MUST_NOT_APPEAR_IN_HTML') -or
               -not $source.Contains('Content-Security-Policy')) { throw 'HTML_SECURITY_POLICY_FAILED' }
           $hash = (Get-FileHash -LiteralPath '.\dist\DBVORA-SYNTHETIC-OWNER-PREVIEW.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $buildInfoPath = 'dist/DBVORA-SYNTHETIC-OWNER-PREVIEW.build-info.json'
+          $buildInfo = [ordered]@{
+            contract = 'dbvora.windows-demo-build.v1'
+            source_commit = '${{ github.sha }}'
+            executable = 'DBVORA-SYNTHETIC-OWNER-PREVIEW.exe'
+            executable_sha256 = $hash
+            signed = $false
+            customer_ready = $false
+          }
+          $buildInfo | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath $buildInfoPath -Encoding utf8
+          $verifiedBuildInfo = Get-Content -LiteralPath $buildInfoPath -Raw -Encoding utf8 | ConvertFrom-Json
+          if ($verifiedBuildInfo.contract -ne 'dbvora.windows-demo-build.v1' -or
+              $verifiedBuildInfo.source_commit -ne '${{ github.sha }}' -or
+              $verifiedBuildInfo.executable_sha256 -ne $hash -or
+              $verifiedBuildInfo.signed -ne $false -or
+              $verifiedBuildInfo.customer_ready -ne $false) { throw 'BUILD_INFO_VERIFICATION_FAILED' }
           Write-Output ('DBVORA_OWNER_EXE_SYNTHETIC_QA_PASS_SHA256=' + $hash)
           Write-Output ('DBVORA_OWNER_EXE_SOURCE_COMMIT=${{ github.sha }}')
           Write-Output 'CUSTOMER_READY=false;SIGNED=false;REAL_DB_TESTED=false'
@@ -68,6 +84,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dbvora-UNSIGNED-SYNTHETIC-WINDOWS-DEMO-${{ github.sha }}
-          path: dist/DBVORA-SYNTHETIC-OWNER-PREVIEW.exe
+          path: |
+            dist/DBVORA-SYNTHETIC-OWNER-PREVIEW.exe
+            dist/DBVORA-SYNTHETIC-OWNER-PREVIEW.build-info.json
           if-no-files-found: error
           retention-days: 7

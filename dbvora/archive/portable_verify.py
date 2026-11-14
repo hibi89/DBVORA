@@ -19,6 +19,17 @@ MAX_MEMBERS = 100
 MAX_FILE_BYTES = 2 * 1024 * 1024
 MAX_TOTAL_BYTES = 16 * 1024 * 1024
 _DIGEST = re.compile(r'[0-9a-f]{64}\Z', re.ASCII)
+_SOURCE_COMMIT = re.compile(r'(?:[0-9a-f]{40}|UNPINNED_LOCAL_SOURCE)\Z', re.ASCII)
+_CONTRACT_FILES = {
+    'contracts/README.md', 'contracts/dbvora-error-v1.schema.json',
+    'contracts/dbvora.local-observation.v1.schema.json',
+    'contracts/dbvora.local-table-storage.v1.schema.json',
+    'contracts/dbvora.multi_engine_offline.v1.schema.json',
+    'contracts/dbvora.pg_catalog.v1.schema.json',
+    'contracts/dbvora.pg_statistics.v1.schema.json',
+    'contracts/p0-01.v1.schema.json',
+    'contracts/p0-03.workspace.v1.schema.json',
+}
 _ROOT_FILES = {'scripts/build_portable.py', 'pyproject.toml', 'README_PORTABLE.txt',
                'run_dbvora_windows.cmd', 'run_dbvora_unix.sh',
                'check_dbvora_windows.cmd', 'check_dbvora_unix.sh',
@@ -29,7 +40,7 @@ _REQUIRED = {'dbvora/archive/portable_verify.py', 'dbvora/archive/review_selftes
              'dbvora/archive/request_ledger.py', 'dbvora/archive/request_service.py',
              'dbvora/archive/request_audit.py', 'dbvora/archive/review_html.py',
              'scripts/build_portable.py', 'pyproject.toml',
-             'verify_dbvora_portable_windows.cmd', 'verify_dbvora_portable_unix.sh'}
+             'verify_dbvora_portable_windows.cmd', 'verify_dbvora_portable_unix.sh'} | _CONTRACT_FILES
 
 
 class PortableVerifyError(ValueError):
@@ -43,7 +54,7 @@ def _valid_name(name: str) -> bool:
     if path.is_absolute() or '..' in path.parts or path.as_posix() != name or any(
             not p or p == '.' or p.startswith('.') for p in path.parts):
         return False
-    if name in _ROOT_FILES:
+    if name in _ROOT_FILES or name in _CONTRACT_FILES:
         return True
     return name.startswith('dbvora/') and path.suffix in ('.py', '.js', '.html', '.css')
 
@@ -103,8 +114,11 @@ def verify(root: Path | None = None) -> dict:
         manifest = json.loads(raw)
     except (UnicodeError, TypeError, ValueError):
         raise PortableVerifyError('INVALID_PACKAGE_MANIFEST') from None
-    if (type(manifest) is not dict or set(manifest) != {'format', 'unsigned', 'files'}
-            or manifest['format'] != 'dbvora-portable-dev-v1' or manifest['unsigned'] is not True):
+    if (type(manifest) is not dict
+            or set(manifest) != {'format', 'unsigned', 'source_commit', 'files'}
+            or manifest['format'] != 'dbvora-portable-dev-v1' or manifest['unsigned'] is not True
+            or type(manifest['source_commit']) is not str
+            or not _SOURCE_COMMIT.fullmatch(manifest['source_commit'])):
         raise PortableVerifyError('INVALID_PACKAGE_MANIFEST')
     files = manifest['files']
     if (type(files) is not dict or not _REQUIRED.issubset(files)
@@ -155,6 +169,7 @@ def verify(root: Path | None = None) -> dict:
         except (OSError, ValueError):
             raise PortableVerifyError('UNSAFE_PACKAGE_ENTRY') from None
     return {'status': 'PASS_UNSIGNED_EXTRACTED_CONTENTS_ONLY',
+            'source_commit': manifest['source_commit'],
             'source_files_verified': len(files), 'total_source_bytes': total,
             'signed': False, 'publisher_authenticity_verified': False,
             'customer_ready': False, 'windows_ntfs_durability_verified': False}
