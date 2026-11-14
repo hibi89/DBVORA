@@ -96,7 +96,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", required=True, help="Existing absolute output directory")
     parser.add_argument("--synthetic-only", action="store_true", required=True)
     args = parser.parse_args(argv)
-    report = create_demo(args.out)
+    # CLI-only convenience for the synthetic demo: relative paths are anchored
+    # to this invocation's working directory. The export API still requires an
+    # explicit absolute existing directory and rejects symlink components.
+    output = Path(args.out)
+    if not output.is_absolute():
+        output = Path.cwd() / output
+    report = create_demo(output)
     print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     return 0 if report["status"] == "CREATED_SYNTHETIC_DEMO" else 1
 
