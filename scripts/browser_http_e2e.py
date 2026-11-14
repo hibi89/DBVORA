@@ -783,7 +783,7 @@ def run(*, screenshots=None):
                     page.wait_for_function(
                         "() => document.querySelector('#error').hidden === false",
                         timeout=30000)
-                    require("exceeds the inventory limit" in
+                    require("안전한 표시 한도를 넘었습니다." in
                             page.locator("#error").inner_text()
                             and at_excess == digest(db),
                             "CATALOG_1001_UI_ERROR_MISSING")

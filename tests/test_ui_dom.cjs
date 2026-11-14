@@ -119,7 +119,7 @@ setImmediate(async () => {
     await ids['postgres-stats-load'].events.click();
     assert.equal(postgresStatsFetches, 1, 'statistics request requires its own explicit click');
     assert.ok(ids['postgres-stats-status'].textContent.includes('조회 시각'));
-    assert.ok(ids['postgres-detail'].textContent.includes('추정 live rows: 1'));
+    assert.ok(ids['postgres-detail'].textContent.includes('추정 활성 행 수: 1'));
     assert.ok(ids['postgres-detail'].textContent.includes('pg_stat_user_tables'));
     assert.ok(ids['postgres-detail'].textContent.includes('8 KB'));
     assert.ok(ids['postgres-detail'].textContent.includes('pg_indexes_size'));
