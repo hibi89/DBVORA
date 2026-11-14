@@ -1010,8 +1010,10 @@ def run(*, screenshots=None):
                             and multi_page.locator('#size').inner_text() == expected_sizes[db_b],
                             'MULTI_REFRESH_SELECTION_NOT_PRESERVED')
                     multi_page.locator('#database-list button').first.click()
+                    # The per-DB ORDERS filter hides its customers endpoint, so no
+                    # relationship edge should be drawn into an invisible node.
                     require(multi_page.locator('#tables-count').inner_text() == '3'
-                            and multi_page.locator('#edges path').count() == 1
+                            and multi_page.locator('#edges path').count() == 0
                             and multi_page.locator('button.table-node').count() == 3
                             and multi_page.locator('#table-filter').input_value() == 'ORDERS'
                             and multi_page.locator('#tables button.table-node:visible').count() == 1
