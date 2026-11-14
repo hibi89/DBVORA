@@ -1,4 +1,16 @@
-> **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
+> **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only]**
+> 1. **목표/범위**: `hibi89/DBVORA`, `feature/p0-db-map`의 R01–R07/G90 최종 설계 구현·검증. 사용자 PC 작업, main/develop 병합, 유료 출시·상용 배포는 범위 밖.
+> 2. **이번 완료**: R01-03 PASS_SCOPED; R01-02 토폴로지와 R02-05 PG 통계 UI도 현재 SHA의 2OS Chromium/PG16 검증을 재확인했다.
+> 3. **최종 소스/테스트 SHA**: `41aa567f0504ace5109afaa3dbe6dcc63aa7f34e`. 변경은 PostgreSQL SQLSTATE 42501의 안전 분류, 카탈로그·통계 API 오류 매핑, 한국어 복구 메시지, 합성 API/브라우저 테스트다.
+> 4. **전체 회귀**: [#43654447078](https://github.com/hibi89/DBVORA/actions/runs/43654447078) PASS. Ubuntu 793/793, 0 skip; Windows 792 PASS + 지정 POSIX-only 1 SKIP; 필수 단계 12/12 양 OS.
+> 5. **Chromium**: [#43654447035](https://github.com/hibi89/DBVORA/actions/runs/43654447035) PASS, 36/36 Ubuntu와 36/36 Windows.
+> 6. **PostgreSQL**: [#43654447096](https://github.com/hibi89/DBVORA/actions/runs/43654447096) PASS: verified TLS/read-only 5 checks, PG UI 10 checks. 한 번의 합성 권한 오류 뒤 동일 실 PG16/TLS 연결로 복구했다.
+> 7. **패키징**: ZIP [#43654447028](https://github.com/hibi89/DBVORA/actions/runs/43654447028) PASS, 75 files, SHA-256 `b065f8bef8c81af6174ce8fd21e5acddba3a05df1625ce616e98f83678f22080`; EXE [#43654447043](https://github.com/hibi89/DBVORA/actions/runs/43654447043) PASS, SHA-256 `2cb874493a84c59a7e2608ab64e2f0d31b12c10a891cfaa7041a5e292fee7470`. 둘 다 unsigned·synthetic only.
+> 8. **Blueprint/증거**: [#43654447279](https://github.com/hibi89/DBVORA/actions/runs/43654447279) PASS. 상세 및 artifact digest는 [R01-03 증거](docs/R01_03_POSTGRES_PERMISSION_RECOVERY_20261115.md)에 기록.
+> 9. **제한**: 권한 오류는 API 경계에서 한 번 합성 주입했고 실제 PG 권한/GRANT는 변경하지 않았다. 실고객 자료, 실기기, 물리 정전, 법률·상업 승인 증거가 아니다.
+> 10. **다음/공식 상태**: R01-01 EVIDENCE_RECHECK부터 진행. 총괄 UNASSESSED / RELEASE HOLD, OWNER_GATE 유지.
+
+> **[2026-11-15 KST | 이전 인수인계 · R01-07 완료 시점 · 10항]**
 > 1. **목표/범위**: `hibi89/DBVORA`, `feature/p0-db-map`의 R01–R07/G90 최종 설계 구현·검증을 계속한다. 사용자 PC, main/develop 병합, 상용출시는 제외.
 > 2. **이번 완료**: R01-07 PASS_SCOPED. 늦은/중단/실패한 테이블 용량 응답이 새 DB·테이블 선택을 덮지 않으며, 다중 DB 화면의 필터는 DB별로 보존된다.
 > 3. **기능/최종 회귀 SHA**: `6913bcbf68ef2133e9cc7f9ad8090efae1bd5fda`. UI 구현 SHA `156d87c5c4d4b07b21cbb9cf7ce5fb551baf92f1`; 이후 두 커밋은 Chromium 수용 검사만 조정했다.
@@ -8,7 +20,7 @@
 > 7. **패키징**: app code SHA `156d87c5c4d4b07b21cbb9cf7ce5fb551baf92f1` ZIP [#43652365827](https://github.com/hibi89/DBVORA/actions/runs/43652365827) PASS, 75 files, ZIP SHA-256 `4a7b248131ef48c9dc3de3cc3d80bdd8fcfc83cff2199fac407a2ec40a2b9669`; EXE [#43652365854](https://github.com/hibi89/DBVORA/actions/runs/43652365854) PASS, SHA-256 `828c3a5723ba1c851c777652da78380e39ebf962731ae072bc146eae7db114a4`. Artifacts unsigned and synthetic.
 > 8. **실패·수정 이력**: [#43652365838](https://github.com/hibi89/DBVORA/actions/runs/43652365838)의 결합된 R01-07 전환 단언을 세분화해 API/앱 포맷 기준으로 검증했다. [#43652979947](https://github.com/hibi89/DBVORA/actions/runs/43652979947)은 필터가 연결 상대 노드를 숨긴 경우에도 edge 1개를 기대하던 기존 검사를 발견했다. 필터된 상대가 숨으면 edge 0개가 맞도록 보정했다. 최종 SHA 전체 검증 PASS.
 > 9. **증거/제한**: Ubuntu Chromium artifact 14136802170 digest `sha256:e358853a24ae1743e4bb6b945488daa05431adea98e999c695167a7bd4d9a134`; Windows 14136896738 digest `sha256:18e3b333fdea8673d8e97bf82cd17040b428df6e00cfbd13bc9b68f4ee6a2e2b`. Synthetic only; no owner-PC, physical power-loss, legal or commercial acceptance.
-> 10. **다음/공식 상태**: R01-03 PostgreSQL read-only UI and entry flow remains OPEN. Overall completion UNASSESSED / RELEASE HOLD; OWNER_GATE retained. Evidence: [R01-07](docs/R01_07_ASYNC_DATABASE_STATE_20261115.md).
+> 10. **당시 다음/공식 상태**: R01-03은 그 시점 OPEN이었고 현재 PASS_SCOPED로 갱신됐다. Overall completion UNASSESSED / RELEASE HOLD; OWNER_GATE retained. Evidence: [R01-07](docs/R01_07_ASYNC_DATABASE_STATE_20261115.md).
 
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
 > 1. **목표·범위**: hibi89/DBVORA, feature/p0-db-map에서 R01–R07/G90 구현·검증 지속. 사용자 PC, main/develop 병합, 상용 출시는 제외.
