@@ -50,7 +50,7 @@
 - [docs/NEXT_TASK.md](docs/NEXT_TASK.md) — 다음 실제 구현 작업
 - [docs/INTEGRATION_BOUNDARIES.md](docs/INTEGRATION_BOUNDARIES.md) — 다른 AX 제품과 경계
 
-본 저장소는 Private. 라이선스·상표 사용권은 미확정이며 외부 공개/배포/실고객 연결은 별도 승인 사항이다.
+**2026-11-14 확인:** 실제 GitHub 저장소 상태는 Public (기존 Private 표기는 오기). 상업 이용/배포 권리, 타사 NOTICE·LICENSE 및 고객 지원·판매 승인은 아직 미확정이다. 사용자 사전 승인 없이 저장소 접근 정책이나 보안 설정을 변경하지 않으며 실고객 연결·대외 판매는 RELEASE HOLD.
 
 ### Local developer source preview (v0.2.0, unsigned)
 From private source root, build a non-overwriting ZIP containing only DBVORA code and offline launcher templates:

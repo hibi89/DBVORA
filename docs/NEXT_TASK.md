@@ -1,3 +1,10 @@
+## 2026-11-14 KST — P100 최초 미완료 작업(합성 전체 CI + 실 Chromium 완료)
+- 검증된 기능 소스 SHA eab26716e25e8c55b120d295110be2f754b6aa5e: Windows2025 **616 PASS/0 FAIL/1 POSIX 0600 SKIP, 10/10 gate PASS**, Ubuntu24.04 **617 PASS/0 FAIL/0 SKIP, 10/10 gate PASS** [full](https://github.com/hibi89/DBVORA/actions/runs/43543367368); 실제 Chromium localhost **8/8 PASS**, 합성 desktop/mobile PNG 2개 GitHub Actions 7일 보존 [browser](https://github.com/hibi89/DBVORA/actions/runs/43543367417).
+- **NEXT 1:** 소유자 Windows10에서 합성-only full gate·오프라인 HTML 클릭 검수 1회. 외출 중 PC 조작 필요 없음. [실행 가이드](OWNER_WINDOWS_QUICK_QA_20261114.md).
+- **NEXT 2:** 승인된 격리 synthetic PG 실서버에서 verify-full TLS/read-only 연결(비밀·실고객 공유 금지). 그 전 PG 판매 보장 금지.
+- **NEXT 3:** 상업 LICENSE/NOTICE·고객 배포 형태(개발 ZIP != 설치 EXE)·지원/환불 및 가격 확정, 크몽 단일 상품 초안 최종 확인. 등록실적 0, 출시 HOLD.
+- **NEXT 4:** 사용자 확정 최종설계 전체 요구/가중치 100점 수용표 검증 후 공식 점수 계산(현행 UNASSESSED, 과거 내부95 별도). [작업중] 지우지 말 것.
+
 ## 2026-11-14 KST — 사용자 최종설계 P100 지시(기존 P95 완료와 별개)
 - 최초 미완료 단위: **원격 정본 전체 소스 자동 검증**. `.github/workflows/dbvora-release-gate.yml` 신설, GitHub-hosted Ubuntu 24.04 / Windows 2025 Python3.11 + Node22의 `python -m scripts.verify_release_gate` 실제 결과/커밋 확인.
 - 이후 Windows 사용자 실기기→합성 PostgreSQL TLS read-only(별도 승인·무비밀 공유)→법적 라이선스/고객 인수/판매 GO. 이전 P95는 내부범위 기록, **공식 최종 100점 UNASSESSED**, 판매 HOLD.

@@ -44,3 +44,9 @@
 4. 최종설계 100점 가중치와 각 요구 수락 근거 승인, 상태·SHA·중앙 원장 일치.
 
 **검증 전 상태: 목표 P100 [작업중], RELEASE HOLD, 크몽 실제 등록 미실행, Vercel/Production 미적용.**
+
+## 2026-11-14 전체 실제 검증 결과
+- 기능 정확 SHA eab26716e25e8c55b120d295110be2f754b6aa5e.
+- Windows Server 2025 Python3.11 Python617 discovered/616 PASS·0 FAIL·1 POSIX-only SKIP + 10/10 release gate PASS. Ubuntu24.04 Python3.11 Python617 PASS·0 FAIL·0 SKIP + 10/10 release gate PASS. [Actions](https://github.com/hibi89/DBVORA/actions/runs/43543367368).
+- 실제 Chromium localhost UI/API+synthetic SQLite: 클릭·FK·모바일·XSS·origin/host/HTTP method guard 등 8/8 PASS. 2개 합성 UI PNG(7일 임시 보존) [Actions](https://github.com/hibi89/DBVORA/actions/runs/43543367417).
+- 이후 미완료: 사용자 Win10 실기기 [단일 QA](OWNER_WINDOWS_QUICK_QA_20261114.md), 실 PG TLS verify-full, 물리 power-cut, 배포 라이선스/지원/유통 승낙, 최종설계 100점 승인 가중치. 현재 UNASSESSED, 과거 내부95 이력 별도, [작업중]/RELEASE HOLD. 실제 크몽 등록0. 고객/secret 데이터 미사용.

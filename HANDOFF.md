@@ -1,3 +1,15 @@
+## 2026-11-14 KST — P100 최신 검증 인수인계 필수 10항
+1. **목표·확정 요구·기술:** DBVORA 전체 최종설계 100%와 주말 크몽 단일 상품화, 0원. 로컬 우선 SQLite/선택형 PG 메타데이터/SQLite 안전 ZIP·ZSTD/HTML, read-only·원본불변.
+2. **완료·변경·설계 결정:** 사용자 Win 단독 검증 A 대비 GitHub 무료 Ubuntu+Windows full gate 및 사용자 Win 사후 QA B 선택. Windows NTFS create-only/write-through/SHA 검증, receipt, UTF-8/경로/핸들/watchdog 수정, 실제 localhost Chromium8항+합성 UI 캡처 추가. 원본 main/develop 불변.
+3. **테스트 명령/정확 SHA/성공·실패·미검증:** 기능 소스 SHA eab26716e25e8c55b120d295110be2f754b6aa5e. python -m scripts.verify_release_gate; Windows2025 Python3.11 617개 중 616 PASS·0 FAIL·1 POSIX-only SKIP 및 각 필수10/10 PASS; Ubuntu24.04 617 PASS·0 FAIL·0 SKIP/필수10/10 PASS [run #43543367368](https://github.com/hibi89/DBVORA/actions/runs/43543367368). 실제 Chromium HTTP/클릭/FK/mobile/보안 8/8 PASS + 합성 PNG2 [run #43543367417](https://github.com/hibi89/DBVORA/actions/runs/43543367417). 고객/PG 실제서버/물리 power-loss/사용자 Win10은 NOT RUN.
+4. **완료·진행·대기·차단:** 개발용 전체 합성 gate PASS. 공식 최종설계 점수 UNASSESSED, 이전 내부 기술범위95% 이력 유지. [작업중], RELEASE HOLD, 크몽 실제 등록0. 고객 PC/실 PG TLS/상업권리·사용자 수용 대기.
+5. **오류·근거·시도·전환·재시도 금지:** 초기 606 unittest 2 FAIL(httpx 누락·sqlite mock uri 충돌), Windows NTFS directory fsync·receipt 충돌, UTF8 기본 cp1252, TEMP 8.3 alias, 닫히지 않은 SQLite connection, dbstat timeout 오판 수정 후 양 OS green. safety guard bypass/force push/무의미 재배포 금지. container GitHub DNS 재시도 중지; GitHub connector 및 무료 hosted runner로 전환.
+6. **저장소/브랜치/SHA·경로:** hibi89/DBVORA feature/p0-db-map; 기능 검증 SHA eab26716e25e8c55b120d295110be2f754b6aa5e, 문서 후속 HEAD 별도 확인. .github/workflows/dbvora-release-gate.yml, .github/workflows/dbvora-browser-http-e2e.yml, scripts/browser_http_e2e.py, dbvora/archive/, docs/OWNER_WINDOWS_QUICK_QA_20261114.md. 중앙 hibi89/hackathon-command-center-2026@kmong-productization.
+7. **Production URL·Vercel·실행·환경:** Production/Vercel 미적용. Windows/Linux Python3.11+Node22 full verify_release_gate; Linux Playwright Chromium synthetic browser_http_e2e; 사용자 Windows10 Python3.11 명령 별도 가이드.
+8. **원본·백업·보안·수정 금지:** feature Git 이력으로 복구, main/develop 불변, 합성 DB만 사용, 고객 DB·토큰·.env/PG 암호·대용량 자료 전송0. repo 실제 Public(과거 Private 오기), 보안 설정 사용자 승인 없이 변경하지 않음. 출처 인증 서명·전원중단 검증 부재.
+9. **다음 우선순위·절차·완료기준·승인:** 소유자 Windows10 synthetic release gate·오프라인 HTML 1회 QA(귀가 후), 승인된 합성 PG verify-full TLS least-privileged 실제 연결, 타사 LICENSE/NOTICE·판매 형태/지원·환불·가격/이미지 최종 확인, 사용자 승인 최종설계 요구/가중치100과 각 수용 증거 대조, 실제 크몽 등록. 원가/권한/원본 수정 추가 시 사전 승인. 지금 즉시 PC 작업 없음.
+10. **갱신 시각 KST·검증 범위·문서 기준 커밋:** 2026-11-14 KST, 정확 source SHA eab26716e25e8c55b120d295110be2f754b6aa5e Actions JSON 로그까지 확인, 실제 테스트 PASS와 고객 검증 NOT RUN 구분. docs/DBVORA_P100_ACCEPTANCE_20261114.md 및 OWNER_WINDOWS_QUICK_QA, 중앙 상품 초안을 다음 정본으로 사용. 문서 커밋 SHA는 원격 조회.
+
 ## 2026-11-14 KST — 사용자 P100 새 목표 / 인수인계 10항
 1. **목표·기술**: DBVORA 전체 최종설계 100%, 이번 주말 크몽 상품화 준비, 0원; Python3.11+ SQLite·PG 읽기전용 관제, ZIP/ZSTD 안전 복원, 오프라인 UI.
 2. **완료/결정**: 과거 feature/P95 원본 11파일 합성 PG 6/6·unittest 11/11 근거 유지. A 소유자 PC 단독 검증 vs B 무료 표준 GitHub Ubuntu/Windows full release gate + 소유자 Windows 후속 비교, B 채택. 신규 CI와 P100 수용 체크리스트 작성.
