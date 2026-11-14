@@ -1,3 +1,5 @@
+> **[2026-11-15 KST · latest execution evidence]** Functional source/test SHA 653722bee4ac595220cc9c8d44459ce9b1e1ee33. R03-05/R03-06 PASS_SCOPED. Full [#43616426097](https://github.com/hibi89/DBVORA/actions/runs/43616426097) PASS: Ubuntu 750/750, Windows 750 PASS + 1 named POSIX-only skip; blueprint [#43616426451](https://github.com/hibi89/DBVORA/actions/runs/43616426451) PASS. Multi-process same-request archive-once produces one ZIP; concurrent same-generation CAS restores produce distinct outputs. ENOSPC injection/short-write/abrupt-process-exit cases preserve good generations. Full evidence: [P3_05_06_CONCURRENCY_FAILURE_RECOVERY_20261115.md](P3_05_06_CONCURRENCY_FAILURE_RECOVERY_20261115.md). Physical power loss and actual disk exhaustion remain unverified; next R03-08.
+
 > **[2026-11-15 KST · latest execution evidence]** Functional source/test SHA b908e5aec99f98652a3a2f6fd3f9259ab06a85c8. R03-07 PASS_SCOPED using the permitted offline workflow CLI for preview-bound ZIP/ZSTD restore. Full [#43614189891](https://github.com/hibi89/DBVORA/actions/runs/43614189891): Ubuntu 747 PASS/0 SKIP; Windows 747 PASS + 1 named POSIX-only skip. Unsigned ZIP [#43614189894](https://github.com/hibi89/DBVORA/actions/runs/43614189894) and blueprint [#43614190193](https://github.com/hibi89/DBVORA/actions/runs/43614190193) PASS. First attempt 0331b28 had three new test failures due to an omitted synthetic acknowledgement flag; fixed and re-run on this exact SHA. Detailed evidence: [P3_07_SAFE_RESTORE_WORKFLOW_20261115.md](P3_07_SAFE_RESTORE_WORKFLOW_20261115.md). Next R03-05/06 recheck. Overall UNASSESSED / RELEASE HOLD.
 
 > **[2026-11-15 KST · latest execution evidence]** Functional source/test SHA: f844ce751ffd2d050f3fe1e8a62b699aa5959dc3. R03-04 PASS_SCOPED for synthetic process restart only. Full [#43612179872](https://github.com/hibi89/DBVORA/actions/runs/43612179872): Ubuntu 744 PASS/0 SKIP; Windows 743 PASS + 1 named POSIX-only skip. Blueprint [#43612180225](https://github.com/hibi89/DBVORA/actions/runs/43612180225) PASS. Physical reboot/power-loss and real OS scheduler remain OWNER_GATE; scheduler not installed. Detailed evidence: [P3_04_SYNTHETIC_RESTART_ACCEPTANCE_20261115.md](P3_04_SYNTHETIC_RESTART_ACCEPTANCE_20261115.md). Next R03-07 safe restore UX. Overall UNASSESSED / RELEASE HOLD.
@@ -75,8 +77,8 @@
 | R03-02 | ZIP/ZSTD/raw CAS/compressed CAS 각 독립 복원, 내용 SHA+integrity, 임의 경로/덮어쓰기/오염 거부 | RECHECK |
 | R03-03 | 4세대 증분·중복·체인 개별 복원/부모 누락·손상·고립 청크 처리, 이전 세대 불변 | RECHECK |
 | R03-04 | **일/주 opt-in 실행 runner**: CLI/서비스 호출만(기본OFF), 합성 날짜/UTC주 슬롯, 중복·프로세스 재시작 HOLD·실패 복구·시간대, 실제 GitHub Windows/Linux 실행 | PASS_SCOPED |
-| R03-05 | 멀티프로세스 동시 쓰기·예약 중복·복원 경쟁: 한 세대 한 번 publish/기존 보관본 불변 | RECHECK |
-| R03-06 | ENOSPC·short-write·프로세스 abrupt-exit·재개·temp/orphan 관리; 기존 정상본 보존 | RECHECK |
+| R03-05 | 멀티프로세스 동시 쓰기·예약 중복·복원 경쟁: 한 세대 한 번 publish/기존 보관본 불변 | PASS_SCOPED |
+| R03-06 | ENOSPC·short-write·프로세스 abrupt-exit·재개·temp/orphan 관리; 기존 정상본 보존 | PASS_SCOPED |
 | R03-07 | **별도 새 목적지로만 복원하는 미리보기/선택 안전 워크플로 CLI**, 해시 검증·기존 파일 덮어쓰기 거부·오류 행동 안내, CLI 합성 | PASS_SCOPED |
 | R03-08 | 보존 정책 preview/용량·고립 파일 목록·누락/손상 보수적 처리; 자동 삭제0 | OPEN |
 | R03-09 | Windows NTFS 경로 alias/ACL·rename/open handle/쓰기실패·독점생성 등 runner 합성 오류 주입 | OPEN |

@@ -4,6 +4,8 @@
 
 > **[2026-11-15 KST · latest scoped evidence]** Functional source/test SHA b908e5aec99f98652a3a2f6fd3f9259ab06a85c8: R03-07 PASS_SCOPED for preview-bound safe restore workflow CLI. Full [#43614189891](https://github.com/hibi89/DBVORA/actions/runs/43614189891) exact SHA PASS (Ubuntu 747/747, Windows 747 PASS + 1 named POSIX-only skip); unsigned ZIP [#43614189894](https://github.com/hibi89/DBVORA/actions/runs/43614189894) and blueprint [#43614190193](https://github.com/hibi89/DBVORA/actions/runs/43614190193) PASS. Detailed evidence: [P3_07_SAFE_RESTORE_WORKFLOW_20261115.md](P3_07_SAFE_RESTORE_WORKFLOW_20261115.md). First attempt at 0331b28 failed three preview tests because of a missing CLI acknowledgement flag; corrected on the final SHA. Overall UNASSESSED / RELEASE HOLD; owner gates remain.
 
+> **[2026-11-15 KST · latest scoped evidence]** Functional source/test SHA 653722bee4ac595220cc9c8d44459ce9b1e1ee33: R03-05 and R03-06 PASS_SCOPED. Full [#43616426097](https://github.com/hibi89/DBVORA/actions/runs/43616426097) exact SHA PASS (Ubuntu 750/750, Windows 750 PASS + 1 named POSIX-only skip); blueprint [#43616426451](https://github.com/hibi89/DBVORA/actions/runs/43616426451) PASS. Three-process same-request archive publication produces one ZIP only; three-process same-CAS-generation restore produces three distinct outputs, with the prior manifest and source unchanged. ENOSPC injection, short-write, and abrupt process-exit recovery cases preserve last-good content. Detailed evidence: [P3_05_06_CONCURRENCY_FAILURE_RECOVERY_20261115.md](P3_05_06_CONCURRENCY_FAILURE_RECOVERY_20261115.md). Physical power loss and actual disk exhaustion remain unverified.
+
 # DBVORA 최종설계 100% — GPT-6 Instant 실행·High 최종검수 마스터 플랜
 
 > 기준 2026-11-14 KST / hibi89/DBVORA / feature/p0-db-map / 기능 기준 SHA 8bb07273f3829248bae8516ac467bfbf7eb4f751
@@ -46,8 +48,8 @@
 | R03-02 | 보관복구 | ZIP/ZSTD/CAS 모든 형식 독립 복원 | 동일 합성 DB의 SHA256·SQLite integrity 비교, manifest/ZIP 변조·대상 덮어쓰기 거부 | Instant | EVIDENCE_RECHECK |
 | R03-03 | 보관복구 | 실제 CAS 증분 중복제거 세대 체인 | 원본/중복/변경 4세대·missing/corrupt parent·청크 실물 검증·이전 세대 독립 복원 | Instant | EVIDENCE_RECHECK |
 | R03-04 | 보관복구 | 하루/주 실제 실행 러너 | 합성 임시 DB 대상 슬롯 실행·중복 방지·프로세스 재시작 HOLD 검증; OS 자동등록·서비스 기본 OFF | Instant | PASS_SCOPED |
-| R03-05 | 보관복구 | 동일 요청 중복 실행·다중 프로세스 경쟁 | 동시 writer/read/restore, 성공 세대 불변, 요청당 최대 한 번 게시, 실패 명확한 HOLD | Instant | EVIDENCE_RECHECK |
-| R03-06 | 보관복구 | ENOSPC/short-write/process kill 중단 복구 | 별도 프로세스 중단 및 재시도·고립 청크 HOLD, 원본/기존 정상 세대 SHA 보존 | Instant | EVIDENCE_RECHECK |
+| R03-05 | 보관복구 | 동일 요청 중복 실행·다중 프로세스 경쟁 | 동시 writer/read/restore, 성공 세대 불변, 요청당 최대 한 번 게시, 실패 명확한 HOLD | Instant | PASS_SCOPED |
+| R03-06 | 보관복구 | ENOSPC/short-write/process kill 중단 복구 | 별도 프로세스 중단 및 재시도·고립 청크 HOLD, 원본/기존 정상 세대 SHA 보존 | Instant | PASS_SCOPED |
 | R03-07 | 보관복구 | 복구 대상 선택·미리보기·실제 별도 복원 UX(CLI) | 새 출력경로만 사용, 해시·내용 검증, 원본 overwrite 0, 복원 실패 안내와 사용자 선택 | Instant | PASS_SCOPED |
 | R03-08 | 보관복구 | 세대 보존·고립 파일·저장량 예측 | 보존 preview 및 승인 전 read-only 목록; 원본·백업 자동 삭제 0, 손상 보수적 처리 | Instant | OPEN |
 | R03-09 | 보관복구 | NTFS/ACL·경로 경쟁·실 디스크 오류 경계 | Windows 합성 오류 검증·create-only·path alias/권한, 실물 내구성은 구분 | Instant | OPEN |

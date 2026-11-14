@@ -1,3 +1,10 @@
+> **[2026-11-15 KST · latest source/test SHA 653722bee4ac595220cc9c8d44459ce9b1e1ee33]**
+> **DONE-SCOPED** R03-05/R03-06. Full [#43616426097](https://github.com/hibi89/DBVORA/actions/runs/43616426097) Ubuntu 750 PASS/0 SKIP; Windows 750 PASS + 1 named POSIX-only skip; blueprint [#43616426451](https://github.com/hibi89/DBVORA/actions/runs/43616426451) PASS.
+> Same synthetic request raced from three processes publishes one ZIP; two replays HOLD. Three spawned processes restore one CAS generation into distinct new outputs with unchanged manifest and source. ENOSPC-injection/short-write/abrupt-exit cases preserve last-good data.
+> **NEXT-1** R03-08: implement a read-only retention/generation preview with safe orphan listing and storage estimates; damaged or ambiguous state must produce HOLD, and no deletion is enabled.
+> **NEXT-2** R03-09: inspect the existing Windows/NTFS path, alias, create-only and I/O failure evidence; add only missing synthetic cases. Keep R03-10 physical power-loss OWNER_GATE.
+> **NEXT-3** Continue remaining R01–R07/G90 tasks in dependency order. Overall UNASSESSED / RELEASE HOLD; synthetic GitHub evidence only.
+
 > **[2026-11-15 KST · latest exact source/test SHA b908e5aec99f98652a3a2f6fd3f9259ab06a85c8]**
 > **DONE-SCOPED** R03-07 preview-bound restore workflow CLI for ZIP/ZSTD. Full [#43614189891](https://github.com/hibi89/DBVORA/actions/runs/43614189891) Ubuntu 747 PASS/0 SKIP; Windows 747 PASS + 1 named POSIX-only skip; unsigned ZIP [#43614189894](https://github.com/hibi89/DBVORA/actions/runs/43614189894) and blueprint [#43614190193](https://github.com/hibi89/DBVORA/actions/runs/43614190193) PASS.
 > Preview is read-only. Restore requires the selected artifact SHA and snapshot SHA from preview; it repeats checks, validates restored bytes/integrity, and creates only a new file in a separate output directory. Changed selection and same input/output directory stop safely.
