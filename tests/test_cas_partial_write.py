@@ -67,8 +67,13 @@ class CasPartialWriteTests(unittest.TestCase):
         before = (self.manifests / old["manifest_name"]).read_bytes()
         write = Path.write_bytes
 
+        injected = [0]
+
         def short_manifest(path, payload):
-            if path.parent == self.manifests and path.name.endswith(".part"):
+            # Identify manifest bytes by contract, not OS-dependent Path
+            # identity/casing. A non-firing injection must never pass silently.
+            if cas.CONTRACT.encode("ascii") in payload:
+                injected[0] += 1
                 return write(path, payload[:len(payload) // 2])
             return write(path, payload)
 
@@ -76,6 +81,7 @@ class CasPartialWriteTests(unittest.TestCase):
             with self.assertRaisesRegex(cas.CompressedCasError,
                                         "STAGED_WRITE_UNVERIFIED"):
                 self.create()
+        self.assertEqual(injected[0], 1)
         self.assertEqual([x.name for x in self.manifests.iterdir()],
                          [old["manifest_name"]])
         self.assertEqual((self.manifests / old["manifest_name"]).read_bytes(),
