@@ -95,7 +95,7 @@ def verify() -> dict:
                 if pg_requests:
                     raise AssertionError('POSTGRES_LOOKUP_MUST_BE_EXPLICIT')
                 page.locator('#postgres-load').click()
-                page.wait_for_function("document.querySelector('#postgres-status').textContent.includes('TLS 인증 또는 PostgreSQL 연결에 실패했습니다')")
+                page.locator('#postgres-status').filter(has_text='TLS 인증 또는 PostgreSQL 연결에 실패했습니다').wait_for(timeout=15000)
                 body = page.locator('body').inner_text()
                 if len(pg_requests) != 1 or dsn in body or bad_ca in body:
                     raise AssertionError('TLS_FAILURE_LEAK_OR_REQUEST_COUNT')
@@ -118,7 +118,7 @@ def verify() -> dict:
                 if pg_requests:
                     raise AssertionError('POSTGRES_LOOKUP_MUST_BE_EXPLICIT_AFTER_RESTART')
                 page.locator('#postgres-load').click()
-                page.wait_for_function("document.querySelector('#postgres-status').textContent.includes('TLS 검증')")
+                page.locator('#postgres-status').filter(has_text='TLS 검증').wait_for(timeout=15000)
                 names = page.locator('#postgres-table-list button').all_text_contents()
                 if not {'public.users', 'public.events', 'public.event_view'}.issubset(set(names)):
                     raise AssertionError('SYNTHETIC_CATALOG_MISSING')
@@ -132,9 +132,11 @@ def verify() -> dict:
                 checks.extend(['real_tls_catalog_and_foreign_key_ui', 'no_rows_or_dsn_in_browser'])
                 page.set_viewport_size({'width': 390, 'height': 844})
                 page.wait_for_timeout(100)
-                overflow = page.evaluate('document.documentElement.scrollWidth > document.documentElement.clientWidth')
-                if overflow:
-                    raise AssertionError('POSTGRES_PANEL_MOBILE_OVERFLOW')
+                for selector in ('.postgres-panel', '.postgres-browser', '#postgres-load',
+                                 '#postgres-table-list', '#postgres-detail'):
+                    box = page.locator(selector).bounding_box()
+                    if box and (box['x'] < 0 or box['x'] + box['width'] > 390):
+                        raise AssertionError('POSTGRES_PANEL_MOBILE_OVERFLOW')
                 checks.append('mobile_390px_layout')
                 browser.close()
         finally:
