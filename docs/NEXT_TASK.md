@@ -1,3 +1,10 @@
+> **[2026-11-15 KST · latest source/test SHA eb191c9783102f108057073f42334503f4ab9e85]**
+> **DONE-SCOPED** R04-02. Full [#43622284063](https://github.com/hibi89/DBVORA/actions/runs/43622284063) PASS: Ubuntu 764/0 skip; Windows 764 PASS + 1 named POSIX-only skip. Blueprint [#43622284359](https://github.com/hibi89/DBVORA/actions/runs/43622284359) PASS.
+> Per method and operation: 3-trial medians/min/max for wall time, current Python process CPU time, boundary-sampled RSS and shared containing-volume free-space delta. Both generations restore/SHA pass. See [P4_02_RESOURCE_BENCHMARK_20261115.md](P4_02_RESOURCE_BENCHMARK_20261115.md).
+> **Limits**: no peak RAM, no per-process disk I/O, ZSTD child process CPU/RSS excluded, cache not cleared, runner load uncontrolled. Direct PostgreSQL/Supabase performance comparison is unavailable; CI values are not customer performance claims.
+> **NEXT-1** R04-03: audit public README claims, state direct provider comparison unavailable, add regression guard for numeric savings/superiority claims.
+> Overall completion UNASSESSED / RELEASE HOLD; owner, physical and legal gates remain open.
+
 > **[2026-11-15 KST · latest source/test SHA 3919a1e3e0287f553f2b491834a67791309257ad]**
 > **DONE-SCOPED** R04-01 repeatable ZIP/ZSTD/raw CAS/compressed CAS comparison. Full [#43620565261](https://github.com/hibi89/DBVORA/actions/runs/43620565261): Ubuntu 761 PASS/0 SKIP; Windows 761 PASS + 1 named POSIX-only skip. Blueprint [#43620565587](https://github.com/hibi89/DBVORA/actions/runs/43620565587) success.
 > Three trials per method use the same two synthetic SQLite snapshots; every trial independently restored both and verified SHA-256. See [P4_01_REPEAT_BENCHMARK_20261115.md](P4_01_REPEAT_BENCHMARK_20261115.md) for exact runner metadata and measurements. Cache was not cleared, host load is uncontrolled, and artifact sizes are file lengths. No universal performance claim.

@@ -1,14 +1,15 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
-> 1. **목표·범위**: feature/p0-db-map에서 R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. main/develop 병합, 크몽 등록·상용 출시는 제외.
-> 2. **이번 완료**: R04-01 동일 합성 SQLite 입력의 ZIP/ZSTD/raw CAS/compressed CAS 3회 반복 및 두 세대 복원·SHA 검증은 PASS_SCOPED다.
-> 3. **기능/검증 SHA**: 3919a1e3e0287f553f2b491834a67791309257ad.
-> 4. **전체 회귀**: [#43620565261](https://github.com/hibi89/DBVORA/actions/runs/43620565261) 성공. Ubuntu 761/761 PASS·0 SKIP; Windows 761 PASS + 1 지정 POSIX-only SKIP.
-> 5. **Blueprint**: [#43620565587](https://github.com/hibi89/DBVORA/actions/runs/43620565587) 성공.
-> 6. **벤치 증거**: 동일 입력 946,176 B·950,272 B, 각 방식 3회. Ubuntu ZIP/ZSTD/raw CAS/zlib CAS 크기 31,216/27,651/1,177,960/24,637 B; Windows 31,550/27,824/1,177,960/25,046 B. 환경별 시간·표본은 [R04-01 증거](docs/P4_01_REPEAT_BENCHMARK_20261115.md)에 기록.
-> 7. **한계**: runner별 합성 표본이며 OS cache 미초기화, host load 비통제, 바이트는 파일 길이. 일반 성능 서열·물리 저장량을 뜻하지 않는다.
-> 8. **이전 게이트**: R03-05..09의 기록된 PASS_SCOPED는 유지. 실제 ACL 변경·정전·실기기 내구성은 검증되지 않았다.
-> 9. **다음 작업**: R04-02에 작업별 process CPU time, 경계 샘플 RSS, 공유 볼륨 여유 공간 delta를 명시적 한계와 함께 추가한다. 이후 R04-03.
-> 10. **공식 상태**: 전체 완성률 UNASSESSED, RELEASE HOLD; 소유자/물리/권리 OWNER_GATE 유지.
+> 1. **목표·범위**: feature/p0-db-map에서 R01–R07 최종설계의 GitHub 구현·검증을 계속한다. main/develop 병합, 크몽 등록·상용 출시는 제외.
+> 2. **이번 완료**: R04-02 반복 합성 벤치에 작업별 Python process CPU, 경계 RSS, 공유 볼륨 여유공간 delta를 기록하고 가용성·한계를 검증했다(PASS_SCOPED).
+> 3. **기능/검증 SHA**: eb191c9783102f108057073f42334503f4ab9e85.
+> 4. **전체 회귀**: [#43622284063](https://github.com/hibi89/DBVORA/actions/runs/43622284063) 정확 SHA 성공. Ubuntu 764/764·0 skip; Windows 764 pass + 지정 POSIX-only skip 1.
+> 5. **Blueprint**: [#43622284359](https://github.com/hibi89/DBVORA/actions/runs/43622284359) 정확 SHA 성공.
+> 6. **측정**: ZIP/ZSTD/raw CAS/compressed CAS 각 3회. 세부 환경별 size/time/CPU/RSS/volume delta와 min/max는 [R04-02 증거](docs/P4_02_RESOURCE_BENCHMARK_20261115.md).
+> 7. **측정 한계**: RSS는 두 경계 표본 최댓값이지 peak가 아니다. CPU/RSS는 Python process만(ZSTD child 제외); per-process disk I/O 미측정, volume delta는 공유 호스트 변화다.
+> 8. **캐시·비교**: OS cache 미초기화, runner 부하 비통제. 합성 CI 값은 고객 성능/절감률 또는 PostgreSQL/Supabase 직접 비교 근거가 아니다.
+> 9. **다음 작업**: R04-03 공개 성능 주장 경계를 README와 회귀 검사에 반영한다. 이후 remaining R04–R07/G90 dependency order.
+> 10. **공식 상태**: 전체 완성률 UNASSESSED, RELEASE HOLD, 소유자·물리·권리 OWNER_GATE 유지.
+
 
 
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
