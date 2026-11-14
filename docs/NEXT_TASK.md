@@ -1,3 +1,5 @@
+> **2026-11-14 KST — unsigned owner preview build exact SHA verified:** `3835a53de75f5de4e1d2ddd3c895377b83d45112`, [Actions](https://github.com/hibi89/DBVORA/actions/runs/43544666021), 56파일 개발자 preview ZIP 자체 SHA-256 `e7a6d46099c170cc8e0f70b098dd6a86d47c5678b0ff51bc3cfa7225fa0426f1`, 합성-only 패키징/검증 PASS. 매니페스트 미서명/고객 readiness false, 실제 사용자 Win10에서 압축해제·검증 스크립트/오프라인 HTML 눈검수 전까지 판매 승인 금지. [최소 1회 QA 문서](docs/OWNER_WINDOWS_QUICK_QA_20261114.md), 기존 full source clone 심층 QA는 선택 사항. 크몽 상품 설명은 실검증범위만; 13시 사용자 작업 통합 알림 설정 완료. P100 [작업중]/UNASSESSED/RELEASE HOLD, 등록0, 운영 서비스/Vercel 미적용. 기존 10항 인수인계 보존.
+
 > **[2026-11-14 KST — Chromium 실제 localhost Windows+Ubuntu 8/8 통과]** 추가 클라우드 Windows·Linux 실제 Chromium HTTP 8/8×2 SUCCESS, `a982508160a3085e12e3663f1df9979dac4e9cae`, [Actions](https://github.com/hibi89/DBVORA/actions/runs/43544065399). 다음 GPT 작업은 상업 종속성/권리/지원 안내 및 최종설계 추적표 갱신, 일반 소비자 실제 Windows 실기기는 **2026-11-14 13:00 KST 통합 사용자 알림**까지 사용자 요청 보류. 실 PG TLS, 물리 전원중단, 사용자 Win10, 고객 인수·상업권리/가격·등록은 미검증. P100 [작업중]/RELEASE HOLD, 공식 UNASSESSED.
 
 ## 2026-11-14 KST — 최신 병렬 브라우저 양OS 2/2 PASS

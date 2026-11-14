@@ -57,3 +57,8 @@
 - synthetic PNG 2개/OS는 Actions artifact로 7일 보존. 고객DB·인증·비밀·PG 라이브 접속·외부 서비스 배포 안 함.
 - 제품 코드는 기존 full release gate [run 43543990300](https://github.com/hibi89/DBVORA/actions/runs/43543990300)에서 617 Python × Windows/Linux, 필수 10개 단계 각각 PASS. Chromium 브라우저 workflow 변경 자체는 프로그램 완성률 가중점수가 아니다.
 - **공식 100% 미달/UNASSESSED**: 실제 소유자 Windows10, 허가된 synthetic PostgreSQL verify-full TLS, 물리적 전원단절 및 신원보증, LICENSE/NOTICE/지원·환불·가격, 상품화 최종 승인과 전체 요구 수용 가중치 확정 필요. 13시 사용자 역할 통합 알림에 모음.
+
+## 2026-11-14 0원 unsigned 사용자 QA ZIP 최종 확인
+- 정확 HEAD `3835a53de75f5de4e1d2ddd3c895377b83d45112`; [공개 GitHub Actions preview run #43544666021](https://github.com/hibi89/DBVORA/actions/runs/43544666021) **SUCCESS**. 합성 패키지 56 소스파일·SHA manifest 재검증·오프라인 selftest 완료; inner `dbvora-dev-preview-0.2.0.zip` SHA-256 `e7a6d46099c170cc8e0f70b098dd6a86d47c5678b0ff51bc3cfa7225fa0426f1`. Actions artifact ID `14092914030`(2026-11-21 만료 예정), 실제 고객 데이터/토큰 없음.
+- 기존 소유자 PC 전체 원본 git clone/pytest 방식보다 PC 부담을 줄이도록 [OWNER_WINDOWS_QUICK_QA_20261114.md](OWNER_WINDOWS_QUICK_QA_20261114.md)에 **다운로드→해시 대조→신규 폴더 추출→로컬 무추가 의존성 selftest 2종→오프라인 HTML 수동 클릭** 경로를 추가. 미서명 ZIP은 **신원 인증/고객 납품/코드서명 불가**, 원본 비공개 복원/EXE 설치기 아님.
+- 비용 0원(기본 공개 GitHub 표준 Runner), 일반 Windows10 실기기·실 DB/PG TLS·물리 정전·법적권리/상품 등록 및 사용자 승인 미검증. 공식 최종설계 UNASSESSED, 내부95는 과거치, [작업중]/RELEASE HOLD.
