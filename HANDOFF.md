@@ -1,14 +1,14 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
-> 1. **목표·범위**: `feature/p0-db-map`에서 R01–R07 최종설계와 G90 검증을 GitHub-only로 계속한다. main/develop 병합·상용 출시·사용자 PC 작업은 제외한다.
-> 2. **이번 완료**: R05-01/02/03/05 및 R06-01/02를 합성 범위 PASS_SCOPED로 판정했다. 버전형 API/오프라인 보고 스키마와 HAE/LA 모의 소비자 테스트를 추가했다.
-> 3. **기능/검증 SHA**: `3fd075226ef5c7e4aa1d66d3392c627315fd5cbc`.
-> 4. **전체 회귀**: [#43636834475](https://github.com/hibi89/DBVORA/actions/runs/43636834475) PASS. Ubuntu 773 PASS/0 skip; Windows 772 PASS + 1 지정 POSIX-only skip (773 discovered); 모든 gate 단계 PASS.
-> 5. **Chromium**: [#43636834445](https://github.com/hibi89/DBVORA/actions/runs/43636834445) Ubuntu/Windows 각 33/33 PASS; loopback Host/Origin/method 및 합성 DNS-rebinding 요청 검증 포함.
-> 6. **PostgreSQL**: [#43636834428](https://github.com/hibi89/DBVORA/actions/runs/43636834428) PASS — ephemeral synthetic PostgreSQL 16, verify-full TLS/read-only role, catalog/statistics, wrong-CA 거부 및 390px UI 검증.
-> 7. **Blueprint**: [#43636834707](https://github.com/hibi89/DBVORA/actions/runs/43636834707) PASS.
-> 8. **남은 보안·권리 범위**: 실 DNS/proxy 공격, privileged parent swap, 물리 정전/전원차단, 서명은 검증하지 않았다. R05-04는 SBOM 후보만 생성됐으며 owner/legal 권리 승인이 필요하다.
-> 9. **다음 작업**: R07-01 — 최신 기능 SHA가 Windows source ZIP/EXE 및 내부 SHA evidence와 일치하는지 GitHub-hosted Windows에서 검증한다. 이어 R07-02/03.
-> 10. **공식 상태**: 전체 완성률 UNASSESSED, RELEASE HOLD. R06-03/R07-04..06 및 소유자·물리·상업 gate 유지.
+> 1. **목표·범위**: `feature/p0-db-map`에서 R01–R07/G90 최종설계의 GitHub-only 구현·검증을 이어간다. main/develop 병합, 사용자 PC 작업, 크몽 등록·상용 출시는 제외한다.
+> 2. **이번 완료**: R07-01 PASS_SCOPED. source ZIP에 9개 `contracts/` 파일을 포함하고 unsigned manifest에 `source_commit`을 기록했다. Windows synthetic EXE artifact에는 source SHA 및 executable SHA-256 sidecar를 넣었다.
+> 3. **기능/검증 SHA**: `4914c59a7009e223e02924fd4f1f92c4a1431bf0`.
+> 4. **전체 회귀**: [#43639974974](https://github.com/hibi89/DBVORA/actions/runs/43639974974) PASS. Ubuntu 777/777, 0 skip; Windows 776 PASS + 1 명시 POSIX-only skip. 12개 gate step 모두 PASS.
+> 5. **source ZIP**: [#43639974931](https://github.com/hibi89/DBVORA/actions/runs/43639974931) PASS, ZIP SHA-256 `9f20ba18824214ccb2fb20a1d9a9bb6ace5619f1aed93cd913677d98d4624815`; 75 files, offline self-check 9/9.
+> 6. **Windows EXE**: [#43639974945](https://github.com/hibi89/DBVORA/actions/runs/43639974945) PASS, EXE SHA-256 `b27397e61241ec059688bffe324b2eeaaa705dc8dfde48940df2224e92fbe30b`; sidecar read-back matched source SHA and executable hash. Blueprint [#43639975373](https://github.com/hibi89/DBVORA/actions/runs/43639975373) PASS.
+> 7. **증거·제한**: [R07 evidence](docs/R07_PACKAGE_PROVENANCE_20261115.md) records artifact IDs and outer digests. All outputs unsigned, synthetic-only; hashes are not publisher authentication or deterministic-build proof.
+> 8. **실패 기록**: `7429a52` first full gate found five trusted-extraction fixture failures from the old fixture manifest shape; `e12dc55` updated it. Final full gate passed at `4914c59a7009e223e02924fd4f1f92c4a1431bf0`.
+> 9. **다음 작업**: R07-02 — GitHub-hosted Windows launch/exit/restart/remove UX, preserving existing folders/data, testing port conflicts and default-off behavior.
+> 10. **공식 상태**: 전체 완성률 UNASSESSED / RELEASE HOLD. R07-04 owner-device QA, R05-04 legal/licensing, physical and commercial OWNER_GATE remain.
 
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
 > 1. **목표·범위**: R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.
