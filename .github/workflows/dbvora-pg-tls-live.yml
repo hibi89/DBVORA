@@ -1,0 +1,106 @@
+name: DBVORA real local PostgreSQL TLS acceptance (synthetic)
+
+on:
+  push:
+    branches:
+      - feature/p0-db-map
+    paths:
+      - "dbvora/connectors/postgres_reader.py"
+      - "dbvora/connectors/postgres_statistics.py"
+      - "dbvora/multi_engine_report.py"
+      - "scripts/pg_tls_local_acceptance.py"
+      - ".github/workflows/dbvora-pg-tls-live.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dbvora-local-pg-tls-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  local-pg16-verified-tls:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact commit without token persistence
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install only local PG client driver
+        run: python -m pip install --disable-pip-version-check -e ".[postgres]"
+      - name: Generate ephemeral test-only localhost TLS certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          d="$(mktemp -d "$RUNNER_TEMP/dbvora-local-pg-tls.XXXXXX")"
+          openssl req -x509 -newkey rsa:2048 -nodes -sha256 -days 1 \
+            -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" \
+            -keyout "$d/server.key" -out "$d/server.crt" >/dev/null 2>&1
+          # Container's default postgres service account is UID 999.
+          sudo chown 999:999 "$d/server.key"
+          chmod 600 "$d/server.key"
+          chmod 755 "$d"
+          cp "$d/server.crt" "$d/ca.crt"
+          openssl req -x509 -newkey rsa:2048 -nodes -sha256 -days 1 \
+            -subj "/CN=untrusted" -keyout "$d/wrong.key" -out "$d/wrong.crt" >/dev/null 2>&1
+          echo "DBVORA_PG_TLS_DIR=$d" >> "$GITHUB_ENV"
+      - name: Start ephemeral loopback-only PostgreSQL 16 with TLS
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name dbvora-ci-pg --rm \
+            -e POSTGRES_DB=dbvora_test -e POSTGRES_HOST_AUTH_METHOD=trust \
+            -p 127.0.0.1:55439:5432 \
+            -v "$DBVORA_PG_TLS_DIR:/certs:ro" postgres:16 \
+            -c ssl=on -c ssl_cert_file=/certs/server.crt \
+            -c ssl_key_file=/certs/server.key >/dev/null
+          for i in $(seq 1 50); do
+            if docker exec dbvora-ci-pg pg_isready -U postgres -d dbvora_test >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Synthetic PostgreSQL readiness failed" >&2
+          exit 1
+      - name: Create least-privileged synthetic schema using container-local admin
+        shell: bash
+        run: |
+          set -euo pipefail
+          # This SQL creates only invented values inside an ephemeral Docker
+          # container. No customer DB, externally bound PG port or secrets.
+          docker exec -i dbvora-ci-pg psql -v ON_ERROR_STOP=1 -U postgres -d dbvora_test >/dev/null <<'SQL'
+          REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+          CREATE ROLE dbvora_reader LOGIN;
+          ALTER ROLE dbvora_reader SET default_transaction_read_only=on;
+          CREATE TABLE public.users (id BIGINT PRIMARY KEY, email TEXT);
+          CREATE TABLE public.events (
+            id BIGINT PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES public.users(id),
+            event_label TEXT
+          );
+          CREATE INDEX idx_events_user_id ON public.events(user_id);
+          CREATE VIEW public.event_view AS SELECT user_id FROM public.events;
+          INSERT INTO public.users VALUES (1, 'synthetic-user.invalid');
+          INSERT INTO public.events VALUES (8, 1, 'SYNTHETIC_ROW_MUST_NEVER_BE_EXPORTED');
+          GRANT CONNECT ON DATABASE dbvora_test TO dbvora_reader;
+          GRANT USAGE ON SCHEMA public TO dbvora_reader;
+          GRANT SELECT ON ALL TABLES IN SCHEMA public TO dbvora_reader;
+          SQL
+      - name: Assert real connector verified TLS, role isolation, FK and HTML
+        shell: bash
+        env:
+          DBVORA_SYNTHETIC_PG_DSN: "host=localhost port=55439 dbname=dbvora_test user=dbvora_reader sslrootcert=${{ env.DBVORA_PG_TLS_DIR }}/ca.crt"
+          DBVORA_SYNTHETIC_BAD_CA: "${{ env.DBVORA_PG_TLS_DIR }}/wrong.crt"
+        run: python -m scripts.pg_tls_local_acceptance
+      - name: Destroy ephemeral container and certificate files
+        if: always()
+        shell: bash
+        run: |
+          docker rm -f dbvora-ci-pg >/dev/null 2>&1 || true
+          if [ -n "${DBVORA_PG_TLS_DIR:-}" ]; then rm -rf "$DBVORA_PG_TLS_DIR"; fi
