@@ -198,6 +198,48 @@ def _parse_manifest(payload: bytes) -> dict:
     return doc
 
 
+def _read_manifest_unchanged(source: Path) -> bytes:
+    """Read one bounded immutable manifest via an identity-checked file descriptor.
+
+    A manifest substituted after the initial lstat must not be accepted even
+    if an attacker preserves its size and modification timestamp.
+    """
+    before = source.lstat()
+    if (not stat.S_ISREG(before.st_mode) or before.st_nlink != 1
+            or source.is_symlink() or not 0 < before.st_size <= MAX_MANIFEST):
+        raise CompressedCasError("UNSAFE_MANIFEST")
+    identity = (before.st_dev, before.st_ino, before.st_size,
+                before.st_mtime_ns, before.st_ctime_ns)
+    fd = os.open(source, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) |
+                 getattr(os, "O_BINARY", 0))
+    try:
+        opened = os.fstat(fd)
+        if (not stat.S_ISREG(opened.st_mode) or opened.st_nlink != 1 or
+                (opened.st_dev, opened.st_ino, opened.st_size,
+                 opened.st_mtime_ns, opened.st_ctime_ns) != identity):
+            raise CompressedCasError("MANIFEST_CHANGED")
+        parts, remaining = [], MAX_MANIFEST + 1
+        while remaining:
+            part = os.read(fd, remaining)
+            if not part:
+                break
+            parts.append(part)
+            remaining -= len(part)
+        raw = b"".join(parts)
+        after = os.fstat(fd)
+        named = source.lstat()
+        for item in (after, named):
+            if (not stat.S_ISREG(item.st_mode) or item.st_nlink != 1 or
+                    (item.st_dev, item.st_ino, item.st_size,
+                     item.st_mtime_ns, item.st_ctime_ns) != identity):
+                raise CompressedCasError("MANIFEST_CHANGED")
+    finally:
+        os.close(fd)
+    if len(raw) != before.st_size:
+        raise CompressedCasError("MANIFEST_CHANGED")
+    return raw
+
+
 def restore_compressed(manifest_path: str | Path, chunk_dir: str | Path,
                        output_dir: str | Path, *, synthetic_only=False,
                        accept_plaintext=False) -> dict:
@@ -212,15 +254,7 @@ def restore_compressed(manifest_path: str | Path, chunk_dir: str | Path,
         raise CompressedCasError("INVALID_MANIFEST_PATH")
     try:
         chunks, output = _directories(source, chunk_dir, output_dir)
-        before = source.lstat()
-        if (not stat.S_ISREG(before.st_mode) or before.st_nlink != 1
-                or source.is_symlink() or before.st_size > MAX_MANIFEST):
-            raise CompressedCasError("UNSAFE_MANIFEST")
-        content = source.read_bytes()
-        if (len(content) != before.st_size
-                or source.stat().st_mtime_ns != before.st_mtime_ns):
-            raise CompressedCasError("MANIFEST_CHANGED")
-        doc = _parse_manifest(content)
+        doc = _parse_manifest(_read_manifest_unchanged(source))
         staged = _staging_file(output)
         try:
             length, digest = 0, hashlib.sha256()

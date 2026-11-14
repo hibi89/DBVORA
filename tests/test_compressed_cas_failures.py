@@ -119,6 +119,31 @@ class CompressedCasFailureTests(unittest.TestCase):
         self.assertEqual(list(self.output.glob("dbvora-*.sqlite")), [])
         self.check_source()
 
+    def test_replaced_manifest_same_size_and_mtime_fails_closed(self):
+        saved = self.create()
+        original = self.manifests / saved["manifest_name"]
+        before = original.stat()
+        impostor = self.manifests / "synthetic-impostor.tmp"
+        impostor.write_bytes(original.read_bytes())
+        os.utime(impostor, ns=(before.st_atime_ns, before.st_mtime_ns))
+        self.assertEqual(impostor.stat().st_size, before.st_size)
+        self.assertEqual(impostor.stat().st_mtime_ns, before.st_mtime_ns)
+        real_open = os.open
+        switched = [False]
+
+        def swap_before_open(path, flags, *args, **kwargs):
+            if not switched[0] and os.fspath(path) == os.fspath(original):
+                impostor.replace(original)
+                switched[0] = True
+            return real_open(path, flags, *args, **kwargs)
+
+        with patch.object(cas.os, "open", side_effect=swap_before_open):
+            with self.assertRaisesRegex(cas.CompressedCasError, "MANIFEST_CHANGED"):
+                self.restore(saved)
+        self.assertTrue(switched[0])
+        self.assertEqual(list(self.output.glob("dbvora-*.sqlite")), [])
+        self.check_source()
+
     def test_hardlinked_chunk_is_refused_without_migration(self):
         saved = self.create()
         entry = cas._parse_manifest(
