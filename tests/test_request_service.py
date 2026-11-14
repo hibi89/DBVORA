@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+import multiprocessing
 from contextlib import closing
 import hashlib
 import sqlite3
@@ -14,6 +15,21 @@ from unittest.mock import patch
 from dbvora.archive import request_service as service
 from dbvora.archive.safe_zip import ArchiveError, create_snapshot
 from tests.fixtures.make_sqlite import create_fixture
+
+
+def _archive_once_process(snapshot, output, ledger, barrier, result_queue):
+    try:
+        barrier.wait(timeout=30)
+        result = service.archive_once(
+            snapshot, output, ledger, "synthetic-request-0001",
+            synthetic_only=True, accept_plaintext=True,
+        )
+        result_queue.put(("PUBLISHED", result["artifact_name"],
+                         result["artifact_sha256"], result["snapshot_sha256"]))
+    except service.RequestServiceError as exc:
+        result_queue.put(("HOLD", exc.code))
+    except BaseException as exc:
+        result_queue.put(("ERROR", type(exc).__name__))
 
 
 class RequestServiceTests(unittest.TestCase):
@@ -123,6 +139,60 @@ class RequestServiceTests(unittest.TestCase):
         self.assertEqual(result.count("RECORDED_UNVERIFIED"), 1)
         self.assertEqual(result.count("REQUEST_REPLAY_HELD"), 2)
         self.assertEqual(len(list(self.output.glob("dbvora-*.zip"))), 1)
+
+    def test_multiprocess_same_request_publishes_only_one_zip(self):
+        from dbvora.archive.request_ledger import reserve
+
+        seed = hashlib.sha256(b"synthetic seed plan").hexdigest()
+        reserve(self.ledger, "synthetic-seed-0001", seed)
+        context = multiprocessing.get_context("spawn")
+        barrier = context.Barrier(3)
+        result_queue = context.Queue()
+        processes = [
+            context.Process(
+                target=_archive_once_process,
+                args=(str(self.snapshot), str(self.output), str(self.ledger),
+                      barrier, result_queue),
+            )
+            for _ in range(3)
+        ]
+        try:
+            for process in processes:
+                process.start()
+            outcomes = [result_queue.get(timeout=45) for _ in processes]
+            for process in processes:
+                process.join(timeout=10)
+            self.assertTrue(all(not process.is_alive() for process in processes))
+            self.assertTrue(all(process.exitcode == 0 for process in processes))
+            published = [item for item in outcomes if item[0] == "PUBLISHED"]
+            held = [item for item in outcomes if item == ("HOLD", "REQUEST_REPLAY_HELD")]
+            errors = [item for item in outcomes if item[0] == "ERROR"]
+            self.assertEqual(errors, [])
+            self.assertEqual(len(published), 1)
+            self.assertEqual(len(held), 2)
+            _, name, artifact_sha, snapshot_sha = published[0]
+            archives = list(self.output.glob("dbvora-*.zip"))
+            self.assertEqual([item.name for item in archives], [name])
+            self.assertEqual(hashlib.sha256(archives[0].read_bytes()).hexdigest(), artifact_sha)
+            self.assertEqual(snapshot_sha, hashlib.sha256(self.snapshot.read_bytes()).hexdigest())
+            with closing(sqlite3.connect(self.ledger / "dbvora-requests.sqlite")) as connection:
+                recorded = connection.execute(
+                    "SELECT phase,artifact_sha FROM requests WHERE artifact_sha IS NOT NULL"
+                ).fetchall()
+            self.assertEqual(recorded, [("RECORDED", artifact_sha)])
+            self.assertEqual(
+                (hashlib.sha256(self.original.read_bytes()).hexdigest(),
+                 self.original.stat().st_mtime_ns),
+                self.original_id,
+            )
+        finally:
+            for process in processes:
+                if process.is_alive():
+                    process.terminate()
+                if process.pid is not None:
+                    process.join(timeout=5)
+            result_queue.close()
+            result_queue.join_thread()
 
     @unittest.skipUnless(shutil.which("zstd"), "optional installed ZSTD codec unavailable")
     def test_zstd_archive_independent_restore(self):
