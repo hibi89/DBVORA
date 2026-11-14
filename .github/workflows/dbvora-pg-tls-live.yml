@@ -117,8 +117,17 @@ jobs:
           # expression server. Do not echo or upload the DSN.
           export DBVORA_SYNTHETIC_PG_DSN="host=localhost port=55439 dbname=dbvora_test user=dbvora_reader sslrootcert=$DBVORA_PG_TLS_DIR/ca.crt"
           export DBVORA_SYNTHETIC_BAD_CA="$DBVORA_PG_TLS_DIR/wrong.crt"
+          export DBVORA_SYNTHETIC_UI_ARTIFACT_DIR="$RUNNER_TEMP/dbvora-pg-ui-screenshots"
           python -m scripts.pg_tls_local_acceptance
           python -m scripts.pg_tls_ui_http_e2e
+      - name: Upload synthetic PostgreSQL UI screenshots
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbvora-synthetic-pg-ui-screenshots-${{ github.sha }}
+          path: ${{ runner.temp }}/dbvora-pg-ui-screenshots/*.png
+          if-no-files-found: error
+          retention-days: 7
       - name: Upload metadata-only Python dependency SBOM candidate
         if: success()
         uses: actions/upload-artifact@v4
