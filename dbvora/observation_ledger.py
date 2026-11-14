@@ -132,7 +132,9 @@ def read_observations(path: str | Path, *, db_id: str) -> list[dict]:
         return []
     if not file.is_file():
         raise ObservationError("ledger must be a regular file")
-    conn = _connect(path)
+    # Reads must never initialize schemas or mutate the ledger file.
+    # SQLite URI mode=ro rejects absent/corrupt stores instead of creating one.
+    conn = sqlite3.connect(file.resolve().as_uri() + "?mode=ro", uri=True, timeout=5)
     try:
         rows = _rows(conn, db_id)
         _verify(rows)
