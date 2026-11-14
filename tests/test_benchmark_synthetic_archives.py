@@ -1,5 +1,8 @@
 """Repeated synthetic-only ZIP/ZSTD/CAS comparison and restore checks."""
 import unittest
+from unittest.mock import patch
+from dbvora import process_resources
+from scripts import benchmark_synthetic_archives as benchmark
 from scripts.benchmark_synthetic_archives import verify, STATUS
 
 
@@ -48,6 +51,31 @@ class BenchmarkSyntheticArchivesTests(unittest.TestCase):
                     self.assertGreater(series["min"], 0)
                     self.assertLessEqual(series["min"], series["median"])
                     self.assertGreaterEqual(series["max"], series["median"])
+                resources = summary["resource_metrics"]
+                self.assertEqual(set(resources), {
+                    "create_process_cpu_time_delta_ns",
+                    "restore_process_cpu_time_delta_ns",
+                    "create_sampled_max_rss_bytes",
+                    "restore_sampled_max_rss_bytes",
+                    "create_volume_free_bytes_delta",
+                    "restore_volume_free_bytes_delta",
+                })
+                for resource in resources.values():
+                    self.assertEqual(resource["sample_count"], 3)
+                    self.assertEqual(len(resource["samples"]), 3)
+                    self.assertIn(resource["status"], {"measured", "partial", "unavailable"})
+                    if resource["status"] == "unavailable":
+                        self.assertEqual(resource["available_sample_count"], 0)
+                        self.assertIsNone(resource["median"])
+                        self.assertEqual(resource["samples"], [None, None, None])
+                    else:
+                        self.assertGreater(resource["available_sample_count"], 0)
+                        self.assertIsInstance(resource["median"], int)
+        self.assertEqual(data["resource_measurement_policy"]["observer"],
+                         "dbvora.process_resources.observe")
+        self.assertIn("not_peak", data["resource_measurement_policy"]["resident_memory_scope"])
+        self.assertIn("not_per_process_io",
+                      data["resource_measurement_policy"]["volume_free_space_scope"])
         metrics = data["metrics"]
         self.assertGreater(metrics["two_zip_archives_bytes"], 0)
         self.assertGreater(metrics["cas_total_stored_bytes"], 0)
@@ -55,6 +83,44 @@ class BenchmarkSyntheticArchivesTests(unittest.TestCase):
         if data["zstd"] == "passed":
             self.assertGreater(metrics["zstd_archives_bytes"], 0)
         self.assertFalse(data["ready_for_customer_data"])
+
+    def test_resource_observer_unavailability_is_reported_without_substitution(self):
+        unavailable = {
+            "contract": process_resources.CONTRACT,
+            "status": "observed_local_process_not_db_server",
+            "process_id": 123,
+            "process_instance_id": "a" * 32,
+            "process_cpu_time_ns": None,
+            "process_cpu_scope": (
+                "cumulative_current_python_process_cpu_not_cpu_percent"),
+            "ram": {
+                "status": "unavailable", "resident_bytes": None, "source": "unavailable",
+                "scope": "current_python_process_not_database_server",
+            },
+            "disk": {
+                "status": "unavailable",
+                "scope": "containing_volume_not_database_file_or_server",
+            },
+        }
+        with patch.object(benchmark.process_resources, "observe", return_value=unavailable):
+            data = verify()
+        self.assertEqual(data["status"], STATUS, data)
+        for method in data["benchmarks"].values():
+            for resource in method["resource_metrics"].values():
+                self.assertEqual(resource["status"], "unavailable")
+                self.assertIsNone(resource["median"])
+                self.assertEqual(resource["samples"], [None, None, None])
+            for trial in method["trials"]:
+                for operation in ("create", "restore"):
+                    self.assertIsNone(
+                        trial["resource_measurements"][operation][
+                            "process_cpu_time_delta_ns"]["value"])
+                    self.assertIsNone(
+                        trial["resource_measurements"][operation][
+                            "sampled_max_rss_bytes"]["value"])
+                    self.assertIsNone(
+                        trial["resource_measurements"][operation][
+                            "volume_free_bytes_delta"]["value"])
 
     def test_invalid_trial_count_and_report_redacts_payloads_and_paths(self):
         self.assertEqual(verify(2)["error_code"], "INVALID_TRIAL_COUNT")

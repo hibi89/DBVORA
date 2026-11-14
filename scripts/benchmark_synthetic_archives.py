@@ -20,6 +20,7 @@ import subprocess
 import tempfile
 from time import perf_counter_ns
 
+from dbvora import process_resources
 from dbvora.archive.incremental_cas import create_incremental, restore_incremental
 from dbvora.archive.compressed_cas import create_compressed, restore_compressed
 from dbvora.archive.safe_zip import (
@@ -37,6 +38,27 @@ OPTIONS = {
     "zstd": "zstd CLI level 3",
     "raw_cas": "synthetic incremental CAS v1, 64 KiB chunks",
     "compressed_cas": "synthetic compressed CAS v2, zlib level 6, 64 KiB chunks",
+}
+RESOURCE_SCOPES = {
+    "process_cpu_time_delta_ns": "current_python_process_cpu_time_delta_ns_not_cpu_percent",
+    "sampled_max_rss_bytes": "sampled_boundary_max_current_python_process_not_peak",
+    "volume_free_bytes_delta": "shared_containing_volume_free_byte_delta_not_per_process_io",
+}
+RESOURCE_POLICY = {
+    "observer": "dbvora.process_resources.observe",
+    "sampling": "before_and_after_each_create_or_restore_operation",
+    "process_cpu_scope": RESOURCE_SCOPES["process_cpu_time_delta_ns"],
+    "resident_memory_scope": RESOURCE_SCOPES["sampled_max_rss_bytes"],
+    "volume_free_space_scope": RESOURCE_SCOPES["volume_free_bytes_delta"],
+    "unavailable_policy": "record_unavailable_or_partial_without_substitution",
+}
+RESOURCE_SUMMARY_FIELDS = {
+    "create_process_cpu_time_delta_ns": ("create", "process_cpu_time_delta_ns"),
+    "restore_process_cpu_time_delta_ns": ("restore", "process_cpu_time_delta_ns"),
+    "create_sampled_max_rss_bytes": ("create", "sampled_max_rss_bytes"),
+    "restore_sampled_max_rss_bytes": ("restore", "sampled_max_rss_bytes"),
+    "create_volume_free_bytes_delta": ("create", "volume_free_bytes_delta"),
+    "restore_volume_free_bytes_delta": ("restore", "volume_free_bytes_delta"),
 }
 
 
@@ -57,6 +79,101 @@ def _summary(values: list[int]) -> dict:
         "min": min(values),
         "max": max(values),
         "samples": values,
+    }
+
+
+def _observe_resources(local_dir: Path):
+    """Optional, path-redacted measurement; an unavailable observer stays unavailable."""
+    try:
+        return process_resources.observe(local_dir)
+    except Exception:
+        return None
+
+
+def _resource_measurements(before, after) -> dict:
+    cpu = {"status": "unavailable", "value": None,
+           "scope": RESOURCE_SCOPES["process_cpu_time_delta_ns"]}
+    if isinstance(before, dict) and isinstance(after, dict):
+        before_cpu = before.get("process_cpu_time_ns")
+        after_cpu = after.get("process_cpu_time_ns")
+        if (type(before_cpu) is int and type(after_cpu) is int
+                and 0 <= before_cpu <= after_cpu <= 2**63 - 1
+                and before.get("process_id") == after.get("process_id")
+                and before.get("process_instance_id") == after.get("process_instance_id")
+                and before.get("process_cpu_scope") ==
+                    "cumulative_current_python_process_cpu_not_cpu_percent"
+                and after.get("process_cpu_scope") ==
+                    "cumulative_current_python_process_cpu_not_cpu_percent"):
+            cpu = {"status": "measured", "value": after_cpu - before_cpu,
+                   "scope": RESOURCE_SCOPES["process_cpu_time_delta_ns"]}
+
+    rss_values, rss_sources = [], []
+    for observation in (before, after):
+        ram = observation.get("ram") if isinstance(observation, dict) else None
+        if (isinstance(ram, dict) and ram.get("status") == "measured"
+                and type(ram.get("resident_bytes")) is int
+                and 0 < ram["resident_bytes"] <= 2**63 - 1
+                and ram.get("scope") == "current_python_process_not_database_server"
+                and isinstance(ram.get("source"), str) and ram["source"]):
+            rss_values.append(ram["resident_bytes"])
+            rss_sources.append(ram["source"])
+    rss = {
+        "status": "measured" if len(rss_values) == 2 else
+                  "partial" if rss_values else "unavailable",
+        "value": max(rss_values) if rss_values else None,
+        "boundary_sample_count": 2,
+        "available_boundary_sample_count": len(rss_values),
+        "source": ",".join(sorted(set(rss_sources))) if rss_sources else "unavailable",
+        "scope": RESOURCE_SCOPES["sampled_max_rss_bytes"],
+    }
+
+    disk_values = []
+    for observation in (before, after):
+        disk = observation.get("disk") if isinstance(observation, dict) else None
+        if (isinstance(disk, dict) and disk.get("status") == "measured"
+                and type(disk.get("free_bytes")) is int
+                and type(disk.get("total_bytes")) is int
+                and 0 <= disk["free_bytes"] <= disk["total_bytes"] <= 2**63 - 1
+                and disk.get("source") == "shutil_disk_usage_explicit_local_volume"
+                and disk.get("scope") ==
+                    "containing_volume_not_database_file_or_server"):
+            disk_values.append((disk["free_bytes"], disk["total_bytes"], disk["source"]))
+    volume = {"status": "unavailable", "value": None,
+              "source": "unavailable",
+              "scope": RESOURCE_SCOPES["volume_free_bytes_delta"]}
+    if (len(disk_values) == 2 and disk_values[0][1] == disk_values[1][1]
+            and disk_values[0][2] == disk_values[1][2]):
+        delta = disk_values[1][0] - disk_values[0][0]
+        if abs(delta) <= 2**63 - 1:
+            volume = {"status": "measured", "value": delta,
+                      "source": disk_values[0][2],
+                      "scope": RESOURCE_SCOPES["volume_free_bytes_delta"]}
+    return {
+        "process_cpu_time_delta_ns": cpu,
+        "sampled_max_rss_bytes": rss,
+        "volume_free_bytes_delta": volume,
+    }
+
+
+def _resource_summary(measurements: list[dict], scope: str) -> dict:
+    samples = [item.get("value") if isinstance(item, dict) else None
+               for item in measurements]
+    values = [value for value in samples if type(value) is int]
+    statuses = [item.get("status") if isinstance(item, dict) else "unavailable"
+                for item in measurements]
+    if not values:
+        status, median, minimum, maximum = "unavailable", None, None, None
+    else:
+        status = ("measured" if len(values) == len(measurements)
+                  and all(value == "measured" for value in statuses)
+                  else "partial")
+        median = int(statistics.median(values))
+        minimum, maximum = min(values), max(values)
+    return {
+        "status": status, "sample_count": len(measurements),
+        "available_sample_count": len(values),
+        "median": median, "min": minimum, "max": maximum,
+        "samples": samples, "scope": scope,
     }
 
 
@@ -201,6 +318,7 @@ def verify(repeats: int = DEFAULT_TRIALS) -> dict:
         "cache_policy": "OS caches are not cleared; method order rotates across trials.",
         "creation_timing_scope": "API call wall time; API self-verification may be included.",
         "restore_timing_scope": "Independent restore API plus restored-file SHA-256 check.",
+        "resource_measurement_policy": RESOURCE_POLICY,
     }
     try:
         zstd_binary = shutil.which("zstd")
@@ -219,12 +337,18 @@ def verify(repeats: int = DEFAULT_TRIALS) -> dict:
                 for method in order:
                     trial_root = base / "trials" / (method + "-" + str(trial + 1))
                     trial_root.mkdir(parents=True)
+                    create_before = _observe_resources(trial_root)
                     artifacts, create_ns = _create_trial(method, trial_root, first, second)
+                    create_after = _observe_resources(trial_root)
+                    create_resources = _resource_measurements(create_before, create_after)
                     if any(artifact.get("snapshot_sha256") != expected_shas[index]
                            for index, artifact in enumerate(artifacts)):
                         raise ValueError("SNAPSHOT_SHA_MISMATCH")
+                    restore_before = _observe_resources(trial_root)
                     restored, restore_ns = _restore_trial(
                         method, trial_root, artifacts, expected_shas)
+                    restore_after = _observe_resources(trial_root)
+                    restore_resources = _resource_measurements(restore_before, restore_after)
                     if not restored:
                         raise ValueError("RESTORED_SHA_MISMATCH")
                     reused = None
@@ -240,6 +364,9 @@ def verify(repeats: int = DEFAULT_TRIALS) -> dict:
                         "restore_wall_ns": restore_ns, "restore_sha256_verified": True,
                         "second_generation_reused_chunks": reused,
                         "generation_count": 2,
+                        "resource_measurements": {
+                            "create": create_resources, "restore": restore_resources,
+                        },
                     })
                     report["checks"] += 2
 
@@ -254,12 +381,19 @@ def verify(repeats: int = DEFAULT_TRIALS) -> dict:
                         trial["restore_sha256_verified"] and trial["generation_count"] == 2
                         for trial in trials):
                     raise ValueError("INCOMPLETE_TRIALS")
+                resource_metrics = {}
+                for field, (operation, metric) in RESOURCE_SUMMARY_FIELDS.items():
+                    resource_metrics[field] = _resource_summary(
+                        [trial["resource_measurements"][operation][metric]
+                         for trial in trials],
+                        RESOURCE_SCOPES[metric])
                 summary = {
                     "trial_count": len(trials), "generation_count": 2,
                     "options": OPTIONS[method], "trials": trials,
                     "artifact_bytes": _summary([trial["artifact_bytes"] for trial in trials]),
                     "create_wall_ns": _summary([trial["create_wall_ns"] for trial in trials]),
                     "restore_wall_ns": _summary([trial["restore_wall_ns"] for trial in trials]),
+                    "resource_metrics": resource_metrics,
                     "restore_sha256_verified": True,
                 }
                 if method == "raw_cas":

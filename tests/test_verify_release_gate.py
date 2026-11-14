@@ -23,24 +23,95 @@ class VerificationGateTests(unittest.TestCase):
         self.root_patch.start()
         self.addCleanup(self.root_patch.stop)
 
-    def responses(self, *, tests=668, checks=10, zstd='passed', customer_ready=False):
+    def responses(self, *, tests=668, checks=10, zstd='passed',
+                  customer_ready=False, resource_unavailable=False):
         def series(value):
             return {"sample_count": 3, "median": value, "min": value,
                     "max": value, "samples": [value, value, value]}
 
+        resource_scopes = {
+            "process_cpu_time_delta_ns":
+                "current_python_process_cpu_time_delta_ns_not_cpu_percent",
+            "sampled_max_rss_bytes":
+                "sampled_boundary_max_current_python_process_not_peak",
+            "volume_free_bytes_delta":
+                "shared_containing_volume_free_byte_delta_not_per_process_io",
+        }
+        resource_fields = {
+            "create_process_cpu_time_delta_ns": ("create", "process_cpu_time_delta_ns"),
+            "restore_process_cpu_time_delta_ns": ("restore", "process_cpu_time_delta_ns"),
+            "create_sampled_max_rss_bytes": ("create", "sampled_max_rss_bytes"),
+            "restore_sampled_max_rss_bytes": ("restore", "sampled_max_rss_bytes"),
+            "create_volume_free_bytes_delta": ("create", "volume_free_bytes_delta"),
+            "restore_volume_free_bytes_delta": ("restore", "volume_free_bytes_delta"),
+        }
+
+        def resource_item(metric, value):
+            scope = resource_scopes[metric]
+            if resource_unavailable:
+                result = {"status": "unavailable", "value": None, "scope": scope}
+                if metric == "sampled_max_rss_bytes":
+                    result.update({"boundary_sample_count": 2,
+                                   "available_boundary_sample_count": 0,
+                                   "source": "unavailable"})
+                if metric == "volume_free_bytes_delta":
+                    result["source"] = "unavailable"
+                return result
+            result = {"status": "measured", "value": value, "scope": scope}
+            if metric == "sampled_max_rss_bytes":
+                result.update({"boundary_sample_count": 2,
+                               "available_boundary_sample_count": 2,
+                               "source": "synthetic_fixture"})
+            if metric == "volume_free_bytes_delta":
+                result["source"] = "shutil_disk_usage_explicit_local_volume"
+            return result
+
         def method(name, stored):
+            trials = []
+            for _ in range(3):
+                measurements = {
+                    operation: {
+                        metric: resource_item(metric, {
+                            "process_cpu_time_delta_ns": 1000,
+                            "sampled_max_rss_bytes": 2048,
+                            "volume_free_bytes_delta": -7,
+                        }[metric])
+                        for metric in resource_scopes
+                    }
+                    for operation in ("create", "restore")
+                }
+                trials.append({
+                    "artifact_bytes": stored, "create_wall_ns": 1000000,
+                    "restore_wall_ns": 1000001,
+                    "restore_sha256_verified": True,
+                    "second_generation_reused_chunks": 1 if name in
+                        ("raw_cas", "compressed_cas") else None,
+                    "generation_count": 2,
+                    "resource_measurements": measurements,
+                })
+            resource_metrics = {}
+            for field, (operation, metric) in resource_fields.items():
+                value = (None if resource_unavailable else {
+                    "process_cpu_time_delta_ns": 1000,
+                    "sampled_max_rss_bytes": 2048,
+                    "volume_free_bytes_delta": -7,
+                }[metric])
+                values = [value, value, value]
+                resource_metrics[field] = {
+                    "status": "unavailable" if resource_unavailable else "measured",
+                    "sample_count": 3,
+                    "available_sample_count": 0 if resource_unavailable else 3,
+                    "median": value, "min": value, "max": value,
+                    "samples": values, "scope": resource_scopes[metric],
+                }
             return {
                 "trial_count": 3, "generation_count": 2,
                 "options": name + " synthetic options",
-                "trials": [{"artifact_bytes": stored, "create_wall_ns": 1000000,
-                            "restore_wall_ns": 1000001,
-                            "restore_sha256_verified": True,
-                            "second_generation_reused_chunks": 1 if name in
-                                ("raw_cas", "compressed_cas") else None,
-                            "generation_count": 2} for _ in range(3)],
+                "trials": trials,
                 "artifact_bytes": series(stored),
                 "create_wall_ns": series(1000000),
                 "restore_wall_ns": series(1000001),
+                "resource_metrics": resource_metrics,
                 "restore_sha256_verified": True,
                 **({"second_generation_reused_chunks": True}
                    if name in ("raw_cas", "compressed_cas") else {}),
@@ -116,6 +187,17 @@ class VerificationGateTests(unittest.TestCase):
                 "status": "PASS_SYNTHETIC_STORAGE_COMPARISON_ONLY",
                 "checks": 29,
                 "timing_scope": "3_trial_medians_two_generations_wall_clock_only",
+                "resource_measurement_policy": {
+                    "observer": "dbvora.process_resources.observe",
+                    "sampling": "before_and_after_each_create_or_restore_operation",
+                    "process_cpu_scope":
+                        "current_python_process_cpu_time_delta_ns_not_cpu_percent",
+                    "resident_memory_scope":
+                        "sampled_boundary_max_current_python_process_not_peak",
+                    "volume_free_space_scope":
+                        "shared_containing_volume_free_byte_delta_not_per_process_io",
+                    "unavailable_policy": "record_unavailable_or_partial_without_substitution",
+                },
                 "timings_ns": {
                     "zip_write_ns": 1000000, "raw_write_ns": 1000001,
                     "zlib_write_ns": 1000002, "zip_restore_ns": 1000003,
@@ -153,6 +235,29 @@ class VerificationGateTests(unittest.TestCase):
         self.assertEqual(report['status'], 'PASS_SYNTHETIC_ENVIRONMENT_ONLY')
         self.assertFalse(report['ready_for_customer_data'])
         self.assertEqual(len(report['steps']), 12)
+
+    def test_benchmark_gate_accepts_explicit_unavailable_resources(self):
+        mocked = self.responses(resource_unavailable=True)
+        with patch.object(gate, "_run", side_effect=mocked), patch.object(
+                gate.shutil, "which", return_value="tool"):
+            report = gate.verify()
+        self.assertEqual(report["status"], "PASS_SYNTHETIC_ENVIRONMENT_ONLY")
+        for resource in report["steps"][-1]["benchmarks"]["zip"]["resource_metrics"].values():
+            self.assertEqual(resource["status"], "unavailable")
+            self.assertIsNone(resource["median"])
+
+    def test_benchmark_gate_rejects_fabricated_unavailable_resource_value(self):
+        mocked = self.responses(resource_unavailable=True)
+        code, output, error = mocked[-1]
+        benchmark = json.loads(output)
+        benchmark["benchmarks"]["zip"]["resource_metrics"][
+            "create_process_cpu_time_delta_ns"]["median"] = 1
+        mocked[-1] = (code, json.dumps(benchmark), error)
+        with patch.object(gate, "_run", side_effect=mocked), patch.object(
+                gate.shutil, "which", return_value="tool"):
+            report = gate.verify()
+        self.assertEqual(report["status"], "FAIL_CLOSED")
+        self.assertEqual(report["steps"][-1]["status"], "FAIL")
 
     def test_benchmark_gate_rejects_fewer_than_three_trials(self):
         mocked = self.responses()

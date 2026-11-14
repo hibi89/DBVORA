@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import re
 import shutil
+import statistics
 import subprocess
 import sys
 
@@ -381,6 +382,28 @@ def verify():
     zstd_timings = sizes.get("zstd_timings_ns", {})
     benchmarks = sizes.get("benchmarks", {})
     env = sizes.get("environment", {})
+    resource_policy = sizes.get("resource_measurement_policy", {})
+    resource_scopes = {
+        "process_cpu_time_delta_ns": "current_python_process_cpu_time_delta_ns_not_cpu_percent",
+        "sampled_max_rss_bytes": "sampled_boundary_max_current_python_process_not_peak",
+        "volume_free_bytes_delta": "shared_containing_volume_free_byte_delta_not_per_process_io",
+    }
+    resource_fields = {
+        "create_process_cpu_time_delta_ns": ("create", "process_cpu_time_delta_ns"),
+        "restore_process_cpu_time_delta_ns": ("restore", "process_cpu_time_delta_ns"),
+        "create_sampled_max_rss_bytes": ("create", "sampled_max_rss_bytes"),
+        "restore_sampled_max_rss_bytes": ("restore", "sampled_max_rss_bytes"),
+        "create_volume_free_bytes_delta": ("create", "volume_free_bytes_delta"),
+        "restore_volume_free_bytes_delta": ("restore", "volume_free_bytes_delta"),
+    }
+    expected_resource_policy = {
+        "observer": "dbvora.process_resources.observe",
+        "sampling": "before_and_after_each_create_or_restore_operation",
+        "process_cpu_scope": resource_scopes["process_cpu_time_delta_ns"],
+        "resident_memory_scope": resource_scopes["sampled_max_rss_bytes"],
+        "volume_free_space_scope": resource_scopes["volume_free_bytes_delta"],
+        "unavailable_policy": "record_unavailable_or_partial_without_substitution",
+    }
     expected_formats = {"zip", "raw_cas", "compressed_cas"}
     if zstd_available:
         expected_formats.add("zstd")
@@ -400,12 +423,88 @@ def verify():
             and all(type(value) is int and value > 0 for value in samples)
         )
 
+    def valid_resource_observation(item, metric):
+        if type(item) is not dict or item.get("scope") != resource_scopes[metric]:
+            return False
+        status, value = item.get("status"), item.get("value")
+        if metric == "sampled_max_rss_bytes":
+            if (item.get("boundary_sample_count") != 2
+                    or item.get("available_boundary_sample_count") not in (0, 1, 2)
+                    or not isinstance(item.get("source"), str)):
+                return False
+            available = item["available_boundary_sample_count"]
+            if status != ("measured" if available == 2 else
+                          "partial" if available == 1 else "unavailable"):
+                return False
+            if available == 0:
+                return value is None
+            return type(value) is int and value > 0 and bool(item["source"])
+        if metric == "process_cpu_time_delta_ns":
+            if status == "unavailable":
+                return value is None
+            return (status == "measured" and type(value) is int
+                    and 0 <= value <= 2**63 - 1)
+        if metric == "volume_free_bytes_delta":
+            if status == "unavailable":
+                return value is None
+            return (status == "measured" and type(value) is int
+                    and abs(value) <= 2**63 - 1
+                    and item.get("source") == "shutil_disk_usage_explicit_local_volume")
+        return False
+
+    def valid_resource_series(summary, metric, observations):
+        if (type(summary) is not dict or summary.get("scope") != resource_scopes[metric]
+                or summary.get("sample_count") != 3
+                or type(summary.get("samples")) is not list
+                or len(summary["samples"]) != 3
+                or len(observations) != 3
+                or not all(valid_resource_observation(item, metric)
+                           for item in observations)):
+            return False
+        values = [item["value"] for item in observations if item["value"] is not None]
+        expected_samples = [item["value"] for item in observations]
+        if (summary["samples"] != expected_samples
+                or summary.get("available_sample_count") != len(values)):
+            return False
+        if not values:
+            return (summary.get("status") == "unavailable"
+                    and summary.get("median") is None
+                    and summary.get("min") is None and summary.get("max") is None)
+        expected_status = (
+            "measured" if len(values) == 3 and all(
+                item["status"] == "measured" for item in observations)
+            else "partial"
+        )
+        return (
+            summary.get("status") == expected_status
+            and summary.get("median") == int(statistics.median(values))
+            and summary.get("min") == min(values)
+            and summary.get("max") == max(values)
+        )
+
     methods_ok = isinstance(benchmarks, dict) and set(benchmarks) == expected_formats
     if methods_ok:
         for name in expected_formats:
             item = benchmarks.get(name, {})
             trials = item.get("trials")
-            methods_ok = methods_ok and (
+            method_resources_ok = (
+                type(item.get("resource_metrics")) is dict
+                and set(item["resource_metrics"]) == set(resource_fields)
+                and type(trials) is list and len(trials) == 3
+            )
+            if method_resources_ok:
+                for field, (operation, metric) in resource_fields.items():
+                    observations = [
+                        trial.get("resource_measurements", {}).get(operation, {}).get(metric)
+                        if type(trial) is dict
+                        and type(trial.get("resource_measurements")) is dict
+                        and type(trial["resource_measurements"].get(operation)) is dict
+                        else None
+                        for trial in trials
+                    ]
+                    method_resources_ok = method_resources_ok and valid_resource_series(
+                        item["resource_metrics"].get(field), metric, observations)
+            methods_ok = methods_ok and method_resources_ok and (
                 item.get("trial_count") == 3
                 and item.get("generation_count") == 2
                 and item.get("restore_sha256_verified") is True
@@ -414,6 +513,15 @@ def verify():
                 and all(type(trial) is dict
                         and trial.get("generation_count") == 2
                         and trial.get("restore_sha256_verified") is True
+                        and type(trial.get("resource_measurements")) is dict
+                        and set(trial["resource_measurements"]) == {"create", "restore"}
+                        and all(type(trial["resource_measurements"].get(operation)) is dict
+                                and set(trial["resource_measurements"][operation]) ==
+                                    set(resource_scopes)
+                                and all(valid_resource_observation(
+                                    trial["resource_measurements"][operation][metric], metric)
+                                    for metric in resource_scopes)
+                                for operation in ("create", "restore"))
                         for trial in trials)
                 and valid_series(item, "artifact_bytes")
                 and valid_series(item, "create_wall_ns")
@@ -459,6 +567,7 @@ def verify():
         and sizes.get("zstd_generations_restored") is zstd_available
         and sizes.get("no_universal_compression_claim") is True
         and sizes.get("timing_scope") == "3_trial_medians_two_generations_wall_clock_only"
+        and resource_policy == expected_resource_policy
         and methods_ok and timings_ok and zstd_timings_ok and env_ok
         and sizes.get("ready_for_customer_data") is False
         and isinstance(metrics, dict)
@@ -492,6 +601,7 @@ def verify():
         "benchmarks": benchmarks if benchmark_ok else None,
         "environment": env if benchmark_ok else None,
         "timing_scope": sizes.get("timing_scope") if benchmark_ok else None,
+        "resource_measurement_policy": resource_policy if benchmark_ok else None,
         "error_code": "NONE" if benchmark_ok else
             _safe_code(sizes.get("error_code"), "SYNTHETIC_BENCHMARK_GATE_FAILED"),
     })
