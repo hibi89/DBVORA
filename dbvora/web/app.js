@@ -80,6 +80,18 @@ function displayGrowth() {
   const comparison = growthComparisons.get(id);
   const target = $('growth-status');
   const samples = observationHistory.get(id) || [];
+  // Render only selected-DB metadata with text nodes; never show row values,
+  // DSNs or identifiers from other databases in this observation ledger.
+  const ledger = $('growth-samples');
+  clear(ledger);
+  for (const sample of samples) {
+    const item = el('div', 'growth-sample');
+    item.setAttribute('role', 'listitem');
+    item.append(el('time', '', new Date(sample.timestamp).toLocaleString('ko-KR')),
+                el('strong', '', formatBytes(sample.size_bytes)));
+    ledger.append(item);
+  }
+  if (!samples.length) ledger.append(el('p', 'empty-state', '관측 기록 없음'));
   $('growth-history').textContent = '관측 이력: ' + samples.length +
     '건 / 최대 ' + MAX_OBSERVATIONS + '건 · 세션 메모리만 사용 · 디스크 저장 없음';
   // Only report a measured net change after three chronological observations.
