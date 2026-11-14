@@ -871,6 +871,22 @@ def run(*, screenshots=None):
                       delete window.__storagePending;
                       delete window.__storageFetchOriginal;
                     }""")
+                    # A table switch within the same DB also aborts the old
+                    # opt-in scan; selection identity must remain correct.
+                    multi_page.locator('.storage-measure').click()
+                    multi_page.wait_for_function(
+                        "() => window.__storagePending.length === 1")
+                    multi_page.locator('#tables button.table-node').nth(1).click()
+                    require(multi_page.evaluate('() => window.__storagePending[0].signal.aborted'),
+                            'TABLE_SWITCH_SCAN_NOT_ABORTED')
+                    require(multi_page.locator('.storage-status').inner_text().startswith('측정 전'),
+                            'TABLE_SWITCH_STALE_STATUS')
+                    multi_page.evaluate("""() => window.__storagePending.shift().reject(
+                      new TypeError('synthetic stale table error'))""")
+                    multi_page.wait_for_timeout(100)
+                    require(multi_page.locator('.storage-status').inner_text().startswith('측정 전')
+                            and not multi_errors, 'TABLE_SWITCH_STALE_FAILURE_LEAK')
+                    result['checks'].append('multi_table_switch_aborts_storage')
                     result['checks'].append('multi_delayed_storage_success_failure_isolated')
                     multi_page.locator('#database-list button').nth(1).click()
                     require(multi_page.locator('#tables-count').inner_text() == '2'
