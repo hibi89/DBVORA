@@ -79,7 +79,7 @@ def _parser():
     audit.add_argument("--require-all-verified", action="store_true",
                        help="Exit nonzero unless at least one archive has a valid unsigned receipt and all entries pass")
 
-    for child in (snapshot, archive, restore, selected, receipt):
+    for child in (snapshot, archive, restore, preview, selected, receipt):
         child.add_argument("--synthetic-only", action="store_true",
                            help="Confirm this command is operating only on synthetic test data")
     for child in (snapshot, archive, restore, preview, selected):
