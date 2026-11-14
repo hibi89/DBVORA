@@ -141,7 +141,7 @@ class RequestServiceTests(unittest.TestCase):
         self.assertEqual(len(list(self.output.glob("dbvora-*.zip"))), 1)
 
     def test_multiprocess_same_request_publishes_only_one_zip(self):
-        from dbvora.archive.request_ledger import reserve
+        from dbvora.archive.request_ledger import LEDGER_NAME, reserve
 
         seed = hashlib.sha256(b"synthetic seed plan").hexdigest()
         reserve(self.ledger, "synthetic-seed-0001", seed)
@@ -175,7 +175,7 @@ class RequestServiceTests(unittest.TestCase):
             self.assertEqual([item.name for item in archives], [name])
             self.assertEqual(hashlib.sha256(archives[0].read_bytes()).hexdigest(), artifact_sha)
             self.assertEqual(snapshot_sha, hashlib.sha256(self.snapshot.read_bytes()).hexdigest())
-            with closing(sqlite3.connect(self.ledger / "dbvora-requests.sqlite")) as connection:
+            with closing(sqlite3.connect(self.ledger / LEDGER_NAME)) as connection:
                 recorded = connection.execute(
                     "SELECT phase,artifact_sha FROM requests WHERE artifact_sha IS NOT NULL"
                 ).fetchall()
