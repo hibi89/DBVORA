@@ -888,11 +888,6 @@ def run(*, screenshots=None):
                     require(multi_page.locator('#tables-count').inner_text() == '3'
                             and multi_page.locator('.storage-status').inner_text().startswith('측정 전')
                             and not multi_errors, 'MULTI_RACE_STALE_FAILURE_LEAK')
-                    multi_page.evaluate("""() => {
-                      window.fetch = window.__storageFetchOriginal;
-                      delete window.__storagePending;
-                      delete window.__storageFetchOriginal;
-                    }""")
                     # A table switch within the same DB also aborts the old
                     # opt-in scan; selection identity must remain correct.
                     multi_page.locator('.storage-measure').click()
@@ -908,6 +903,11 @@ def run(*, screenshots=None):
                     multi_page.wait_for_timeout(100)
                     require(multi_page.locator('.storage-status').inner_text().startswith('측정 전')
                             and not multi_errors, 'TABLE_SWITCH_STALE_FAILURE_LEAK')
+                    multi_page.evaluate("""() => {
+                      window.fetch = window.__storageFetchOriginal;
+                      delete window.__storagePending;
+                      delete window.__storageFetchOriginal;
+                    }""")
                     result['checks'].append('multi_table_switch_aborts_storage')
                     result['checks'].append('multi_delayed_storage_success_failure_isolated')
                     multi_page.locator('#database-list button').nth(1).click()

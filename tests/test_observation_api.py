@@ -6,6 +6,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 from dbvora.api import create_app
+from dbvora.errors import InventoryError
 from dbvora.observation_ledger import append_observation
 from tests.fixtures.make_sqlite import create_fixture
 
@@ -57,8 +58,9 @@ class ObservationApiTests(unittest.TestCase):
         self.assertFalse(self.ledger.exists())
 
     def test_rejects_source_database_as_ledger_configuration(self):
-        with self.assertRaisesRegex(ValueError, "separate local observation ledger"):
+        with self.assertRaises(InventoryError) as raised:
             create_app(self.source, port=8765, observation_ledger_path=self.source)
+        self.assertEqual(raised.exception.code, "INVALID_OBSERVATION_LEDGER")
 
     def test_rejects_unconfigured_database_and_extra_query(self):
         with self.client() as client:

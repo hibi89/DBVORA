@@ -57,4 +57,4 @@ jobs:
       - name: Diagnose synthetic-only failures without changing release verdict
         if: failure()
         continue-on-error: true
-        run: python -m unittest -v tests.test_api tests.test_request_ledger tests.test_durability tests.test_export_html tests.test_mixed_cli tests.test_portable_build tests.test_review_html tests.test_schema_review_ui tests.test_windows_ntfs_publish tests.test_windows_ntfs_archive_shadow tests.test_workspace_storage tests.test_incremental_cas tests.test_daily_synthetic tests.test_process_resources tests.test_cas_partial_write tests.test_cas_concurrency
+        run: python -m unittest -v tests.test_observation_api tests.test_observation_ledger tests.test_observation_cli tests.test_api tests.test_request_ledger tests.test_durability tests.test_export_html tests.test_mixed_cli tests.test_portable_build tests.test_review_html tests.test_schema_review_ui tests.test_windows_ntfs_publish tests.test_windows_ntfs_archive_shadow tests.test_workspace_storage tests.test_incremental_cas tests.test_daily_synthetic tests.test_process_resources tests.test_cas_partial_write tests.test_cas_concurrency
