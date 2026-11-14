@@ -6,6 +6,7 @@ import io
 import json
 from pathlib import Path
 import tempfile
+import time
 import unittest
 from unittest.mock import patch
 from dbvora import process_resources as p
@@ -44,6 +45,9 @@ class ProcessResourcesTests(unittest.TestCase):
     def test_real_two_samples_compare_local_process_only(self):
         before = p.observe(self.root)
         sum(x * x for x in range(40000))
+        # On Windows two instantaneous calls may share one native monotonic
+        # clock tick. This is a live two-sample test, so allow real time to pass.
+        time.sleep(0.1)
         after = p.observe(self.root)
         # Path-free Windows diagnostic if a native clock/RAM field is outside
         # the expected provenance range. Never print customer directories.
@@ -168,12 +172,12 @@ class ProcessResourcesTests(unittest.TestCase):
                 self.assertNotIn(secret, stream.getvalue())
 
     def test_cli_bounded_two_sample_mode_produces_honest_delta(self):
-        with patch.object(p.time, "sleep") as sleeper:
-            with io.StringIO() as stream, redirect_stdout(stream):
-                code = p.main(["--local-dir", str(self.root), "--sample-interval-ms", "100"])
-                report = json.loads(stream.getvalue())
+        # Do not mock away the interval: Windows clock resolution can make
+        # consecutive instantaneous observations have equal timestamps.
+        with io.StringIO() as stream, redirect_stdout(stream):
+            code = p.main(["--local-dir", str(self.root), "--sample-interval-ms", "100"])
+            report = json.loads(stream.getvalue())
         self.assertEqual(code, 0)
-        sleeper.assert_called_once_with(0.1)
         self.assertEqual(report["report"]["contract"], "dbvora.local-process-trend-cli.v1")
         self.assertEqual(report["report"]["comparison"]["status"],
                          "measured_two_samples_only_no_forecast")
