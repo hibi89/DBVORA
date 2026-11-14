@@ -1,14 +1,15 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
-> 1. **목표·범위**: R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.
-> 2. **이번 완료**: R03-09 Windows/NTFS native publication 경계와 R03-08 읽기 전용 보존 preview를 합성 환경에서 검증했다.
-> 3. **기능/검증 SHA**: 4f3e0c8833735129c1e3c0dbf23c487220e3cf73; R03-09 변경은 문서 명확화와 합성 경계 테스트이며, R03-08 구현은 선행 SHA 1d7d5af74055e19717b73291328fca666c05ce63에서 완료했다.
-> 4. **전체 회귀**: [#43618972951](https://github.com/hibi89/DBVORA/actions/runs/43618972951) 정확 SHA PASS. Ubuntu 760/760 PASS·0 SKIP; Windows 760 PASS + 지정 POSIX 전용 SKIP 1.
-> 5. **Blueprint**: [#43618973180](https://github.com/hibi89/DBVORA/actions/runs/43618973180) 정확 SHA PASS.
-> 6. **R03-09**: native temporary-path alias publication/hash, injected Win32 access denial sanitization, production wrapper fail-closed stage preservation, unsupported-volume rejection pass. No ACL mutation.
-> 7. **수정 이력**: 최초 83dcafba 테스트 파일 문법 오류로 [#43618687075](https://github.com/hibi89/DBVORA/actions/runs/43618687075) 실패. syntax-only fix가 포함된 최종 SHA에서 전체 게이트 PASS.
-> 8. **R03-08·R03-05/06**: storage preview는 untrusted mtime·무삭제, R03-05/06는 다중 프로세스·주입 장애 증거로 PASS_SCOPED 유지.
-> 9. **다음 작업**: R04-01 ZIP/ZSTD/CAS 반복 벤치 범위 감사 및 R04-02 리소스·분산 측정. 실디스크 오류·물리 전원중단은 OWNER_GATE.
-> 10. **공식 상태**: 전체 완성률 UNASSESSED, 과거 기술평가 95% 비공식, [작업중]/RELEASE HOLD, 사용자·물리·권리 수용 OWNER_GATE 유지.
+> 1. **목표·범위**: feature/p0-db-map에서 R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. main/develop 병합, 크몽 등록·상용 출시는 제외.
+> 2. **이번 완료**: R04-01 동일 합성 SQLite 입력의 ZIP/ZSTD/raw CAS/compressed CAS 3회 반복 및 두 세대 복원·SHA 검증은 PASS_SCOPED다.
+> 3. **기능/검증 SHA**: 3919a1e3e0287f553f2b491834a67791309257ad.
+> 4. **전체 회귀**: [#43620565261](https://github.com/hibi89/DBVORA/actions/runs/43620565261) 성공. Ubuntu 761/761 PASS·0 SKIP; Windows 761 PASS + 1 지정 POSIX-only SKIP.
+> 5. **Blueprint**: [#43620565587](https://github.com/hibi89/DBVORA/actions/runs/43620565587) 성공.
+> 6. **벤치 증거**: 동일 입력 946,176 B·950,272 B, 각 방식 3회. Ubuntu ZIP/ZSTD/raw CAS/zlib CAS 크기 31,216/27,651/1,177,960/24,637 B; Windows 31,550/27,824/1,177,960/25,046 B. 환경별 시간·표본은 [R04-01 증거](docs/P4_01_REPEAT_BENCHMARK_20261115.md)에 기록.
+> 7. **한계**: runner별 합성 표본이며 OS cache 미초기화, host load 비통제, 바이트는 파일 길이. 일반 성능 서열·물리 저장량을 뜻하지 않는다.
+> 8. **이전 게이트**: R03-05..09의 기록된 PASS_SCOPED는 유지. 실제 ACL 변경·정전·실기기 내구성은 검증되지 않았다.
+> 9. **다음 작업**: R04-02에 작업별 process CPU time, 경계 샘플 RSS, 공유 볼륨 여유 공간 delta를 명시적 한계와 함께 추가한다. 이후 R04-03.
+> 10. **공식 상태**: 전체 완성률 UNASSESSED, RELEASE HOLD; 소유자/물리/권리 OWNER_GATE 유지.
+
 
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
 > 1. **목표·범위**: R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.

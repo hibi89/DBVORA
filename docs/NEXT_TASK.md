@@ -1,3 +1,10 @@
+> **[2026-11-15 KST · latest source/test SHA 3919a1e3e0287f553f2b491834a67791309257ad]**
+> **DONE-SCOPED** R04-01 repeatable ZIP/ZSTD/raw CAS/compressed CAS comparison. Full [#43620565261](https://github.com/hibi89/DBVORA/actions/runs/43620565261): Ubuntu 761 PASS/0 SKIP; Windows 761 PASS + 1 named POSIX-only skip. Blueprint [#43620565587](https://github.com/hibi89/DBVORA/actions/runs/43620565587) success.
+> Three trials per method use the same two synthetic SQLite snapshots; every trial independently restored both and verified SHA-256. See [P4_01_REPEAT_BENCHMARK_20261115.md](P4_01_REPEAT_BENCHMARK_20261115.md) for exact runner metadata and measurements. Cache was not cleared, host load is uncontrolled, and artifact sizes are file lengths. No universal performance claim.
+> **NEXT-1** R04-02: add scoped process CPU-time delta, sampled RSS, and shared-volume free-space delta per create/restore operation; label unavailable/noisy metrics honestly.
+> **NEXT-2** R04-03: review measurement interpretation/claims and align evidence; retain OWNER_GATE for physical and owner-only proof.
+> Overall completion UNASSESSED / RELEASE HOLD; synthetic GitHub runner evidence only.
+
 > **[2026-11-15 KST · latest source/test SHA 4f3e0c8833735129c1e3c0dbf23c487220e3cf73]**
 > **DONE-SCOPED** R03-09 Windows/NTFS synthetic publication boundaries. Full [#43618972951](https://github.com/hibi89/DBVORA/actions/runs/43618972951) Ubuntu 760 PASS/0 SKIP; Windows 760 PASS + 1 named POSIX-only skip; blueprint [#43618973180](https://github.com/hibi89/DBVORA/actions/runs/43618973180) PASS.
 > Native temp-parent alias publication, access-denied injection/sanitization, production wrapper stage preservation, and unsupported-volume rejection passed. ACL settings were not modified; real disk-full/power-loss remain unverified. Failure SHA 83dcafba only had a Python test-file syntax error, fixed at this passing SHA. Detailed evidence: [P3_09_WINDOWS_NTFS_BOUNDARIES_20261115.md](P3_09_WINDOWS_NTFS_BOUNDARIES_20261115.md).
