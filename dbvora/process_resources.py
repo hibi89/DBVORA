@@ -15,7 +15,7 @@ CONTRACT = "dbvora.local-process-resources.v1"
 TREND_CONTRACT = "dbvora.local-process-trend.v1"
 _MAX_COUNTER = 2**63 - 1
 _INSTANCE_ID = secrets.token_hex(16)  # Process-local; not a persistent device identifier.
-_ID = re.compile(r"[a-f0-9]{32}\\Z")
+_ID = re.compile(r"[a-f0-9]{32}\Z")
 class ResourceError(ValueError):
     """Fixed code, without private paths."""
 
