@@ -82,6 +82,55 @@ class MultiLiveApiTests(unittest.TestCase):
         self.assertEqual(self.client.post('/api/table-storage?table=shipments&database=' + second_id).status_code, 405)
         self.assertEqual(before, self.fingerprints())
 
+    def test_eight_sources_are_accepted_with_distinct_scoped_ids(self):
+        paths = [self.first, self.second]
+        for index in range(3, 9):
+            path = self.second.parent / f"database-{index}.sqlite"
+            with closing(sqlite3.connect(path)) as db:
+                db.execute(
+                    f"CREATE TABLE item_{index}(id INTEGER PRIMARY KEY, marker TEXT)"
+                )
+                db.execute(
+                    f"INSERT INTO item_{index} VALUES (1, ?)",
+                    ("EIGHT_SOURCE_ROW_SENTINEL",),
+                )
+            paths.append(path)
+
+        def fingerprints():
+            return tuple(
+                (hashlib.sha256(path.read_bytes()).hexdigest(), path.stat().st_mtime_ns)
+                for path in paths
+            )
+
+        before = fingerprints()
+        with TestClient(create_app(paths, port=8766),
+                        base_url="http://127.0.0.1:8766") as client:
+            with patch("dbvora.workspace.collect_table_storage") as scan:
+                response = client.get("/api/inventory")
+            scan.assert_not_called()
+            self.assertEqual(response.status_code, 200)
+            report = response.json()
+            self.assertEqual(report["database_count"], 8)
+            self.assertEqual(report["table_count"], 11)
+            database_ids = [database["db_id"] for database in report["databases"]]
+            self.assertEqual(len(set(database_ids)), 8)
+            self.assertEqual(report["cross_database_edges_verified"], 0)
+            self.assertEqual(
+                {edge["database_id"] for edge in report["relationships"]},
+                {database_ids[0], database_ids[1]},
+            )
+            self.assertNotIn("EIGHT_SOURCE_ROW_SENTINEL", response.text)
+            for path in paths:
+                self.assertNotIn(str(path), response.text)
+
+            last = report["databases"][-1]
+            selected = client.get("/api/table-storage", params={
+                "database": last["db_id"], "table": "item_8"})
+            self.assertEqual(selected.status_code, 200)
+            self.assertEqual(selected.json()["table"], "item_8")
+
+        self.assertEqual(before, fingerprints())
+
     def test_invalid_multi_startup_denies_duplicates_and_excess(self):
         with self.assertRaises(InventoryError) as caught:
             create_app([self.first, self.first])

@@ -2,7 +2,7 @@
 
 Opt-in connection requires psycopg 3, a user-provided approved DSN, verified
 TLS by default, and a read-only transaction. No connection is attempted on
-import. This connector is not yet tested against a real PostgreSQL server.
+import. GitHub acceptance uses an ephemeral synthetic PostgreSQL 16 server; owner and customer environments remain unverified.
 """
 from __future__ import annotations
 
