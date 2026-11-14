@@ -377,7 +377,7 @@ class VerificationGateTests(unittest.TestCase):
         ):
             result = gate.verify()
         self.assertEqual(result['status'], 'FAIL_CLOSED')
-        self.assertEqual(result['steps'][-1]['status'], 'FAIL')
+        self.assertEqual(result['steps'][-2]['status'], 'FAIL')
 
     def test_pg_gate_rejects_automatic_actions_or_customer_claim(self):
         for change in ('automatic_actions', 'ready_for_customer_data'):
