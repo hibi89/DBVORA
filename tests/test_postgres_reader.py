@@ -64,6 +64,15 @@ class PostgresCatalogTests(unittest.TestCase):
         self.assertFalse(result['ready_for_customer_data'])
         self.assertEqual(result['cpu_usage'],'unavailable')
 
+    def test_like_pattern_is_bound_for_real_psycopg_percent_parser(self):
+        # psycopg interprets % in SQL templates, including inside literals.
+        # Keep a literal SELECT and bind the fixed exclusion pattern instead
+        # of embedding an unescaped SQL LIKE wildcard in its format string.
+        conn = Connection()
+        pg.inspect_catalog(conn)
+        self.assertIn("n.nspname NOT LIKE %s", pg.TABLES)
+        self.assertEqual(conn.calls[0][1], ("pg_toast%", pg.MAX_TABLES + 1))
+
     def test_queries_never_interpolate_table_names(self):
         conn=Connection(tables=[('public', 'x";DELETE FROM secrets;--',1,'r',1)])
         result=pg.inspect_catalog(conn)

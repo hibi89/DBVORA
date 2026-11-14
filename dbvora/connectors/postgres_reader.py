@@ -24,7 +24,7 @@ FROM pg_catalog.pg_class AS c
 JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
 WHERE c.relkind IN ('r', 'p', 'v', 'm')
   AND n.nspname NOT IN ('pg_catalog', 'information_schema')
-  AND n.nspname NOT LIKE 'pg_toast%'
+  AND n.nspname NOT LIKE %s
 ORDER BY n.nspname COLLATE "C", c.relname COLLATE "C"
 LIMIT %s
 """
@@ -87,7 +87,7 @@ def inspect_catalog(connection: Any, *, include_statistics: bool = False) -> dic
     if type(include_statistics) is not bool:
         raise PostgresInventoryError("INVALID_STATISTICS_OPTION")
     try:
-        catalog = _rows(connection, TABLES, MAX_TABLES + 1)
+        catalog = _rows(connection, TABLES, 'pg_toast%', MAX_TABLES + 1)
         if len(catalog) > MAX_TABLES:
             raise PostgresInventoryError("CATALOG_LIMIT")
         oids: dict[int, tuple[str, str]] = {}
