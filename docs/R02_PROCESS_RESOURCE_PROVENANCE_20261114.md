@@ -1,3 +1,6 @@
+## 2026-11-14 리소스 실측 검증 결과
+- 기능 source `2011d5fda1bd3d91b0010b5901fdf6149e0a31cc` [full Actions #43553401567](https://github.com/hibi89/DBVORA/actions/runs/43553401567) Ubuntu677PASS/0SKIP / Windows676PASS+1 OS-only SKIP, 0FAIL, both mandatory12/12 PASS. `python -m dbvora.process_resources --local-dir ABSOLUTE_EXISTING_DIRECTORY`는 실제 process CPU time / RSS / local volume total-free를 scope와 함께 내보낸다. HTTP/PG/고객 데이터 없이 유효 경로 한정. 소유자 Win10 실기기와 remote PG server CPU/RAM은 여전히 NOT TESTED/UNAVAILABLE.
+
 # DBVORA process/volume resource provenance, 2026-11-14 KST
 
 R02 final requirement: measured CPU/RAM/disk, no made-up per-database metrics.

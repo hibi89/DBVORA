@@ -1,3 +1,7 @@
+## 2026-11-14 R02 리소스 최종설계 대조 및 확증
+- `dbvora.process_resources.observe(explicit_local_directory)`: **DBVORA Python 프로세스**의 실제 누적 CPU time ns (`time.process_time_ns`), Linux /proc/self/statm 또는 Windows PSAPI 현재 RSS, 선택한 로컬 디렉터리가 속한 **파일시스템**의 실제 total/free 바이트 (`shutil.disk_usage`). 모든 측정 scope·provenance 표기, null 시 unavailable. **DB/PG 서버의 CPU/메모리 사용량 또는 한 DB당 사용량이 아니며** 그런 지표는 null. 외부 패키지/네트워크/고객 데이터 추가0.
+- Windows2025/Ubuntu24.04 [source `2011d5fda1bd3d91b0010b5901fdf6149e0a31cc` 677개 발견·12/12 필수 통과](https://github.com/hibi89/DBVORA/actions/runs/43553401567), 각 676/677 PASS /0FAIL, Win POSIX-only SKIP1. 구매자 물리 Win10/11, 원격 PG 서버 system telemetry/호스트/장기 메트릭·판매 사용권/사용자 승인 미완료; R02 제안 가중15점은 사용자 미확정, 공식 P100 UNASSESSED·HOLD.
+
 ## 2026-11-14 R04 효율/성능 근거 추가
 - [정확 SHA `ff20658b2d9db099eea6386d354e90f5c0dc5264` Windows/Linux CI #43552745227](https://github.com/hibi89/DBVORA/actions/runs/43552745227): Linux671PASS/0FAIL; Windows670PASS/1 posix skip/0FAIL, 게이트 각각12/12PASS.
 - 동일 두 합성 SQLite 세대 ZIP, raw CAS v1, zlib CAS v2 **동일 SHA 복원** 상태에서 실제 단일 wall-clock 저장·복원 시간 추가. Linux (ZIP create/restore 15.261/7.168ms; zlib 19.920/8.137ms), Windows (ZIP86.893/47.808ms; zlib245.156/66.871ms). zlib 압축 CAS가 이 CI 시도에서 느린 편임을 확인했지만 로컬 CI 부하와 filesystem cache를 통제하지 않았으므로 속도 차이의 일반화/인수수용 금지.
