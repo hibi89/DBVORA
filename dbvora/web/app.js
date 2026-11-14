@@ -596,7 +596,8 @@ const POSTGRES_UI_ERRORS = {
   DRIVER_UNAVAILABLE: '선택적 PostgreSQL 드라이버가 설치되지 않았습니다.',
   CATALOG_LIMIT: '안전한 표시 한도를 넘는 PostgreSQL 카탈로그입니다.',
   INVALID_CATALOG: 'PostgreSQL 카탈로그 응답을 검증할 수 없습니다.',
-  PG_CATALOG_QUERY_FAILED: '읽기 전용 PostgreSQL 카탈로그 조회에 실패했습니다.'
+  PG_CATALOG_QUERY_FAILED: '읽기 전용 PostgreSQL 카탈로그 조회에 실패했습니다.',
+  INVALID_STATISTICS: 'PostgreSQL 통계를 검증할 수 없습니다.'
 };
 function pgSection(title, values) {
   const section = el('section', 'postgres-detail-section');
@@ -611,6 +612,7 @@ function pgSection(title, values) {
   return section;
 }
 function renderPostgresTable(table, selectedButton) {
+  selectedPostgresTable = table;
   const detail = $('postgres-detail');
   clear(detail);
   const heading = el('div', 'postgres-selected-table');
@@ -632,6 +634,8 @@ function renderPostgresTable(table, selectedButton) {
       ' (' + (fk.to_columns || []).join(', ') + ')';
   }) : [];
   detail.append(pgSection('외래 키', foreignKeys));
+  const statistics = postgresStatistics.get(postgresTableKey(table));
+  if (statistics) detail.append(pgSection('통계', postgresStatisticsLines(statistics)));
   for (const button of $('postgres-table-list').children) button.setAttribute('aria-pressed', button === selectedButton ? 'true' : 'false');
 }
 function renderPostgresCatalog(data) {
@@ -640,6 +644,14 @@ function renderPostgresCatalog(data) {
     throw new Error('PostgreSQL 메타데이터 응답을 검증할 수 없습니다.');
   }
   const list = $('postgres-table-list');
+  postgresCatalogTables = data.tables;
+  postgresStatistics = new Map();
+  postgresStatisticsObservedAt = null;
+  selectedPostgresTable = null;
+  $('postgres-stats-load').hidden = false;
+  $('postgres-stats-load').disabled = data.tables.length === 0;
+  $('postgres-stats-status').textContent = '통계 조회 전 · 명시적으로 요청해야 하며 추정치는 지연될 수 있습니다.';
+  $('postgres-stats-status').classList.toggle('is-error', false);
   clear(list);
   clear($('postgres-detail'));
   for (const table of data.tables) {
@@ -665,6 +677,13 @@ async function loadPostgresCatalog() {
   button.disabled = true;
   status.textContent = 'TLS 인증을 포함한 읽기 전용 메타데이터 조회 중…';
   status.classList.toggle('is-error', false);
+  $('postgres-stats-load').hidden = true;
+  $('postgres-stats-load').disabled = true;
+  postgresCatalogTables = [];
+  postgresStatistics = new Map();
+  postgresStatisticsObservedAt = null;
+  selectedPostgresTable = null;
+  $('postgres-stats-status').textContent = '통계 조회 전 · 명시적으로 요청해야 하며 추정치는 지연될 수 있습니다.';
   clear($('postgres-table-list'));
   clear($('postgres-detail'));
   const controller = new AbortController();
@@ -694,6 +713,119 @@ async function loadPostgresCatalog() {
     button.disabled = false;
   }
 }
+// PostgreSQL estimates and storage metrics require their own explicit click.
+let postgresCatalogTables = [];
+let postgresStatistics = new Map();
+let postgresStatisticsObservedAt = null;
+let postgresStatsRequestPending = false;
+let selectedPostgresTable = null;
+$('postgres-stats-load').hidden = true;
+$('postgres-stats-load').disabled = true;
+
+function postgresTableKey(table) {
+  return JSON.stringify([table.schema, table.name]);
+}
+function formatPgCounter(value) {
+  return Number.isSafeInteger(value) && value >= 0
+    ? value.toLocaleString('en-US') : '정밀 표시 불가';
+}
+function postgresStatisticsLines(statistics) {
+  if (!statistics || statistics.status !== 'observed') {
+    const reason = statistics && statistics.reason;
+    const explanation = reason === 'pg_statistics_unavailable'
+      ? '권한 또는 PostgreSQL 통계 뷰에서 사용할 수 없습니다.'
+      : reason === 'relation_not_in_statistics_view'
+        ? '이 관계 유형은 pg_stat_user_tables 통계 범위 밖입니다.'
+        : '현재 통계를 사용할 수 없습니다.';
+    return [explanation, '수치는 표시하지 않습니다. 사용 불가를 0으로 대체하지 않습니다.'];
+  }
+  return [
+    '추정 live rows: ' + formatPgCounter(statistics.estimated_live_rows) +
+      ' · pg_stat_user_tables · 정확한 행 수 아님',
+    '추정 dead rows: ' + formatPgCounter(statistics.estimated_dead_rows) +
+      ' · pg_stat_user_tables · 정확한 행 수 아님',
+    'Heap: ' + (Number.isSafeInteger(statistics.heap_bytes) && statistics.heap_bytes >= 0
+      ? formatBytes(statistics.heap_bytes) : '정밀 표시 불가') + ' · pg_relation_size',
+    'Indexes: ' + (Number.isSafeInteger(statistics.index_bytes) && statistics.index_bytes >= 0
+      ? formatBytes(statistics.index_bytes) : '정밀 표시 불가') + ' · pg_indexes_size',
+    '통계 추정치는 갱신이 지연될 수 있습니다.'
+  ];
+}
+function rerenderSelectedPostgresTable() {
+  if (!selectedPostgresTable) return;
+  const selectedButton = Array.from($('postgres-table-list').children)
+    .find(button => button.getAttribute('aria-pressed') === 'true') || null;
+  renderPostgresTable(selectedPostgresTable, selectedButton);
+}
+async function loadPostgresStatistics() {
+  if (postgresStatsRequestPending || !postgresCatalogTables.length) return;
+  const button = $('postgres-stats-load');
+  const status = $('postgres-stats-status');
+  postgresStatsRequestPending = true;
+  button.disabled = true;
+  status.textContent = 'PostgreSQL 통계 조회 중…';
+  status.classList.toggle('is-error', false);
+  postgresStatistics = new Map();
+  postgresStatisticsObservedAt = null;
+  rerenderSelectedPostgresTable();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  try {
+    const response = await fetch('/api/postgres/statistics', {
+      method: 'GET', cache: 'no-store', credentials: 'same-origin', signal: controller.signal
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      const code = data && data.error && data.error.code;
+      status.textContent = POSTGRES_UI_ERRORS[code] || 'PostgreSQL 통계를 사용할 수 없습니다.';
+      status.classList.toggle('is-error', true);
+      return;
+    }
+    if (!data || data.contract !== 'dbvora.pg_statistics.v1' ||
+        !Array.isArray(data.tables) || data.tables.length > 300 ||
+        typeof data.observed_at !== 'string' || !Number.isFinite(Date.parse(data.observed_at))) {
+      throw new Error('INVALID_STATISTICS_RESPONSE');
+    }
+    const allowed = new Set(postgresCatalogTables.map(postgresTableKey));
+    const next = new Map();
+    for (const row of data.tables) {
+      if (!row || typeof row.schema !== 'string' || typeof row.name !== 'string' ||
+          !allowed.has(postgresTableKey(row)) || !row.statistics ||
+          !['observed', 'unavailable'].includes(row.statistics.status)) {
+        throw new Error('INVALID_STATISTICS_RESPONSE');
+      }
+      if (row.statistics.status === 'observed' &&
+          (row.statistics.row_count_provenance !== 'pg_stat_user_tables_estimate_not_exact' ||
+           row.statistics.storage_provenance !== 'pg_relation_size_and_pg_indexes_size')) {
+        throw new Error('INVALID_STATISTICS_RESPONSE');
+      }
+      if (row.statistics.status === 'observed' &&
+          ['estimated_live_rows', 'estimated_dead_rows', 'heap_bytes', 'index_bytes'].some(key =>
+            !Number.isFinite(row.statistics[key]) || !Number.isInteger(row.statistics[key]) || row.statistics[key] < 0)) {
+        throw new Error('INVALID_STATISTICS_RESPONSE');
+      }
+      next.set(postgresTableKey(row), row.statistics);
+    }
+    postgresStatistics = next;
+    postgresStatisticsObservedAt = data.observed_at;
+    rerenderSelectedPostgresTable();
+    const timestamp = new Date(postgresStatisticsObservedAt).toLocaleString('ko-KR');
+    status.textContent = '조회 시각 ' + timestamp +
+      ' · pg_stat_user_tables는 추정치이며 지연될 수 있음 · 조회 시각은 통계 갱신 시각이 아님';
+    status.classList.toggle('is-error', false);
+  } catch (error) {
+    status.textContent = error && error.name === 'AbortError'
+      ? 'PostgreSQL 통계 요청 시간이 초과되었습니다. 다시 시도하세요.'
+      : 'PostgreSQL 통계 응답을 검증하지 못했습니다. 다시 시도하세요.';
+    status.classList.toggle('is-error', true);
+  } finally {
+    clearTimeout(timeout);
+    postgresStatsRequestPending = false;
+    button.disabled = false;
+  }
+}
+$('postgres-stats-load').addEventListener('click', loadPostgresStatistics);
+
 $('postgres-load').addEventListener('click', loadPostgresCatalog);
 
 $('refresh').addEventListener('click', refresh);

@@ -36,7 +36,7 @@ async function verify() {
     'tables','detail','edges','diagram','table-filter','filter-status','filter-empty',
     'database-selector','database-list','workspace-summary','growth-status','growth-scope',
     'growth-history','growth-trend','growth-samples','persistent-growth-status',
-    'persistent-growth-trend','persistent-growth-samples','postgres-load','postgres-status','postgres-table-list','postgres-detail'
+    'persistent-growth-trend','persistent-growth-samples','postgres-load','postgres-stats-load','postgres-status','postgres-stats-status','postgres-table-list','postgres-detail'
   ].map(id => [id, new Element('div',meter)]));
   const tables = Array.from({length:1000},(_,i)=>({
     name:`synthetic_table_${String(i).padStart(4,'0')}`,

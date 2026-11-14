@@ -112,8 +112,11 @@ def verify() -> dict:
                 browser = playwright.chromium.launch()
                 page = browser.new_page(viewport={'width': 1280, 'height': 900})
                 pg_requests = []
+                stats_requests = []
                 page.on('request', lambda request: pg_requests.append(request.url)
                         if request.url.endswith('/api/postgres') else None)
+                page.on('request', lambda request: stats_requests.append(request.url)
+                        if request.url.endswith('/api/postgres/statistics') else None)
                 page.goto('http://127.0.0.1:' + str(port) + '/', wait_until='domcontentloaded')
                 if pg_requests:
                     raise AssertionError('POSTGRES_LOOKUP_MUST_BE_EXPLICIT_AFTER_RESTART')
@@ -129,7 +132,43 @@ def verify() -> dict:
                     raise AssertionError('POSTGRES_DETAIL_MISSING_FK_METADATA')
                 if CANARY in body or 'synthetic-user.invalid' in body or dsn in body:
                     raise AssertionError('POSTGRES_ROW_OR_DSN_LEAK')
-                checks.extend(['real_tls_catalog_and_foreign_key_ui', 'no_rows_or_dsn_in_browser'])
+                if stats_requests or not page.locator('#postgres-stats-load').is_visible():
+                    raise AssertionError('STATISTICS_LOOKUP_MUST_BE_EXPLICIT')
+                stats_responses = []
+                page.on('response', lambda response: stats_responses.append(response)
+                        if response.url.endswith('/api/postgres/statistics') else None)
+                page.locator('#postgres-stats-load').click()
+                page.locator('#postgres-stats-status').filter(has_text='조회 시각').wait_for(timeout=30000)
+                if len(stats_requests) != 1 or len(stats_responses) != 1:
+                    raise AssertionError('STATISTICS_REQUEST_COUNT_INVALID')
+                stats_payload = stats_responses[0].json()
+                stats_json = json.dumps(stats_payload, sort_keys=True)
+                if stats_payload.get('contract') != 'dbvora.pg_statistics.v1' or not stats_payload.get('statistics_may_lag'):
+                    raise AssertionError('STATISTICS_PROVENANCE_CONTRACT_INVALID')
+                if CANARY in stats_json or dsn in stats_json or 'columns' in stats_json:
+                    raise AssertionError('STATISTICS_API_ROW_COLUMN_OR_DSN_LEAK')
+                stats_text = page.locator('#postgres-detail').inner_text()
+                events_stats = next((row['statistics'] for row in stats_payload['tables']
+                                     if row['schema'] == 'public' and row['name'] == 'events'), None)
+                if events_stats is None:
+                    raise AssertionError('SYNTHETIC_EVENT_STATS_MISSING')
+                if events_stats.get('status') == 'observed':
+                    if 'pg_stat_user_tables' not in stats_text or 'pg_relation_size' not in stats_text or 'pg_indexes_size' not in stats_text:
+                        raise AssertionError('OBSERVED_STATS_PROVENANCE_NOT_RENDERED')
+                    checks.append('estimated_rows_and_measured_storage_provenance')
+                else:
+                    if '통계를 사용할 수 없습니다.' not in stats_text or '0으로 대체하지 않습니다.' not in stats_text:
+                        raise AssertionError('UNAVAILABLE_STATS_FABRICATED_AS_ZERO')
+                    checks.append('unavailable_statistics_without_fabricated_zero')
+                page.locator('#postgres-table-list button').filter(has_text='public.event_view').click()
+                view_text = page.locator('#postgres-detail').inner_text()
+                if '통계 범위 밖' not in view_text or '0으로 대체하지 않습니다.' not in view_text:
+                    raise AssertionError('VIEW_STATS_LIMIT_NOT_SHOWN')
+                body = page.locator('body').inner_text()
+                if CANARY in body or 'synthetic-user.invalid' in body or dsn in body:
+                    raise AssertionError('STATISTICS_ROW_OR_DSN_LEAK')
+                checks.extend(['real_tls_catalog_and_foreign_key_ui', 'no_rows_or_dsn_in_browser',
+                               'explicit_stats_may_lag_and_view_unavailable'])
                 page.set_viewport_size({'width': 390, 'height': 844})
                 page.wait_for_timeout(100)
                 for selector in ('.postgres-panel', '.postgres-browser', '#postgres-load',

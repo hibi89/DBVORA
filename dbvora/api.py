@@ -167,7 +167,8 @@ def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], 
     @app.get('/api/postgres')
     async def postgres_catalog(request: Request):
         """Explicit, bounded TLS/read-only catalog lookup; never returns table rows."""
-        if request.query_params or await request.body():
+        if (request.query_params or request.headers.get('content-length', '0') not in ('0', '')
+                or request.headers.get('transfer-encoding')):
             return JSONResponse(status_code=422, content={
                 'error': {'code': 'INVALID_QUERY', 'message': 'This metadata endpoint accepts no query parameters.'}})
         if not postgres_dsn_valid:
@@ -191,6 +192,57 @@ def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], 
             status = 503 if exc.code == 'DRIVER_UNAVAILABLE' else 502 if exc.code.startswith('PG_') else 422
             return JSONResponse(status_code=status, content={'error': {
                 'code': exc.code, 'message': messages.get(exc.code, 'PostgreSQL metadata is unavailable.')}})
+
+    @app.get('/api/postgres/statistics')
+    async def postgres_statistics(request: Request):
+        """Separate explicit read-only request for provenance-aware PG estimates."""
+        if (request.query_params or request.headers.get('content-length', '0') not in ('0', '')
+                or request.headers.get('transfer-encoding')):
+            return JSONResponse(status_code=422, content={
+                'error': {'code': 'INVALID_QUERY', 'message': 'This statistics endpoint accepts no query parameters.'}})
+        if not postgres_dsn_valid:
+            return JSONResponse(status_code=422, content={
+                'error': {'code': 'POSTGRES_CONFIG_INVALID', 'message': 'Server-side PostgreSQL configuration is invalid.'}})
+        if postgres_dsn is None:
+            return JSONResponse(status_code=404, content={
+                'error': {'code': 'POSTGRES_DISABLED', 'message': 'PostgreSQL is not configured for this local viewer.'}})
+        try:
+            catalog = inspect_postgres(postgres_dsn, require_tls=True, include_statistics=True)
+        except PostgresInventoryError as exc:
+            messages = {
+                'INVALID_DSN': 'Server-side PostgreSQL configuration is invalid.',
+                'TLS_REQUIRED': 'Verified TLS is required for PostgreSQL statistics.',
+                'DRIVER_UNAVAILABLE': 'The optional PostgreSQL driver is not installed.',
+                'CATALOG_LIMIT': 'The PostgreSQL catalog exceeds the safe statistics limit.',
+                'INVALID_CATALOG': 'PostgreSQL returned an invalid catalog response.',
+                'INVALID_STATISTICS': 'PostgreSQL returned invalid statistics.',
+                'PG_CONNECTION_FAILED': 'PostgreSQL TLS verification or connection failed. Check the server certificate and availability.',
+                'PG_CATALOG_QUERY_FAILED': 'The read-only PostgreSQL statistics query failed.',
+            }
+            status = 503 if exc.code == 'DRIVER_UNAVAILABLE' else 502 if exc.code.startswith('PG_') else 422
+            return JSONResponse(status_code=status, content={'error': {
+                'code': exc.code, 'message': messages.get(exc.code, 'PostgreSQL statistics are unavailable.')}})
+        # Return only allowlisted relation labels and statistics. Catalog column
+        # lists and all table rows are excluded from this endpoint response.
+        tables = []
+        for table in catalog['tables']:
+            stats = table.get('statistics', {})
+            if not isinstance(stats, dict) or stats.get('status') not in ('observed', 'unavailable'):
+                stats = {'status': 'unavailable', 'reason': 'statistics_not_reported'}
+            allowed = ('status', 'reason', 'estimated_live_rows', 'estimated_dead_rows',
+                       'heap_bytes', 'index_bytes', 'row_count_provenance', 'storage_provenance')
+            tables.append({
+                'schema': table['schema'], 'name': table['name'],
+                'relation_kind': table['relation_kind'],
+                'statistics': {key: stats[key] for key in allowed if key in stats},
+            })
+        return JSONResponse({
+            'contract': 'dbvora.pg_statistics.v1',
+            'observed_at': catalog['observed_at'],
+            'statistics_may_lag': True,
+            'freshness_note': 'pg_stat_user_tables estimates may lag; observed_at is request time, not statistics refresh time.',
+            'tables': tables,
+        })
 
     @app.get('/health')
     async def health():

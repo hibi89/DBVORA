@@ -29,6 +29,7 @@ class PostgreSQLApiTests(unittest.TestCase):
                 response = client.get('/api/postgres')
                 self.assertEqual(response.status_code, 404)
                 self.assertEqual(response.json()['error']['code'], 'POSTGRES_DISABLED')
+                self.assertEqual(client.get('/api/postgres/statistics').status_code, 404)
                 self.assertNotIn('/api/postgres', page.text)
                 self.assertEqual(client.post('/api/postgres').status_code, 405)
                 inspect.assert_not_called()
@@ -50,6 +51,49 @@ class PostgreSQLApiTests(unittest.TestCase):
         self.assertNotIn(dsn, response.text)
         self.assertNotIn('NEVER_RETURN_THIS', response.text)
         self.assertNotIn(str(self.db), response.text)
+        self.assertNotIn('SYNTHETIC_ROW_MUST_NEVER_BE_EXPORTED', response.text)
+
+    def test_statistics_are_a_separate_explicit_allowlisted_metadata_response(self):
+        dsn = 'host=synthetic.invalid password=NEVER_RETURN_THIS'
+        catalog = {
+            'contract_version': 'dbvora.pg_catalog.v1', 'engine': 'postgresql',
+            'observed_at': '2026-11-15T00:00:00Z',
+            'tables': [
+                {'schema': 'public', 'name': 'synthetic_table', 'relation_kind': 'r',
+                 'columns': [{'name': 'private_column_name'}], 'indexes': [],
+                 'primary_key_columns': [], 'foreign_keys': [],
+                 'statistics': {'status': 'observed', 'estimated_live_rows': 1,
+                    'estimated_dead_rows': 0, 'heap_bytes': 8192, 'index_bytes': 4096,
+                    'row_count_provenance': 'pg_stat_user_tables_estimate_not_exact',
+                    'storage_provenance': 'pg_relation_size_and_pg_indexes_size'}},
+                {'schema': 'public', 'name': 'synthetic_view', 'relation_kind': 'v',
+                 'columns': [], 'indexes': [], 'primary_key_columns': [], 'foreign_keys': [],
+                 'statistics': {'status': 'unavailable', 'reason': 'relation_not_in_statistics_view'}},
+            ],
+        }
+        with patch('dbvora.api.inspect_postgres', return_value=catalog) as inspect:
+            with self.client(dsn) as client:
+                page = client.get('/')
+                self.assertEqual(page.status_code, 200)
+                self.assertNotIn('/api/postgres/statistics', page.text)
+                self.assertEqual(client.get('/api/postgres/statistics?table=synthetic_table').status_code, 422)
+                self.assertEqual(client.request('GET', '/api/postgres/statistics',
+                                                json={'dsn': dsn}).status_code, 422)
+                inspect.assert_not_called()
+                response = client.get('/api/postgres/statistics')
+        self.assertEqual(response.status_code, 200)
+        inspect.assert_called_once_with(dsn, require_tls=True, include_statistics=True)
+        result = response.json()
+        self.assertEqual(result['contract'], 'dbvora.pg_statistics.v1')
+        self.assertTrue(result['statistics_may_lag'])
+        self.assertIn('not statistics refresh time', result['freshness_note'])
+        self.assertEqual(result['tables'][0]['statistics']['estimated_live_rows'], 1)
+        self.assertEqual(result['tables'][1]['statistics'],
+                         {'status': 'unavailable', 'reason': 'relation_not_in_statistics_view'})
+        self.assertNotIn('columns', response.text)
+        self.assertNotIn('private_column_name', response.text)
+        self.assertNotIn(dsn, response.text)
+        self.assertNotIn('NEVER_RETURN_THIS', response.text)
         self.assertNotIn('SYNTHETIC_ROW_MUST_NEVER_BE_EXPORTED', response.text)
 
     def test_connection_failure_is_sanitized_for_recoverable_ui(self):

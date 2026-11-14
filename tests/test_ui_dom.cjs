@@ -19,7 +19,7 @@ class Element {
   getBoundingClientRect() { return {left: 100, top: 100, width: 120, height: 100}; }
   get classList() { return {toggle: (name, yes) => { if (yes && !this.className.includes(name)) this.className += ' ' + name; }}; }
 }
-const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','database-topology','workspace-summary','growth-status','growth-scope','growth-history','growth-trend','growth-samples','persistent-growth-status','persistent-growth-trend','persistent-growth-samples','postgres-load','postgres-status','postgres-table-list','postgres-detail'].map(id => [id, new Element('div')]));
+const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','database-topology','workspace-summary','growth-status','growth-scope','growth-history','growth-trend','growth-samples','persistent-growth-status','persistent-growth-trend','persistent-growth-samples','postgres-load','postgres-stats-load','postgres-status','postgres-stats-status','postgres-table-list','postgres-detail'].map(id => [id, new Element('div')]));
 ids.diagram.getBoundingClientRect = () => ({left: 0, top: 0, width: 800, height: 600});
 const doc = {getElementById: id => ids[id], createElement: tag => new Element(tag), createElementNS: (_, tag) => new Element(tag)};
 const marker = '<img src=x onerror=alert(7)>';
@@ -35,6 +35,9 @@ let failNextFetch = false;
 let storageFetches = 0;
 let observationFetches = 0;
 let postgresFetches = 0;
+let postgresStatsFetches = 0;
+const pgStatsObserved = {contract:'dbvora.pg_statistics.v1',observed_at:'2026-11-15T00:00:00Z',statistics_may_lag:true,tables:[{schema:'public',name:'events',relation_kind:'r',statistics:{status:'observed',estimated_live_rows:1,estimated_dead_rows:0,heap_bytes:8192,index_bytes:4096,row_count_provenance:'pg_stat_user_tables_estimate_not_exact',storage_provenance:'pg_relation_size_and_pg_indexes_size'}}]};
+const pgStatsUnavailable = {contract:'dbvora.pg_statistics.v1',observed_at:'2026-11-15T00:00:10Z',statistics_may_lag:true,tables:[{schema:'public',name:'events',relation_kind:'r',statistics:{status:'unavailable',reason:'pg_statistics_unavailable'}}]};
 const postgresInventory = {contract_version:'dbvora.pg_catalog.v1',engine:'postgresql',tables:[{schema:'public',name:'events',relation_kind:'r',columns:[{name:'user_id',type:'bigint',nullable_declared:false}],primary_key_columns:['id'],indexes:[{name:'idx_events_user_id',unique:false,partial:false,key_columns:['user_id']}],foreign_keys:[{constraint:'events_user_id_fkey',from_columns:['user_id'],to_schema:'public',to_table:'users',to_columns:['id']}]}]};
 let currentInventory = data;
 let currentObservations = {
@@ -51,6 +54,10 @@ const sandbox = {
   requestAnimationFrame: fn => fn(),
   fetch: async (url) => {
     if (failNextFetch) { failNextFetch = false; throw new TypeError('Failed to fetch'); }
+    if (url === '/api/postgres/statistics') {
+      const result = postgresStatsFetches++ === 0 ? pgStatsObserved : pgStatsUnavailable;
+      return {ok:true,status:200,json: async () => result};
+    }
     if (url === '/api/postgres') {
       postgresFetches++;
       return {ok:true,status:200,json: async () => postgresInventory};
@@ -107,6 +114,20 @@ setImmediate(async () => {
     assert.ok(ids['postgres-detail'].textContent.includes('user_id'));
     assert.ok(ids['postgres-detail'].textContent.includes('users'));
     assert.ok(!ids['postgres-detail'].textContent.includes('SYNTHETIC_ROW_MUST_NEVER_BE_EXPORTED'));
+    assert.equal(postgresStatsFetches, 0, 'statistics must remain opt-in after catalog lookup');
+    assert.equal(ids['postgres-stats-load'].hidden, false);
+    await ids['postgres-stats-load'].events.click();
+    assert.equal(postgresStatsFetches, 1, 'statistics request requires its own explicit click');
+    assert.ok(ids['postgres-stats-status'].textContent.includes('조회 시각'));
+    assert.ok(ids['postgres-detail'].textContent.includes('추정 live rows: 1'));
+    assert.ok(ids['postgres-detail'].textContent.includes('pg_stat_user_tables'));
+    assert.ok(ids['postgres-detail'].textContent.includes('8 KB'));
+    assert.ok(ids['postgres-detail'].textContent.includes('pg_indexes_size'));
+    await ids['postgres-stats-load'].events.click();
+    assert.ok(ids['postgres-detail'].textContent.includes('권한 또는 PostgreSQL 통계 뷰에서 사용할 수 없습니다.'));
+    assert.ok(ids['postgres-detail'].textContent.includes('0으로 대체하지 않습니다.'));
+    assert.ok(!ids['postgres-detail'].textContent.includes('추정 live rows: 0'));
+    assert.ok(!ids['postgres-detail'].textContent.includes('Heap: 0 B'));
     const getMeasure = () => ids.detail.children.flatMap(root => {
       const items = [];
       const walk = node => { if (node.className.split(/\s+/).includes('storage-measure')) items.push(node);

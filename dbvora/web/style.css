@@ -52,3 +52,12 @@
   .postgres-selected-table { grid-column:auto; }
   .postgres-load { width:100%; white-space:normal; }
 }
+
+.postgres-actions { display:flex; flex-direction:column; align-items:stretch; gap:8px; flex:0 0 auto; min-width:190px; }
+.postgres-stats-load { border-color:rgba(111,226,193,.35); }
+.postgres-stats-status { color:var(--muted, #91a0b5); }
+@media (max-width:720px) {
+  .postgres-actions { width:100%; min-width:0; }
+}
+
+.postgres-stats-load[hidden] { display:none; }

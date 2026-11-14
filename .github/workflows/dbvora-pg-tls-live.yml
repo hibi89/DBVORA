@@ -12,6 +12,7 @@ on:
       - "dbvora/api.py"
       - "dbvora/serve.py"
       - "dbvora/web/**"
+      - "dbvora/connectors/postgres_statistics.py"
       - "scripts/pg_tls_ui_http_e2e.py"
       - "tests/test_postgres_api.py"
       - ".github/workflows/dbvora-pg-tls-live.yml"
@@ -97,6 +98,8 @@ jobs:
           CREATE VIEW public.event_view AS SELECT user_id FROM public.events;
           INSERT INTO public.users VALUES (1, 'synthetic-user.invalid');
           INSERT INTO public.events VALUES (8, 1, 'SYNTHETIC_ROW_MUST_NEVER_BE_EXPORTED');
+          ANALYZE public.users;
+          ANALYZE public.events;
           GRANT CONNECT ON DATABASE dbvora_test TO dbvora_reader;
           GRANT USAGE ON SCHEMA public TO dbvora_reader;
           GRANT SELECT ON ALL TABLES IN SCHEMA public TO dbvora_reader;
