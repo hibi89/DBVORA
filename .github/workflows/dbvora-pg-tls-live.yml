@@ -15,6 +15,8 @@ on:
       - "dbvora/connectors/postgres_statistics.py"
       - "scripts/pg_tls_ui_http_e2e.py"
       - "tests/test_postgres_api.py"
+      - "scripts/dependency_sbom.py"
+      - "tests/test_dependency_sbom.py"
       - ".github/workflows/dbvora-pg-tls-live.yml"
   workflow_dispatch:
 
@@ -44,6 +46,8 @@ jobs:
         run: |
           python -m playwright install-deps chromium
           python -m playwright install chromium
+      - name: Generate metadata-only Python dependency SBOM candidate
+        run: python -m scripts.dependency_sbom --profile "ui,postgres,test + Playwright 1.56.0" --output "$RUNNER_TEMP/dbvora-python-dependency-sbom.json"
       - name: Generate ephemeral test-only localhost TLS certificate
         shell: bash
         run: |
@@ -114,6 +118,14 @@ jobs:
           export DBVORA_SYNTHETIC_BAD_CA="$DBVORA_PG_TLS_DIR/wrong.crt"
           python -m scripts.pg_tls_local_acceptance
           python -m scripts.pg_tls_ui_http_e2e
+      - name: Upload metadata-only Python dependency SBOM candidate
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbvora-python-sbom-${{ github.sha }}
+          path: ${{ runner.temp }}/dbvora-python-dependency-sbom.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Destroy ephemeral container and certificate files
         if: always()
         shell: bash

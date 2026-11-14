@@ -35,7 +35,7 @@ class PostgreSQLApiTests(unittest.TestCase):
                 inspect.assert_not_called()
 
     def test_explicit_lookup_is_verified_tls_read_only_and_secret_free(self):
-        dsn = 'host=synthetic.invalid password=NEVER_RETURN_THIS'
+        dsn = 'host=synthetic.invalid password=NEVER_RETURN_THIS sslrootcert=/private/runner/certs/NEVER_RETURN_CA.pem'
         catalog = {'contract_version': 'dbvora.pg_catalog.v1', 'engine': 'postgresql',
                    'tables': [{'schema': 'public', 'name': 'synthetic_table',
                                'relation_kind': 'r', 'columns': [], 'indexes': [],
@@ -50,6 +50,8 @@ class PostgreSQLApiTests(unittest.TestCase):
         inspect.assert_called_once_with(dsn, require_tls=True, include_statistics=False)
         self.assertNotIn(dsn, response.text)
         self.assertNotIn('NEVER_RETURN_THIS', response.text)
+        self.assertNotIn('NEVER_RETURN_CA.pem', response.text)
+        self.assertNotIn('/private/runner/certs', response.text)
         self.assertNotIn(str(self.db), response.text)
         self.assertNotIn('SYNTHETIC_ROW_MUST_NEVER_BE_EXPORTED', response.text)
 
@@ -97,7 +99,7 @@ class PostgreSQLApiTests(unittest.TestCase):
         self.assertNotIn('SYNTHETIC_ROW_MUST_NEVER_BE_EXPORTED', response.text)
 
     def test_connection_failure_is_sanitized_for_recoverable_ui(self):
-        dsn = 'host=synthetic.invalid password=NEVER_RETURN_THIS'
+        dsn = 'host=synthetic.invalid password=NEVER_RETURN_THIS sslrootcert=/private/runner/certs/NEVER_RETURN_CA.pem'
         with patch('dbvora.api.inspect_postgres',
                    side_effect=PostgresInventoryError('PG_CONNECTION_FAILED')):
             with self.client(dsn) as client:
@@ -106,6 +108,8 @@ class PostgreSQLApiTests(unittest.TestCase):
         self.assertEqual(response.json()['error']['code'], 'PG_CONNECTION_FAILED')
         self.assertNotIn(dsn, response.text)
         self.assertNotIn('NEVER_RETURN_THIS', response.text)
+        self.assertNotIn('NEVER_RETURN_CA.pem', response.text)
+        self.assertNotIn('/private/runner/certs', response.text)
 
 
 if __name__ == '__main__':

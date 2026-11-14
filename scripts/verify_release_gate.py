@@ -81,6 +81,7 @@ REQUIRED = (
     "dbvora/archive/cas_audit.py", "tests/test_cas_audit.py",
     "scripts/incremental_cli_gate.py",
     "scripts/benchmark_synthetic_archives.py", "tests/test_benchmark_synthetic_archives.py",
+    "scripts/dependency_sbom.py", "tests/test_dependency_sbom.py",
     "README.md", "tests/test_performance_claim_boundaries.py",
 )
 
