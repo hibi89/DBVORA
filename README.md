@@ -1,3 +1,5 @@
+> **현행 저장소 공개범위 안내(2026-11-14 KST)**: GitHub에서 `hibi89/DBVORA`는 현재 **Public**으로 관측된다. 아래 본문의 `Private`는 이전 상태의 역사적 문구다. 공개 여부·권리 변경은 소유자 승인사항이며 라이선스·NOTICE 및 고객 배포 승인 전까지 **판매 RELEASE HOLD**, 코드가 공개라는 사실이 무제한 재사용 허락을 의미하지 않는다. 최신 릴리스 게이트 증거는 `STATUS.md`, `HANDOFF.md`를 참조.
+
 # DBVORA
 
 > **2026-10-28 USER CANONICAL HAE INTEGRATION:** [HAE 4-필수-제품 생태계 정본 (PRIVATE)](https://github.com/hibi89/HAE/blob/main/docs/ECOSYSTEM_CANONICAL.md) — HAE 자연어·단계별 고객 안내 → LA 플로우/실제 업무 데이터 DB 쓰기 → SOVIA 위험·실행 감사 → DBVORA 승인된 DB의 구조·크기·상태·검증 백업/복구 → HAE 통합 결과. **DBVORA는 전체 HAE 완성의 필수 통합 요소이면서 독립 제품**이다. 업무 데이터 실제 저장은 LA/승인된 데이터 어댑터 책임이고 DBVORA는 관리·가시화·보존을 맡는다. 현재 전체 연결은 목표일 뿐 실현 완료 아님. 다른 REA_APP/SMAX/코드체커 등은 외곽 확장 모듈.

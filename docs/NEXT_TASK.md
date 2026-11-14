@@ -1,3 +1,5 @@
+> **[2026-11-14 KST — Chromium 실제 localhost Windows+Ubuntu 8/8 통과]** 추가 클라우드 Windows·Linux 실제 Chromium HTTP 8/8×2 SUCCESS, `a982508160a3085e12e3663f1df9979dac4e9cae`, [Actions](https://github.com/hibi89/DBVORA/actions/runs/43544065399). 다음 GPT 작업은 상업 종속성/권리/지원 안내 및 최종설계 추적표 갱신, 일반 소비자 실제 Windows 실기기는 **2026-11-14 13:00 KST 통합 사용자 알림**까지 사용자 요청 보류. 실 PG TLS, 물리 전원중단, 사용자 Win10, 고객 인수·상업권리/가격·등록은 미검증. P100 [작업중]/RELEASE HOLD, 공식 UNASSESSED.
+
 ## 2026-11-14 KST — 최신 병렬 브라우저 양OS 2/2 PASS
 - 코드 SHA eab26716e25e8c55b120d295110be2f754b6aa5e, docs full-gate c730c6912dc3635a8f8a56504116b9cbed5039a3 [2/2 PASS](https://github.com/hibi89/DBVORA/actions/runs/43543990300), 브라우저 workflow SHA a982508160a3085e12e3663f1df9979dac4e9cae [Win/Linux 2/2, 각 8/8 PASS](https://github.com/hibi89/DBVORA/actions/runs/43544065399), 합성 화면 PNG 4장 (7일 아티팩트).
 - **NEXT 미완료:** 소유자 Windows10 실사용 1회 [QA](OWNER_WINDOWS_QUICK_QA_20261114.md), PG TLS 합성 실제 서버 승인, 배포·라이선스/가격/지원/고객 승인, 공식 최종설계 가중치 수용. [작업중]·공식 UNASSESSED·RELEASE HOLD 유지.

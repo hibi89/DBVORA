@@ -50,3 +50,10 @@
 - Windows Server 2025 Python3.11 Python617 discovered/616 PASS·0 FAIL·1 POSIX-only SKIP + 10/10 release gate PASS. Ubuntu24.04 Python3.11 Python617 PASS·0 FAIL·0 SKIP + 10/10 release gate PASS. [Actions](https://github.com/hibi89/DBVORA/actions/runs/43543367368).
 - 실제 Chromium localhost UI/API+synthetic SQLite: 클릭·FK·모바일·XSS·origin/host/HTTP method guard 등 8/8 PASS. 2개 합성 UI PNG(7일 임시 보존) [Actions](https://github.com/hibi89/DBVORA/actions/runs/43543367417).
 - 이후 미완료: 사용자 Win10 실기기 [단일 QA](OWNER_WINDOWS_QUICK_QA_20261114.md), 실 PG TLS verify-full, 물리 power-cut, 배포 라이선스/지원/유통 승낙, 최종설계 100점 승인 가중치. 현재 UNASSESSED, 과거 내부95 이력 별도, [작업중]/RELEASE HOLD. 실제 크몽 등록0. 고객/secret 데이터 미사용.
+
+
+## 2026-11-14 추가 검증 — Windows/Ubuntu 실제 Chromium 통합
+- 기능/워크플로 exact SHA: `a982508160a3085e12e3663f1df9979dac4e9cae`. 이번 커밋은 기존 Linux 한 대에 한정했던 Chromium localhost 신뢰검사를 **무료 표준 Ubuntu24.04 + Windows2025** 매트릭스로 확장. 각 운영체제에서 합성 SQLite 실제 FastAPI HTTP와 실제 Chromium 렌더링 및 보안/모바일/출력 8개 조건 통과: **2/2 SUCCESS** [run 43544065399](https://github.com/hibi89/DBVORA/actions/runs/43544065399).
+- synthetic PNG 2개/OS는 Actions artifact로 7일 보존. 고객DB·인증·비밀·PG 라이브 접속·외부 서비스 배포 안 함.
+- 제품 코드는 기존 full release gate [run 43543990300](https://github.com/hibi89/DBVORA/actions/runs/43543990300)에서 617 Python × Windows/Linux, 필수 10개 단계 각각 PASS. Chromium 브라우저 workflow 변경 자체는 프로그램 완성률 가중점수가 아니다.
+- **공식 100% 미달/UNASSESSED**: 실제 소유자 Windows10, 허가된 synthetic PostgreSQL verify-full TLS, 물리적 전원단절 및 신원보증, LICENSE/NOTICE/지원·환불·가격, 상품화 최종 승인과 전체 요구 수용 가중치 확정 필요. 13시 사용자 역할 통합 알림에 모음.

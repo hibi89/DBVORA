@@ -1,3 +1,5 @@
+> **[2026-11-14 KST — Chromium 실제 localhost Windows+Ubuntu 8/8 통과]** SHA `a982508160a3085e12e3663f1df9979dac4e9cae`에서 실제 Chromium localhost 8/8 × Windows2025+Ubuntu24.04 **2/2 SUCCESS** ([Actions](https://github.com/hibi89/DBVORA/actions/runs/43544065399)); 합성 screenshot 각2(만료 2026-11-21), 클라우드 외부 고객DB·비밀0. 이전 SHA `c730c6912dc3` full release 617 tests/필수10단계 ×2OS SUCCESS ([Actions](https://github.com/hibi89/DBVORA/actions/runs/43543990300)); 이후 변경은 브라우저 워크플로와 문서, 제품 기능 바이트 불변. 사용자 개입은 2026-11-14 13:00 KST 통합 알림(FFAX/DATA2WEB/DBVORA)에 모아 전달; PC 실제 Win10 QA와 상업권리/라이선스/가격/실 PG 승인 이후에만 요청. 공식 UNASSESSED, 과거 내부95, [작업중]/RELEASE HOLD/크몽 미등록. 기존 10항 인수인계 그대로 유효하며 새로운 source/Actions가 우선.
+
 ## 2026-11-14 KST — 10항 후속 검증 인수인계 보정(앞선 10항 내용 유지)
 1. 목표·기술: DBVORA 사용자 확정 최종설계 P100/주말 단일 크몽 등록 준비, Python3.11/SQLite·PG·ZIP/ZSTD·로컬 UI.
 2. 완료·변경: source eab26716e25e8c55b120d295110be2f754b6aa5e 및 browser-only workflow a982508160a3085e12e3663f1df9979dac4e9cae; 실행 환경 Windows2025/Linux Ubuntu24.04 양측 browser Playwright Chromium 검증 경로 확보.

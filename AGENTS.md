@@ -12,7 +12,7 @@
 
 ## 역할과 단일 기준
 - 총괄: GPT-6 ChatGPT (설계·구현·수정·테스트·검수); 실제 소유·승인 주체: 사용자.
-- 단일 코드·버전 정본: Private hibi89/DBVORA. 원격 GitHub 브랜치와 SHA 직접 확인.
+- 단일 코드·버전 정본: hibi89/DBVORA (2026-11-14 GitHub 조회상 Public; 이전 Private 표기는 구시점 기록). 원격 브랜치와 SHA 직접 확인; 접근권한 변경은 사용자 사전 승인.
 - main: 안정 기준. develop: 검증된 통합. feature/p0-db-map: 초기 구현 작업 브랜치. 기존 정상 기능과 문서를 보존.
 - 새 채팅 복원은 CHAT_BOOTSTRAP.md 및 HANDOFF/STATUS → 요구사항/설계 → 소스 순서로 시행.
 
