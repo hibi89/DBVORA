@@ -19,7 +19,7 @@ class Element {
   getBoundingClientRect() { return {left: 100, top: 100, width: 120, height: 100}; }
   get classList() { return {toggle: (name, yes) => { if (yes && !this.className.includes(name)) this.className += ' ' + name; }}; }
 }
-const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','database-topology','workspace-summary','growth-status','growth-scope','growth-history'].map(id => [id, new Element('div')]));
+const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','database-topology','workspace-summary','growth-status','growth-scope','growth-history','growth-trend'].map(id => [id, new Element('div')]));
 ids.diagram.getBoundingClientRect = () => ({left: 0, top: 0, width: 800, height: 600});
 const doc = {getElementById: id => ids[id], createElement: tag => new Element(tag), createElementNS: (_, tag) => new Element(tag)};
 const marker = '<img src=x onerror=alert(7)>';
@@ -61,6 +61,7 @@ setImmediate(async () => {
     assert.equal(ids['database-selector'].hidden, true, 'single DB must hide chooser');
     assert.ok(ids['growth-status'].textContent.includes('첫 측정'), 'baseline no fabricated trend');
     assert.ok(ids['growth-history'].textContent.includes('1건'), 'one verified baseline sample');
+    assert.ok(ids['growth-trend'].textContent.includes('3건 필요'), 'one sample is not a trend');
     assert.equal(ids['database-topology'].children.length, 0, 'single DB topology remains hidden');
     assert.equal(ids['tables-count'].textContent, '3');
     assert.equal(ids['links-count'].textContent, '1');
@@ -110,6 +111,7 @@ setImmediate(async () => {
       observed_at: '2026-10-26T07:05:00Z'};
     await ids.refresh.events.click();
     assert.ok(ids['growth-history'].textContent.includes('2건'), 'second verified observation recorded');
+    assert.ok(ids['growth-trend'].textContent.includes('3건 필요'), 'two samples are not a trend');
     assert.ok(ids['growth-status'].textContent.includes('증가 +2 KB'),
       'show measured two-sample main-file delta');
     await ids.refresh.events.click();
@@ -129,6 +131,10 @@ setImmediate(async () => {
       'new comparison must use the last accepted 07:05 baseline, not stale 07:03');
     assert.ok(ids['growth-history'].textContent.includes('3건'),
       'newer observation is appended after stale sample rejected');
+    assert.ok(ids['growth-trend'].textContent.includes('증가 +3 KB'),
+      'three chronological samples report measured first-to-last net change');
+    assert.ok(ids['growth-trend'].textContent.includes('예측 아님'),
+      'observed trend must not be presented as a forecast');
     assert.equal(resizeCount(), 1, 'repeated refresh must not accumulate resize listeners');
     assert.equal(ids.tables.children.length, 3);
     assert.equal(ids.edges.children.length, 1);
