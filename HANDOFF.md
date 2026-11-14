@@ -1,4 +1,16 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
+> 1. **목표/범위**: `hibi89/DBVORA`, `feature/p0-db-map`의 R01–R07/G90 최종 설계 구현·검증을 계속한다. 사용자 PC, main/develop 병합, 상용출시는 제외.
+> 2. **이번 완료**: R01-07 PASS_SCOPED. 늦은/중단/실패한 테이블 용량 응답이 새 DB·테이블 선택을 덮지 않으며, 다중 DB 화면의 필터는 DB별로 보존된다.
+> 3. **기능/최종 회귀 SHA**: `6913bcbf68ef2133e9cc7f9ad8090efae1bd5fda`. UI 구현 SHA `156d87c5c4d4b07b21cbb9cf7ce5fb551baf92f1`; 이후 두 커밋은 Chromium 수용 검사만 조정했다.
+> 4. **전체 회귀**: [#43653187661](https://github.com/hibi89/DBVORA/actions/runs/43653187661) PASS. Ubuntu 791/791, 0 skip; Windows 791 discovered, 790 PASS + named POSIX-only 1 SKIP; 두 OS에서 release gate 통과.
+> 5. **Chromium**: [#43653187677](https://github.com/hibi89/DBVORA/actions/runs/43653187677) PASS 35/35 on Ubuntu and Windows. Covers A→B delayed success, rejected stale failure, same-DB table switch, selected DB size/inspector and per-DB filter persistence.
+> 6. **PostgreSQL/Blueprint**: [TLS/UI #43653187670](https://github.com/hibi89/DBVORA/actions/runs/43653187670) PASS (verified TLS/read-only 5 checks, browser 9 checks); [blueprint #43653187930](https://github.com/hibi89/DBVORA/actions/runs/43653187930) PASS.
+> 7. **패키징**: app code SHA `156d87c5c4d4b07b21cbb9cf7ce5fb551baf92f1` ZIP [#43652365827](https://github.com/hibi89/DBVORA/actions/runs/43652365827) PASS, 75 files, ZIP SHA-256 `4a7b248131ef48c9dc3de3cc3d80bdd8fcfc83cff2199fac407a2ec40a2b9669`; EXE [#43652365854](https://github.com/hibi89/DBVORA/actions/runs/43652365854) PASS, SHA-256 `828c3a5723ba1c851c777652da78380e39ebf962731ae072bc146eae7db114a4`. Artifacts unsigned and synthetic.
+> 8. **실패·수정 이력**: [#43652365838](https://github.com/hibi89/DBVORA/actions/runs/43652365838)의 결합된 R01-07 전환 단언을 세분화해 API/앱 포맷 기준으로 검증했다. [#43652979947](https://github.com/hibi89/DBVORA/actions/runs/43652979947)은 필터가 연결 상대 노드를 숨긴 경우에도 edge 1개를 기대하던 기존 검사를 발견했다. 필터된 상대가 숨으면 edge 0개가 맞도록 보정했다. 최종 SHA 전체 검증 PASS.
+> 9. **증거/제한**: Ubuntu Chromium artifact 14136802170 digest `sha256:e358853a24ae1743e4bb6b945488daa05431adea98e999c695167a7bd4d9a134`; Windows 14136896738 digest `sha256:18e3b333fdea8673d8e97bf82cd17040b428df6e00cfbd13bc9b68f4ee6a2e2b`. Synthetic only; no owner-PC, physical power-loss, legal or commercial acceptance.
+> 10. **다음/공식 상태**: R01-03 PostgreSQL read-only UI and entry flow remains OPEN. Overall completion UNASSESSED / RELEASE HOLD; OWNER_GATE retained. Evidence: [R01-07](docs/R01_07_ASYNC_DATABASE_STATE_20261115.md).
+
+> **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
 > 1. **목표·범위**: hibi89/DBVORA, feature/p0-db-map에서 R01–R07/G90 구현·검증 지속. 사용자 PC, main/develop 병합, 상용 출시는 제외.
 > 2. **이번 완료**: R01-04 PASS_SCOPED. 혼합 SQLite+PostgreSQL 서비스 지도에 명시 선언 교차 링크를 연결했고 동명 테이블 선택을 DB identity로 구분한다.
 > 3. **기능/테스트 SHA**: cd2588e126c5014d2311b15a1041350b457380e1. 이 SHA에서 전체 회귀, Chromium, 실제 PG TLS, ZIP/EXE, blueprint 실행.

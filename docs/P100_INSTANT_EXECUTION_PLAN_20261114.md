@@ -1,3 +1,10 @@
+> **[2026-11-15 KST · final feature/source/test SHA 6913bcbf68ef2133e9cc7f9ad8090efae1bd5fda]**
+> **DONE-SCOPED R01-07.** The selected database's inspector, size and filter remain correctly scoped through delayed, aborted and failed measurement responses, database/table switches and refresh. Filters are retained independently for each configured SQLite database.
+> Full [#43653187661](https://github.com/hibi89/DBVORA/actions/runs/43653187661) PASS: Ubuntu 791/791, Windows 790 PASS + one named POSIX-only skip. Chromium [#43653187677](https://github.com/hibi89/DBVORA/actions/runs/43653187677) 35/35 per OS; PG TLS/UI [#43653187670](https://github.com/hibi89/DBVORA/actions/runs/43653187670) 5 TLS + 9 browser checks PASS; blueprint [#43653187930](https://github.com/hibi89/DBVORA/actions/runs/43653187930) PASS. App ZIP/EXE passed on code SHA `156d87c5c4d4b07b21cbb9cf7ce5fb551baf92f1` ([ZIP](https://github.com/hibi89/DBVORA/actions/runs/43652365827), [EXE](https://github.com/hibi89/DBVORA/actions/runs/43652365854)); final two commits adjust only browser expectations.
+> Evidence: [R01_07_ASYNC_DATABASE_STATE_20261115.md](R01_07_ASYNC_DATABASE_STATE_20261115.md).
+> **NEXT-1 R01-03:** PostgreSQL read-only entry UI and verified-TLS recovery.
+> Overall UNASSESSED / RELEASE HOLD; owner-device, physical, legal and commercial gates remain open.
+
 > **[2026-11-15 KST · latest feature/source/test SHA cd2588e126c5014d2311b15a1041350b457380e1]**
 > **DONE-SCOPED R01-04.** SQLite+PostgreSQL mixed map and explicitly declared cross-database metadata links are available; links remain unverified, and identical table names are scoped by database/table identity. Exact full [#43650797153](https://github.com/hibi89/DBVORA/actions/runs/43650797153) PASS (Ubuntu 791/791, Windows 790 PASS + one named POSIX-only skip; 12/12 mandatory steps per OS). Chromium [#43650797152](https://github.com/hibi89/DBVORA/actions/runs/43650797152) 35/35 per OS; real PG16 TLS/UI [#43650797203](https://github.com/hibi89/DBVORA/actions/runs/43650797203) PASS (5 TLS + 9 browser checks); source ZIP [#43650797187](https://github.com/hibi89/DBVORA/actions/runs/43650797187), EXE [#43650797191](https://github.com/hibi89/DBVORA/actions/runs/43650797191), blueprint [#43650797372](https://github.com/hibi89/DBVORA/actions/runs/43650797372) PASS. Detailed evidence: [R01_04_MIXED_ENGINE_LINKS_20261115.md](R01_04_MIXED_ENGINE_LINKS_20261115.md).
 > **NEXT-1 R01-07:** verify A→B database/table switching isolates delayed, aborted and failed responses from the active inspector and measurements.
@@ -52,7 +59,7 @@
 | R01-04 | 구조 | SQLite+PG 혼합 및 승인된 교차 관계 | 여러 서비스/DB의 출처 있는 링크만 보여주고 무증거 FK 추정 금지; 동일 테이블명 충돌 시험 | Codex GPT-6 Luna Max | PASS_SCOPED |
 | R01-05 | 구조 | 대용량/비정상 카탈로그 한계·오염 테스트 | 1,000테이블·workspace2,000 제한, 악성 식별자·잘못된 관계·XSS/SQL/path 안전실패 | Codex GPT-6 Luna Max | PASS_SCOPED |
 | R01-06 | 구조 | 화면 클릭·키보드·모바일·오류 복구 | Tab/Enter/aria, 390px/desktop, 실 API/Chromium, 15초 timeout·재시도·하얀 화면 회귀 | Codex GPT-6 Luna Max | PASS_SCOPED |
-| R01-07 | 구조 | 비동기 DB 전환 경합·출처 혼동 방지 | A DB 조회 늦은 응답이 B DB 인스펙터/측정에 섞이지 않음, 새로고침 및 필터 보존 | Instant | OPEN |
+| R01-07 | 구조 | 비동기 DB 전환 경합·출처 혼동 방지 | A DB 조회 늦은 응답이 B DB 인스펙터/측정에 섞이지 않음, 새로고침 및 DB별 필터 보존 | Codex GPT-6 Luna Max | PASS_SCOPED |
 | R02-01 | 지표 | SQLite main/WAL·dbstat 실제 측정 감사 | dbstat 64MiB/0.75초, opt-in, 동일 경로 파일교체 검사, 미지원/측정결과 출처 | Instant | EVIDENCE_RECHECK |
 | R02-02 | 지표 | 두 시점 DB별 용량 비교 회귀 | 기존 Chromium26/26 증거 재사용, 변화 없음/동일 시각/DB 전환/연결 실패 무허위 수치 | Instant | EVIDENCE_RECHECK |
 | R02-03 | 지표 | 실제 주기별 로컬 관측 이력 원장 | 기본 OFF·사용자 명시 실행, 시각·크기·해시·범위·중복/손상 차단; 3샘플 이상 추세 | Codex Luna Max | PASS_SCOPED |
