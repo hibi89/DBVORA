@@ -155,6 +155,32 @@ class ProcessResourcesTests(unittest.TestCase):
                 self.assertEqual(p.main(args), 2)
                 self.assertNotIn(secret, stream.getvalue())
 
+    def test_cli_bounded_two_sample_mode_produces_honest_delta(self):
+        with patch.object(p.time, "sleep") as sleeper:
+            with io.StringIO() as stream, redirect_stdout(stream):
+                code = p.main(["--local-dir", str(self.root), "--sample-interval-ms", "100"])
+                report = json.loads(stream.getvalue())
+        self.assertEqual(code, 0)
+        sleeper.assert_called_once_with(0.1)
+        self.assertEqual(report["report"]["contract"], "dbvora.local-process-trend-cli.v1")
+        self.assertEqual(report["report"]["comparison"]["status"],
+                         "measured_two_samples_only_no_forecast")
+        self.assertIsNone(report["report"]["comparison"]["database_server_cpu_percent"])
+        self.assertNotIn(str(self.root), str(report))
+
+    def test_cli_rejects_unsafe_or_unbounded_sampling_without_sleep(self):
+        for interval in ("0", "99", "5001", "-2", "C:/very_private/secret"):
+            with self.subTest(interval=interval), patch.object(p.time, "sleep") as sleeper:
+                with io.StringIO() as stream, redirect_stderr(stream):
+                    code = p.main(["--local-dir", str(self.root),
+                                   "--sample-interval-ms", interval])
+                    raw = stream.getvalue()
+                self.assertEqual(code, 2)
+                self.assertEqual(json.loads(raw)["error_code"],
+                                 "INVALID_ARGUMENT" if "secret" in interval else "INVALID_SAMPLE_INTERVAL")
+                self.assertNotIn(interval, raw)
+                sleeper.assert_not_called()
+
     def test_actual_cli_reports_only_scoped_metrics(self):
         with io.StringIO() as stream, redirect_stdout(stream):
             self.assertEqual(p.main(["--local-dir", str(self.root)]), 0)
