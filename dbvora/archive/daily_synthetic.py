@@ -9,7 +9,7 @@ ambiguous interrupted run is HELD for manual review, not silently retried.
 from __future__ import annotations
 
 import argparse
-from datetime import date
+from datetime import date, timedelta
 import hashlib
 import json
 from pathlib import Path
@@ -143,8 +143,39 @@ def run_daily(source: str | Path, snapshot_dir: str | Path,
         raise DailyArchiveError("DAILY_ATTEMPT_FAILED_REQUIRES_MANUAL_REVIEW") from None
 
 
+def run_weekly(source: str | Path, snapshot_dir: str | Path,
+               archive_dir: str | Path, ledger_dir: str | Path,
+               *, job_id: str, utc_day: str, codec: str = "zip",
+               zstd_level: int | None = None, synthetic_only: bool = False,
+               accept_plaintext: bool = False) -> dict:
+    """One immutable ISO-week UTC slot, reusing the existing daily ledger.
+
+    Only the calendar key changes. No scheduler is installed and no automatic
+    retry, deletion, promotion or customer-data connection is performed.
+    """
+    day = _verified_day(utc_day)
+    if type(job_id) is not str or JOB_ID.fullmatch(job_id) is None or len(job_id) > 18:
+        raise DailyArchiveError("INVALID_WEEKLY_JOB_ID")
+    today = date.fromisoformat(day)
+    monday = (today - timedelta(days=today.weekday())).isoformat()
+    result = run_daily(
+        source, snapshot_dir, archive_dir, ledger_dir,
+        job_id="w-" + job_id, utc_day=monday, codec=codec, zstd_level=zstd_level,
+        synthetic_only=synthetic_only, accept_plaintext=accept_plaintext,
+    )
+    return {**result, "period": "weekly", "selected_utc_day": day,
+            "period_start_utc": monday, "job_id": job_id}
+
+
+class _SafeArgumentParser(argparse.ArgumentParser):
+    def error(self, message):
+        # argparse.error normally echoes the supplied invalid option value,
+        # which could itself be a local path or secret. Never echo it.
+        raise DailyArchiveError("INVALID_ARGUMENT")
+
+
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Synthetic-only daily archive attempt; no scheduler installed")
+    parser = _SafeArgumentParser(description="Synthetic-only explicit UTC date-slot archive attempt; no scheduler installed")
     parser.add_argument("--source", required=True)
     parser.add_argument("--snapshot-dir", required=True)
     parser.add_argument("--archive-dir", required=True)
@@ -152,6 +183,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--job-id", required=True)
     parser.add_argument("--utc-day", required=True)
     parser.add_argument("--codec", choices=("zip", "zstd"), default="zip")
+    parser.add_argument("--period", choices=("daily", "weekly"), default="daily")
     parser.add_argument("--zstd-level", type=int)
     parser.add_argument("--synthetic-only", action="store_true")
     parser.add_argument("--accept-plaintext", action="store_true")
@@ -161,7 +193,8 @@ def main(argv: list[str] | None = None) -> int:
         args, rest = parser.parse_known_args(argv)
         if rest:
             raise DailyArchiveError("INVALID_ARGUMENT")
-        output = run_daily(
+        method = run_weekly if args.period == "weekly" else run_daily
+        output = method(
             args.source, args.snapshot_dir, args.archive_dir, args.ledger_dir,
             job_id=args.job_id, utc_day=args.utc_day, codec=args.codec,
             zstd_level=args.zstd_level, synthetic_only=args.synthetic_only,
