@@ -403,6 +403,10 @@ def verify():
         "resident_memory_scope": resource_scopes["sampled_max_rss_bytes"],
         "volume_free_space_scope": resource_scopes["volume_free_bytes_delta"],
         "unavailable_policy": "record_unavailable_or_partial_without_substitution",
+        "process_disk_io_scope":
+            "unavailable_not_measured_volume_delta_is_shared_host_volume_signal",
+        "external_child_process_cpu_and_rss":
+            "not_included_in_current_python_process_metrics",
     }
     expected_formats = {"zip", "raw_cas", "compressed_cas"}
     if zstd_available:
@@ -567,6 +571,12 @@ def verify():
         and sizes.get("zstd_generations_restored") is zstd_available
         and sizes.get("no_universal_compression_claim") is True
         and sizes.get("timing_scope") == "3_trial_medians_two_generations_wall_clock_only"
+        and sizes.get("creation_timing_scope") ==
+            "API call wall time; API self-verification may be included."
+        and sizes.get("restore_timing_scope") ==
+            "Independent restore API plus restored-file SHA-256 check."
+        and sizes.get("cache_policy") ==
+            "OS caches are not cleared; method order rotates across trials."
         and resource_policy == expected_resource_policy
         and methods_ok and timings_ok and zstd_timings_ok and env_ok
         and sizes.get("ready_for_customer_data") is False

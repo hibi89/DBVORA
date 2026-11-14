@@ -51,6 +51,10 @@ RESOURCE_POLICY = {
     "resident_memory_scope": RESOURCE_SCOPES["sampled_max_rss_bytes"],
     "volume_free_space_scope": RESOURCE_SCOPES["volume_free_bytes_delta"],
     "unavailable_policy": "record_unavailable_or_partial_without_substitution",
+    "process_disk_io_scope":
+        "unavailable_not_measured_volume_delta_is_shared_host_volume_signal",
+    "external_child_process_cpu_and_rss":
+        "not_included_in_current_python_process_metrics",
 }
 RESOURCE_SUMMARY_FIELDS = {
     "create_process_cpu_time_delta_ns": ("create", "process_cpu_time_delta_ns"),

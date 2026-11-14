@@ -76,6 +76,12 @@ class BenchmarkSyntheticArchivesTests(unittest.TestCase):
         self.assertIn("not_peak", data["resource_measurement_policy"]["resident_memory_scope"])
         self.assertIn("not_per_process_io",
                       data["resource_measurement_policy"]["volume_free_space_scope"])
+        self.assertEqual(
+            data["resource_measurement_policy"]["process_disk_io_scope"],
+            "unavailable_not_measured_volume_delta_is_shared_host_volume_signal")
+        self.assertEqual(
+            data["resource_measurement_policy"]["external_child_process_cpu_and_rss"],
+            "not_included_in_current_python_process_metrics")
         metrics = data["metrics"]
         self.assertGreater(metrics["two_zip_archives_bytes"], 0)
         self.assertGreater(metrics["cas_total_stored_bytes"], 0)
