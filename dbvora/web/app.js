@@ -10,6 +10,8 @@ let selected = null;
 // Strictly in-memory: no localStorage, disk writes, background collection or network calls.
 let lastMeasurements = new Map();
 let growthComparisons = new Map();
+let observationHistory = new Map();
+const MAX_OBSERVATIONS = 8;
 let nodeElements = new Map();
 let edgeByTable = new Map();
 let observer = null;
@@ -40,11 +42,20 @@ function recordMeasurements(data) {
     ? data.databases : [data];
   const next = new Map();
   const comparisons = new Map();
+  const histories = new Map();
   for (const db of databases) {
     const timestamp = Date.parse(db.observed_at);
     if (typeof db.db_id !== 'string' || !Number.isSafeInteger(db.size_bytes) ||
         db.size_bytes < 0 || !Number.isFinite(timestamp)) continue;
     const prior = lastMeasurements.get(db.db_id);
+    const history = [...(observationHistory.get(db.db_id) || [])];
+    // Deduplicate server observations, reject out-of-order samples, retain
+    // only the most recent eight valid observations per selected database.
+    if (!history.length || timestamp > history[history.length - 1].timestamp) {
+      history.push({timestamp, size_bytes: db.size_bytes});
+      if (history.length > MAX_OBSERVATIONS) history.shift();
+    }
+    histories.set(db.db_id, history);
     if (prior && timestamp > prior.timestamp) {
       comparisons.set(db.db_id, {status: 'measured',
         delta: db.size_bytes - prior.size_bytes});
@@ -58,12 +69,16 @@ function recordMeasurements(data) {
   // Enforce a bounded memory footprint (<= 8 server-selected DBs).
   lastMeasurements = next;
   growthComparisons = comparisons;
+  observationHistory = histories;
 }
 
 function displayGrowth() {
   const id = workspace ? selectedDatabase : inventory?.db_id;
   const comparison = growthComparisons.get(id);
   const target = $('growth-status');
+  const samples = observationHistory.get(id) || [];
+  $('growth-history').textContent = '관측 이력: ' + samples.length +
+    '건 / 최대 ' + MAX_OBSERVATIONS + '건 · 세션 메모리만 사용 · 디스크 저장 없음';
   if (!comparison || comparison.status === 'baseline') {
     target.textContent = '첫 측정 완료 · 새로고침 후 비교';
   } else if (comparison.status !== 'measured') {
