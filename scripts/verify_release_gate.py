@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-EXPECTED_PYTHON_TESTS = 553
+EXPECTED_PYTHON_TESTS = 668
 EXPECTED_GATE_CHECKS = 9
 TEST_COUNT = re.compile(r"Ran\s+(\d+)\s+tests?\s+in\s+", re.IGNORECASE)
 SKIPPED_COUNT = re.compile(r"\bskipped=(\d+)\b", re.IGNORECASE)
@@ -74,6 +74,8 @@ REQUIRED = (
     "dbvora/incremental_cli.py", "tests/test_incremental_cli.py",
     "dbvora/archive/compressed_cas.py", "tests/test_compressed_cas.py",
     "tests/test_compressed_cas_failures.py",
+    "tests/test_cas_abrupt_process.py", "tests/test_weekly_synthetic.py",
+    "dbvora/archive/daily_synthetic.py", "tests/test_daily_synthetic.py",
     "scripts/incremental_cli_gate.py",
     "scripts/benchmark_synthetic_archives.py", "tests/test_benchmark_synthetic_archives.py",
 )
