@@ -1,3 +1,9 @@
+> **[2026-11-15 KST · latest source/test SHA 4debf5aa580f49265d90de6f441cb1eda3382cbb]**
+> **DONE-SCOPED** R04-03 public performance claim boundary. Full [#43623040821](https://github.com/hibi89/DBVORA/actions/runs/43623040821) PASS: Ubuntu 765/0 skip; Windows 765 PASS + one named POSIX-only skip; blueprint [#43623041398](https://github.com/hibi89/DBVORA/actions/runs/43623041398) PASS.
+> README removes the historical 21.1% reduction phrase; runner samples are explicitly not customer performance/savings evidence. Direct PostgreSQL/Supabase benchmark is unmeasured / comparison unavailable. Static regression guard is required in full release gate. See [P4_03_PERFORMANCE_CLAIM_BOUNDARIES_20261115.md](P4_03_PERFORMANCE_CLAIM_BOUNDARIES_20261115.md).
+> **NEXT-1** R05-01/R05-02: audit localhost-only API, security headers/GET-only policy, file identity/path protections, hardlink/symlink and create-only restore tests at the current code SHA; close only evidence-backed scope.
+> Overall completion UNASSESSED / RELEASE HOLD; user, physical and commercial gates remain open.
+
 > **[2026-11-15 KST · latest source/test SHA eb191c9783102f108057073f42334503f4ab9e85]**
 > **DONE-SCOPED** R04-02. Full [#43622284063](https://github.com/hibi89/DBVORA/actions/runs/43622284063) PASS: Ubuntu 764/0 skip; Windows 764 PASS + 1 named POSIX-only skip. Blueprint [#43622284359](https://github.com/hibi89/DBVORA/actions/runs/43622284359) PASS.
 > Per method and operation: 3-trial medians/min/max for wall time, current Python process CPU time, boundary-sampled RSS and shared containing-volume free-space delta. Both generations restore/SHA pass. See [P4_02_RESOURCE_BENCHMARK_20261115.md](P4_02_RESOURCE_BENCHMARK_20261115.md).

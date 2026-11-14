@@ -1,14 +1,15 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
-> 1. **목표·범위**: feature/p0-db-map에서 R01–R07 최종설계의 GitHub 구현·검증을 계속한다. main/develop 병합, 크몽 등록·상용 출시는 제외.
-> 2. **이번 완료**: R04-02 반복 합성 벤치에 작업별 Python process CPU, 경계 RSS, 공유 볼륨 여유공간 delta를 기록하고 가용성·한계를 검증했다(PASS_SCOPED).
-> 3. **기능/검증 SHA**: eb191c9783102f108057073f42334503f4ab9e85.
-> 4. **전체 회귀**: [#43622284063](https://github.com/hibi89/DBVORA/actions/runs/43622284063) 정확 SHA 성공. Ubuntu 764/764·0 skip; Windows 764 pass + 지정 POSIX-only skip 1.
-> 5. **Blueprint**: [#43622284359](https://github.com/hibi89/DBVORA/actions/runs/43622284359) 정확 SHA 성공.
-> 6. **측정**: ZIP/ZSTD/raw CAS/compressed CAS 각 3회. 세부 환경별 size/time/CPU/RSS/volume delta와 min/max는 [R04-02 증거](docs/P4_02_RESOURCE_BENCHMARK_20261115.md).
-> 7. **측정 한계**: RSS는 두 경계 표본 최댓값이지 peak가 아니다. CPU/RSS는 Python process만(ZSTD child 제외); per-process disk I/O 미측정, volume delta는 공유 호스트 변화다.
-> 8. **캐시·비교**: OS cache 미초기화, runner 부하 비통제. 합성 CI 값은 고객 성능/절감률 또는 PostgreSQL/Supabase 직접 비교 근거가 아니다.
-> 9. **다음 작업**: R04-03 공개 성능 주장 경계를 README와 회귀 검사에 반영한다. 이후 remaining R04–R07/G90 dependency order.
-> 10. **공식 상태**: 전체 완성률 UNASSESSED, RELEASE HOLD, 소유자·물리·권리 OWNER_GATE 유지.
+> 1. **목표·범위**: feature/p0-db-map에서 R01–R07 최종설계의 GitHub 구현·검증을 계속한다. main/develop 병합과 상용 출시는 제외.
+> 2. **이번 완료**: R04-03 공개 성능 주장 경계를 명시하고 README 회귀 검사와 full release gate에 포함했다(PASS_SCOPED).
+> 3. **기능/검증 SHA**: 4debf5aa580f49265d90de6f441cb1eda3382cbb.
+> 4. **전체 회귀**: [#43623040821](https://github.com/hibi89/DBVORA/actions/runs/43623040821) 성공. Ubuntu 765/765·0 skip; Windows 765 pass + 지정 POSIX-only skip 1.
+> 5. **Blueprint**: [#43623041398](https://github.com/hibi89/DBVORA/actions/runs/43623041398) 성공.
+> 6. **주장 경계**: README의 과거 21.1% 절감 표현을 제거하고, 합성 CI가 고객 성능/운영 절감을 입증하지 않는다고 명시했다.
+> 7. **직접 비교**: PostgreSQL/Supabase 성능·가격·저장비 직접 benchmark는 미실행이므로 비교 불가. UI의 PG 경로는 읽기 전용 메타데이터용이다.
+> 8. **회귀 가드**: tests/test_performance_claim_boundaries.py가 README percentage/direct superiority 표현을 차단하고 제한 문구를 요구한다.
+> 9. **다음 작업**: R05-01/02 기존 localhost 보안·파일 identity/restore 경계를 현재 SHA에서 재점검하고 필요한 보완을 구현한다.
+> 10. **공식 상태**: 전체 완성률 UNASSESSED, RELEASE HOLD; 사용자·물리·권리 OWNER_GATE 유지.
+
 
 
 
