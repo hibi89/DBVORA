@@ -240,45 +240,44 @@ def verify() -> dict:
                 mixed_page = render_report(mixed)
                 if dsn in mixed_page or str(database) in mixed_page or CANARY in mixed_page:
                     raise AssertionError('MIXED_REPORT_SECRET_ROW_OR_PATH_LEAK')
-                page.set_viewport_size({'width': 1280, 'height': 900})
+                mixed_view = browser.new_page(viewport={'width': 1280, 'height': 900})
                 mixed_page_errors = []
-                page.on('pageerror', lambda error: mixed_page_errors.append(type(error).__name__))
-                page.set_content(mixed_page, wait_until='domcontentloaded')
-                if page.locator('#cross-database-links').count() != 1:
+                mixed_view.on('pageerror', lambda error: mixed_page_errors.append(type(error).__name__))
+                mixed_view.set_content(mixed_page, wait_until='domcontentloaded')
+                if mixed_view.locator('#cross-database-links').count() != 1:
                     raise AssertionError('MIXED_LINK_LIST_ELEMENT_MISSING')
                 if mixed_page_errors:
                     raise AssertionError('MIXED_MAP_SCRIPT_ERROR:' + ','.join(mixed_page_errors[:3]))
-                model = json.loads(page.locator('#catalog').text_content())
+                model = json.loads(mixed_view.locator('#catalog').text_content())
                 declared = model.get('declared_cross_database_links', [])
                 if len(declared) != 1:
                     raise AssertionError('MIXED_LINK_MODEL_MISSING')
-                if page.locator('#cross-database-links button').count() != 1:
+                if mixed_view.locator('#cross-database-links button').count() != 1:
                     raise AssertionError('MIXED_LINK_BUTTON_NOT_RENDERED')
-                node_names = page.locator('#databases button.node .table-key').all_text_contents()
+                node_names = mixed_view.locator('#databases button.node .table-key').all_text_contents()
                 if node_names.count('users') != 1 or node_names.count('public.users') != 1:
                     raise AssertionError('SAME_NAME_DATABASE_NODES_NOT_SCOPED')
-                if 'user-declared / unverified' not in page.locator('#cross-database-links').inner_text():
+                if 'user-declared / unverified' not in mixed_view.locator('#cross-database-links').inner_text():
                     raise AssertionError('CROSS_DATABASE_LINK_NOT_MARKED_UNVERIFIED')
-                model = json.loads(page.locator('#catalog').text_content())
-                declared = model.get('declared_cross_database_links', [])
                 if (len(declared) != 1 or declared[0].get('evidence') != 'user_declared_unverified'
                         or declared[0].get('verified') is not False
                         or declared[0].get('from_db_id') != 1 or declared[0].get('to_db_id') != 2
                         or model.get('cross_database_edges_verified') != 0):
                     raise AssertionError('MIXED_LINK_EVIDENCE_SCOPE_INVALID')
-                page.locator('#cross-database-links button').click()
-                if page.locator('#selection').inner_text() != 'Database 2 / public.users':
+                mixed_view.locator('#cross-database-links button').click()
+                if mixed_view.locator('#selection').inner_text() != 'Database 2 / public.users':
                     raise AssertionError('CROSS_DATABASE_LINK_SELECTED_WRONG_COLLIDING_TABLE')
-                if page.locator('#databases button.node[aria-pressed="true"]').count() != 1:
+                if mixed_view.locator('#databases button.node[aria-pressed="true"]').count() != 1:
                     raise AssertionError('MIXED_REPORT_SELECTION_STATE_INVALID')
-                if CANARY in page.locator('body').inner_text() or dsn in page.locator('body').inner_text():
+                if CANARY in mixed_view.locator('body').inner_text() or dsn in mixed_view.locator('body').inner_text():
                     raise AssertionError('MIXED_REPORT_ROW_OR_DSN_LEAK')
-                _capture_sanitized_screenshot(page, screenshot_root, 'mixed-map-desktop.png')
-                page.set_viewport_size({'width': 390, 'height': 844})
-                if page.evaluate('document.documentElement.scrollWidth') > 390:
+                _capture_sanitized_screenshot(mixed_view, screenshot_root, 'mixed-map-desktop.png')
+                mixed_view.set_viewport_size({'width': 390, 'height': 844})
+                if mixed_view.evaluate('document.documentElement.scrollWidth') > 390:
                     raise AssertionError('MIXED_MAP_MOBILE_OVERFLOW')
-                _capture_sanitized_screenshot(page, screenshot_root, 'mixed-map-mobile-390px.png')
+                _capture_sanitized_screenshot(mixed_view, screenshot_root, 'mixed-map-mobile-390px.png')
                 checks.append('real_pg16_sqlite_same_name_collision_and_explicit_unverified_link')
+                mixed_view.close()
                 browser.close()
         finally:
             stop_server(good_server)
