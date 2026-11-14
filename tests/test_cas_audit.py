@@ -90,6 +90,31 @@ class CasAuditTests(unittest.TestCase):
             self.inspect()
         self.assertEqual(self.manifest.read_bytes(), b'{"contract":"x","contract":"y"}')
 
+    def test_manifest_same_size_same_mtime_swap_is_denied(self):
+        # Attack exists only inside this disposable synthetic test folder.
+        from unittest.mock import patch
+        before = self.manifest.stat()
+        substitute = self.manifests / "synthetic-audit-swap.tmp"
+        substitute.write_bytes(self.manifest_bytes)
+        os.utime(substitute, ns=(before.st_atime_ns, before.st_mtime_ns))
+        self.assertEqual(substitute.stat().st_size, before.st_size)
+        self.assertEqual(substitute.stat().st_mtime_ns, before.st_mtime_ns)
+        real_open = os.open
+        swapped = [False]
+
+        def swap_at_descriptor_open(path, flags, *args, **kwargs):
+            if not swapped[0] and os.fspath(path) == os.fspath(self.manifest):
+                substitute.replace(self.manifest)
+                swapped[0] = True
+            return real_open(path, flags, *args, **kwargs)
+
+        with patch.object(cas_audit.cas.os, "open",
+                          side_effect=swap_at_descriptor_open):
+            with self.assertRaisesRegex(cas_audit.CasAuditError, "INVALID_MANIFEST"):
+                self.inspect()
+        self.assertTrue(swapped[0])
+        self.assertEqual(self.manifest.read_bytes(), self.manifest_bytes)
+
     def test_symlink_directory_or_file_denied(self):
         alias = self.snap / "alias"
         try:

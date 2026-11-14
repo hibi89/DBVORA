@@ -76,33 +76,10 @@ def _scan(root: Path, extension: str) -> tuple[list[str], int]:
 
 
 def _manifest(root: Path, name: str) -> dict:
-    path = root / name
+    # Share the exact descriptor-identity guard with restore_compressed:
+    # reject same-size/same-mtime replacements, and never trust path-only reads.
     try:
-        before = path.lstat()
-        if (not stat.S_ISREG(before.st_mode) or before.st_nlink != 1
-                or path.is_symlink() or not 0 < before.st_size <= cas.MAX_MANIFEST):
-            raise CasAuditError("UNTRUSTED_MANIFEST")
-        fd = os.open(path, os.O_RDONLY | getattr(os, "O_BINARY", 0) |
-                     getattr(os, "O_NOFOLLOW", 0))
-        try:
-            opened = os.fstat(fd)
-            if (opened.st_dev, opened.st_ino, opened.st_size) != (
-                    before.st_dev, before.st_ino, before.st_size):
-                raise CasAuditError("MANIFEST_CHANGED")
-            raw = os.read(fd, cas.MAX_MANIFEST + 1)
-            after = os.fstat(fd)
-            named = path.lstat()
-            original = (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
-            if ((after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns) != original or
-                    (named.st_dev, named.st_ino, named.st_size, named.st_mtime_ns) != original):
-                raise CasAuditError("MANIFEST_CHANGED")
-        finally:
-            os.close(fd)
-        if len(raw) != before.st_size:
-            raise CasAuditError("MANIFEST_CHANGED")
-        return cas._parse_manifest(raw)
-    except CasAuditError:
-        raise
+        return cas._parse_manifest(cas._read_manifest_unchanged(root / name))
     except (cas.CompressedCasError, OSError):
         raise CasAuditError("INVALID_MANIFEST") from None
 
