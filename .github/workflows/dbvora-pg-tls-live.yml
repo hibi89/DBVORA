@@ -43,8 +43,8 @@ jobs:
             -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1" \
             -keyout "$d/server.key" -out "$d/server.crt" >/dev/null 2>&1
           # Container's default postgres service account is UID 999.
-          sudo chown 999:999 "$d/server.key"
           chmod 600 "$d/server.key"
+          sudo chown 999:999 "$d/server.key"
           chmod 755 "$d"
           cp "$d/server.crt" "$d/ca.crt"
           openssl req -x509 -newkey rsa:2048 -nodes -sha256 -days 1 \
@@ -94,10 +94,13 @@ jobs:
           SQL
       - name: Assert real connector verified TLS, role isolation, FK and HTML
         shell: bash
-        env:
-          DBVORA_SYNTHETIC_PG_DSN: "host=localhost port=55439 dbname=dbvora_test user=dbvora_reader sslrootcert=${{ env.DBVORA_PG_TLS_DIR }}/ca.crt"
-          DBVORA_SYNTHETIC_BAD_CA: "${{ env.DBVORA_PG_TLS_DIR }}/wrong.crt"
-        run: python -m scripts.pg_tls_local_acceptance
+        run: |
+          set -euo pipefail
+          # GITHUB_ENV variables are resolved on the runner, not the Actions
+          # expression server. Do not echo or upload the DSN.
+          export DBVORA_SYNTHETIC_PG_DSN="host=localhost port=55439 dbname=dbvora_test user=dbvora_reader sslrootcert=$DBVORA_PG_TLS_DIR/ca.crt"
+          export DBVORA_SYNTHETIC_BAD_CA="$DBVORA_PG_TLS_DIR/wrong.crt"
+          python -m scripts.pg_tls_local_acceptance
       - name: Destroy ephemeral container and certificate files
         if: always()
         shell: bash
