@@ -31,6 +31,7 @@ def verify() -> dict:
         "customer_data": False,
         "customer_ready": False,
     }
+    phase = "ENVIRONMENT"
     try:
         import psycopg
         dsn = os.environ.get("DBVORA_SYNTHETIC_PG_DSN", "")
@@ -44,6 +45,7 @@ def verify() -> dict:
                 parsed.get("user") != "dbvora_reader" or
                 "password" in parsed or "passfile" in parsed):
             raise ValueError("LOOPBACK_ONLY_REQUIRED")
+        phase = "TLS_ROLE"
         with psycopg.connect(dsn, sslmode="verify-full", connect_timeout=5,
                              autocommit=True) as conn:
             with conn.cursor() as cursor:
@@ -63,7 +65,9 @@ def verify() -> dict:
         result["read_only_role"] = True
         result["checks"].append("real_postgres_verified_tls_readonly")
         # Exercise actual production connector, not the synthetic catalog fake.
+        phase = "CONNECTOR"
         catalog = inspect_postgres(dsn, include_statistics=True)
+        phase = "CATALOG"
         tables = {table["name"]: table for table in catalog["tables"]}
         if not _EXPECTED.issubset(tables):
             raise ValueError("MISSING_SYNTHETIC_TABLES")
@@ -81,11 +85,13 @@ def verify() -> dict:
         if _CANARY in json.dumps(catalog, ensure_ascii=False):
             raise ValueError("PRIVATE_ROW_LEAK")
         result["checks"].append("real_catalog_fks_views_no_rows")
+        phase = "STATISTICS"
         if (tables["users"]["statistics"].get("status") not in
                 ("observed", "unavailable") or
                 tables["event_view"]["statistics"].get("status") != "unavailable"):
             raise ValueError("STATISTICS_PROVENANCE_WRONG")
         result["checks"].append("real_pg_statistics_provenance")
+        phase = "HTML"
         workspace = assemble_workspace([catalog])
         html = render_report(workspace)
         if (_CANARY in html or "events" not in html or "users" not in html
@@ -94,6 +100,7 @@ def verify() -> dict:
         # Only generated report text; no written HTML or private DSN.
         result["checks"].append("real_pg_to_offline_html_no_rows")
         # Same host, but untrusted CA MUST fail without fallback or URL/secret leaks.
+        phase = "BAD_CERTIFICATE"
         wrong = dsn + " sslrootcert=" + bad_ca
         try:
             inspect_postgres(wrong)
@@ -107,9 +114,13 @@ def verify() -> dict:
                 or "password" in json.dumps(result).lower()):
             raise ValueError("UNSAFE_TEST_OUTPUT")
         result["status"] = "PASS_SYNTHETIC_LOCAL_POSTGRES_TLS_ONLY"
+    except PostgresInventoryError as exc:
+        # These are stable public connector codes; never include libpq errors.
+        result["error_code"] = "CONNECTOR_" + exc.code
     except Exception:
         # Deliberately suppress exception messages that may include a DSN.
-        result["error_code"] = "PG_LIVE_ACCEPTANCE_FAILED"
+        # The fixed phase name makes CI failures diagnosable without secrets.
+        result["error_code"] = "FAILED_PHASE_" + phase
     return result
 
 
