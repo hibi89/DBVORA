@@ -1,3 +1,5 @@
+> **2026-11-14 KST 실행자 변경 고지:** 사용자 최신 지시에 따라 아래 48개 원자 ID/수용 조건은 보존하되 실행은 **Codex GPT-6 Luna Max의 GitHub-only**로 위임. 최신 실행 정본: [P100_CODEX_LUNA_MAX_GITHUB_ONLY_20261114.md](P100_CODEX_LUNA_MAX_GITHUB_ONLY_20261114.md). 과거 Instant 실행 설명 및 SHA는 이력으로만 남기며, 현재 기능/CI/공식점수를 의미하지 않는다. High 최종검수/OWNER_GATE/RELEASE HOLD 그대로.
+
 # DBVORA 최종설계 100% — GPT-6 Instant 실행·High 최종검수 마스터 플랜
 
 > 기준 2026-11-14 KST / hibi89/DBVORA / feature/p0-db-map / 기능 기준 SHA 8bb07273f3829248bae8516ac467bfbf7eb4f751
