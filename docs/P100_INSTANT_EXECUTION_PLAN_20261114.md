@@ -1,3 +1,8 @@
+> **[2026-11-15 KST · latest feature/source/test SHA `8dc0a4dd9096ec9b92a683db53912c00a017f03c`]**
+> **DONE-SCOPED R07-03.** Exact full [#43647307300](https://github.com/hibi89/DBVORA/actions/runs/43647307300): Ubuntu 783/783 (0 skip), Windows 782 PASS + one named POSIX-only skip, all mandatory 12 steps each OS. Chromium [#43647307293](https://github.com/hibi89/DBVORA/actions/runs/43647307293) 35/35 per OS; PG TLS/UI [#43647307279](https://github.com/hibi89/DBVORA/actions/runs/43647307279) 5+8; ZIP [#43647307331](https://github.com/hibi89/DBVORA/actions/runs/43647307331), EXE [#43647307329](https://github.com/hibi89/DBVORA/actions/runs/43647307329), blueprint [#43647307578](https://github.com/hibi89/DBVORA/actions/runs/43647307578) PASS. Evidence: [R07_03_KOREAN_RECOVERY_UX_20261115.md](R07_03_KOREAN_RECOVERY_UX_20261115.md). R01-05/R01-06 moved to PASS_SCOPED.
+> **NEXT-1 R01-04:** test evidence-backed SQLite+PostgreSQL cross-links and same-name table collisions.
+> Overall UNASSESSED / RELEASE HOLD; owner/device, physical, legal and commercial gates remain open.
+
 > **[2026-11-15 KST · latest source/test SHA `3f138530321a35dc96c1682f1ebb2fac3fac85ce`]**
 > **DONE-SCOPED R07-02.** Exact-SHA portable lifecycle and synthetic-data preservation passed in [full gate #43642757174](https://github.com/hibi89/DBVORA/actions/runs/43642757174): Ubuntu 779/779, Windows 778 PASS + one named POSIX-only skip, all mandatory 12 steps each OS. Chromium [#43642757197](https://github.com/hibi89/DBVORA/actions/runs/43642757197) 33/33 each OS; PG TLS/UI [#43642757164](https://github.com/hibi89/DBVORA/actions/runs/43642757164), ZIP [#43642757175](https://github.com/hibi89/DBVORA/actions/runs/43642757175), EXE [#43642757229](https://github.com/hibi89/DBVORA/actions/runs/43642757229), blueprint [#43642757612](https://github.com/hibi89/DBVORA/actions/runs/43642757612) PASS. Details: [R07_02_PORTABLE_LIFECYCLE_20261115.md](R07_02_PORTABLE_LIFECYCLE_20261115.md).
 > **NEXT-1 R07-03:** Korean error/consent/safe-restore guidance, verified with Chromium at desktop and 390px, keyboard, ARIA, and screenshots.
@@ -45,8 +50,8 @@
 | R01-02 | 구조 | 여러 DB/서비스를 한눈에 보는 토폴로지 | DB 선택 탭만이 아닌 동일 화면의 전체 DB 노드·요약·클릭 탐색·관계 증거; 실 Chromium 2OS | Codex Luna Max | PASS_SCOPED |
 | R01-03 | 구조 | PG 읽기 전용 진입 UI/통합 | 실 PG16 localhost TLS verify-full·read-only 및 악성 인증서/권한 실패, 브라우저·로그 DSN 미노출 | Codex Luna Max | PASS_SCOPED |
 | R01-04 | 구조 | SQLite+PG 혼합 및 승인된 교차 관계 | 여러 서비스/DB의 출처 있는 링크만 보여주고 무증거 FK 추정 금지; 동일 테이블명 충돌 시험 | Instant | OPEN |
-| R01-05 | 구조 | 대용량/비정상 카탈로그 한계·오염 테스트 | 1,000테이블·workspace2,000 제한, 악성 식별자·잘못된 관계·XSS/SQL/path 안전실패 | Instant | EVIDENCE_RECHECK |
-| R01-06 | 구조 | 화면 클릭·키보드·모바일·오류 복구 | Tab/Enter/aria, 390px/desktop, 실 API/Chromium, 15초 timeout·재시도·하얀 화면 회귀 | Instant | EVIDENCE_RECHECK |
+| R01-05 | 구조 | 대용량/비정상 카탈로그 한계·오염 테스트 | 1,000테이블·workspace2,000 제한, 악성 식별자·잘못된 관계·XSS/SQL/path 안전실패 | Codex GPT-6 Luna Max | PASS_SCOPED |
+| R01-06 | 구조 | 화면 클릭·키보드·모바일·오류 복구 | Tab/Enter/aria, 390px/desktop, 실 API/Chromium, 15초 timeout·재시도·하얀 화면 회귀 | Codex GPT-6 Luna Max | PASS_SCOPED |
 | R01-07 | 구조 | 비동기 DB 전환 경합·출처 혼동 방지 | A DB 조회 늦은 응답이 B DB 인스펙터/측정에 섞이지 않음, 새로고침 및 필터 보존 | Instant | OPEN |
 | R02-01 | 지표 | SQLite main/WAL·dbstat 실제 측정 감사 | dbstat 64MiB/0.75초, opt-in, 동일 경로 파일교체 검사, 미지원/측정결과 출처 | Instant | EVIDENCE_RECHECK |
 | R02-02 | 지표 | 두 시점 DB별 용량 비교 회귀 | 기존 Chromium26/26 증거 재사용, 변화 없음/동일 시각/DB 전환/연결 실패 무허위 수치 | Instant | EVIDENCE_RECHECK |
@@ -77,7 +82,7 @@
 | R06-03 | 확장 | 실제 HAE/LA/SOVIA 연동 필수범위 확인 | 초기 판매 오케스트레이션은 기존 정본상 비필수. 필수 확대는 사용자 명시 승인 후 별도 E2E | Owner | OWNER_SCOPE_GATE |
 | R07-01 | Windows | 최신 기능 SHA 패키지/preview/빌드 증거 일치 | 무료 unsigned source ZIP/EXE SHA, 새 기능 포함 여부, 빌드+실행 구분 ([evidence](R07_PACKAGE_PROVENANCE_20261115.md)) | Instant | PASS_SCOPED |
 | R07-02 | Windows | Windows 설치·실행·종료·재시작·제거 UX | 새 폴더만/기존 데이터 안전, 포트충돌·Python/브라우저 문제·기본 OFF 통제 ([evidence](R07_02_PORTABLE_LIFECYCLE_20261115.md)) | Codex GPT-6 Luna Max | PASS_SCOPED |
-| R07-03 | Windows | 한국어 오류·승인·복구 UI/CLI 마감 | 위험 작업 미리보기·기본 거부, 잘린 화면/검색/선택·복원 오류 실브라우저 | Instant | OPEN |
+| R07-03 | Windows | 한국어 오류·승인·복구 UI/CLI 마감 | 위험 작업 미리보기·기본 거부, 잘린 화면/검색/선택·복원 오류 실브라우저 | Codex GPT-6 Luna Max | PASS_SCOPED |
 | R07-04 | Windows | 사용자 Windows10/11 최신 SHA 실물 QA | 한 번에 합성 설치/실행/테이블/복원/제거, 개인정보 없는 증거; 최신 SHA와 과거 QA 구분 | Owner | OWNER_GATE |
 | R07-05 | Windows | 재배포권·지원/환불·서명·구매자 수용 승인 | 소유자 확정 전 RELEASE HOLD, 유료/도메인/상품 등록 금지; 등록은 후속 Codex | Owner | OWNER_GATE |
 | R07-06 | Windows | 실제 허가된 장기 고객환경 평가 | 동의한 데이터는 로컬에만 두고 익명화 결과로 수용; 실제 접근권/전원/복원 증거 | Owner | OWNER_GATE |

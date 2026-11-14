@@ -1,3 +1,5 @@
+> **[2026-11-15 KST · latest scoped acceptance · source/test SHA `8dc0a4dd9096ec9b92a683db53912c00a017f03c`]** R07-03 PASS_SCOPED: Korean consent/safe-restore/diagnostic UX and recovery behavior. Full [#43647307300](https://github.com/hibi89/DBVORA/actions/runs/43647307300) PASS (Ubuntu 783/783, 0 skip; Windows 782 PASS + one named POSIX-only skip; 12/12 mandatory steps each OS). Chromium [#43647307293](https://github.com/hibi89/DBVORA/actions/runs/43647307293) 35/35 each OS; PostgreSQL TLS/UI [#43647307279](https://github.com/hibi89/DBVORA/actions/runs/43647307279) 5+8 checks; ZIP [#43647307331](https://github.com/hibi89/DBVORA/actions/runs/43647307331), unsigned EXE [#43647307329](https://github.com/hibi89/DBVORA/actions/runs/43647307329) and blueprint [#43647307578](https://github.com/hibi89/DBVORA/actions/runs/43647307578) PASS. R01-05/R01-06 also PASS_SCOPED on this evidence. [Detailed evidence](R07_03_KOREAN_RECOVERY_UX_20261115.md). Next R01-04. Official completion remains UNASSESSED / RELEASE HOLD.
+
 > **[2026-11-15 KST · latest scoped acceptance · source/test SHA `3f138530321a35dc96c1682f1ebb2fac3fac85ce`]** R07-02 PASS_SCOPED: portable ZIP manual launch/stop/restart/port-conflict/removal verified with synthetic source DB preservation. Exact full gate [#43642757174](https://github.com/hibi89/DBVORA/actions/runs/43642757174): Ubuntu 779/779, 0 skip; Windows 778 PASS + one named POSIX-only skip; mandatory 12/12 each. Chromium [#43642757197](https://github.com/hibi89/DBVORA/actions/runs/43642757197) 33/33 each OS; real PG16 TLS/UI [#43642757164](https://github.com/hibi89/DBVORA/actions/runs/43642757164), source ZIP [#43642757175](https://github.com/hibi89/DBVORA/actions/runs/43642757175), unsigned EXE [#43642757229](https://github.com/hibi89/DBVORA/actions/runs/43642757229), blueprint [#43642757612](https://github.com/hibi89/DBVORA/actions/runs/43642757612) PASS. [Evidence](R07_02_PORTABLE_LIFECYCLE_20261115.md). Next R07-03. Overall UNASSESSED / RELEASE HOLD.
 
 > **[2026-11-15 KST · latest scoped acceptance · source/test SHA `4914c59a7009e223e02924fd4f1f92c4a1431bf0`]** R07-01 PASS_SCOPED: source ZIP manifest and unsigned Windows EXE sidecar match the exact commit; all nine contracts are included. ZIP/EXE, full Ubuntu/Windows gate and blueprint evidence: [R07_PACKAGE_PROVENANCE_20261115.md](R07_PACKAGE_PROVENANCE_20261115.md). Full gate 777 discovered on each OS; Ubuntu 777 PASS/0 skip, Windows 776 PASS + one named POSIX-only skip; all 12 gate steps PASS. Overall completion remains UNASSESSED / RELEASE HOLD.
@@ -65,8 +67,8 @@
 | R01-02 | **동시에 보이는 다중 DB 노드**·클릭·Enter·390px·2OS 실제 Chromium; 기존 구현/증거 재사용 | RECHECK |
 | R01-03 | PG16 verified TLS 읽기전용 사용자 진입 UI/조회 흐름; 보안정보·DSN/경로 UI·로그 미노출, TLS/권한 오류 복구·Chromium | OPEN |
 | R01-04 | SQLite+PG 함께 보는 서비스 지도 및 사용자 명시 cross-DB 관계의 unverified 표시; 추정 관계 금지 | OPEN |
-| R01-05 | 1,000표/997FK/2,000 workspace 제한, XSS·식별자·무한 graph/메모리 상한 회귀 | RECHECK |
-| R01-06 | 키보드 Tab/Enter, ARIA, 작은 화면, 로딩/오류/15초 timeout·재시도, 하얀 화면 방지 실제 브라우저 | RECHECK |
+| R01-05 | 1,000표/997FK/2,000 workspace 제한, XSS·식별자·무한 graph/메모리 상한 회귀 | PASS_SCOPED |
+| R01-06 | 키보드 Tab/Enter, ARIA, 작은 화면, 로딩/오류/15초 timeout·재시도, 하얀 화면 방지 실제 브라우저 | PASS_SCOPED |
 | R01-07 | 느린 A→B DB 전환/동일 DB 테이블 전환 뒤 stale/abort/failed 응답 혼입 방어와 adversarial browser regression | PARTIAL_RECHECK |
 
 ### C. 측정/관측/영구추세 (R02-01..06; 6)
@@ -113,7 +115,7 @@
 | R06-03 | 실제 HAE/LA/SOVIA 통합은 초기 필수 아님; 별도 요구 확대가 없는지 문서 확인, 확대는 사전 승인 | OWNER_SCOPE_GATE |
 | R07-01 | 최신 기능 SHA 기반 unsigned ZIP/EXE 산출·내부 SHA manifest, 소스와 바이너리 산출 검증 ([evidence](R07_PACKAGE_PROVENANCE_20261115.md)) | PASS_SCOPED |
 | R07-02 | GitHub-hosted Windows 실제 portable launch/종료/재시작/제거·기존 폴더/port 충돌·기본OFF ([evidence](R07_02_PORTABLE_LIFECYCLE_20261115.md)) | PASS_SCOPED |
-| R07-03 | 한국어 오류·동의·복원·안전/실패 안내, 실제 Chromium 390px/desktop·키보드/ARIA 스크린샷 | OPEN |
+| R07-03 | 한국어 오류·동의·복원·안전/실패 안내, 실제 Chromium 390px/desktop·키보드/ARIA 스크린샷 | PASS_SCOPED |
 | R07-04 | 구매자/소유자의 **실제 Win10/11 실물 QA**는 GH runner 대체 불가, 별도 OWNER_GATE | OWNER_GATE |
 | R07-05 | 상업권·서명·지원/환불·가격/소유자 최종 사용 수용은 GH만으로 확정 불가, RELEASE HOLD | OWNER_GATE |
 | R07-06 | 동의된 실제 고객환경 장기 평가·물리 오류/복원은 데이터 접근·소유자 승인 필요; GH는 합성만 | OWNER_GATE |
