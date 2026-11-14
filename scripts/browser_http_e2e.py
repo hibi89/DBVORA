@@ -831,7 +831,10 @@ def run(*, screenshots=None):
                             and multi_page.locator('button.table-node').count() == 3
                             and not multi_errors, 'MULTI_SWITCH_BACK_FAILED')
                     result['checks'].append('multi_live_two_databases_isolated_navigation')
-                    require("첫 측정" in multi_page.locator('#growth-status').inner_text(),
+                    # This view has already completed one successful
+                    # explicit refresh above: compare two measured observations.
+                    require("직전 측정 대비 변화 없음" in
+                            multi_page.locator('#growth-status').inner_text(),
                             'MULTI_GROWTH_BASELINE_NOT_SCOPED')
                     multi_page.locator('#refresh').click()
                     multi_page.wait_for_function(
