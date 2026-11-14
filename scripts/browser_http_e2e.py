@@ -574,6 +574,113 @@ def run(*, screenshots=None):
                     page.set_viewport_size({"width": 1440, "height": 900})
                     result["checks"].append("sqlite_1000_repeated_mobile_viewport")
 
+                    # Bounded real-browser soak, not a 24h memory certification.
+                    # Exercise multiple *real* 1,000-table SQLite inventory
+                    # fetches and alternating filter/keyboard/selection, with
+                    # intermittent synthetic transport failures. Chrome CDP
+                    # reports post-GC JS heap; report the values rather than
+                    # advertising an unproven long-term leak-free guarantee.
+                    cdp = page.context.new_cdp_session(page)
+                    cdp.send("Performance.enable")
+
+                    def after_gc_heap():
+                        cdp.send("HeapProfiler.collectGarbage")
+                        values = cdp.send("Performance.getMetrics")["metrics"]
+                        match = [v["value"] for v in values
+                                 if v["name"] == "JSHeapUsedSize"]
+                        require(len(match) == 1 and match[0] >= 0,
+                                "CDP_JS_HEAP_UNAVAILABLE")
+                        return int(match[0])
+
+                    heap_samples = [after_gc_heap()]
+                    original_dom = page.evaluate(
+                        "() => document.querySelectorAll('*').length")
+                    require(page.locator("#edges path").count() == 997,
+                            "SOAK_PRECONDITION_GRAPH")
+                    for cycle in range(24):
+                        target = f"synthetic_catalog_{(cycle * 37) % 996:04d}"
+                        page.locator("#table-filter").fill(target.upper())
+                        node = page.locator("button.table-node:visible")
+                        require(node.count() == 1, "SOAK_FILTER_AMBIGUOUS")
+                        node.focus()
+                        node.press("Enter")
+                        require(page.locator(".detail-heading h3").inner_text() == target
+                                and node.get_attribute("aria-pressed") == "true"
+                                and page.locator("#edges path").count() == 0,
+                                "SOAK_SELECTION_MISMATCH")
+
+                        if cycle % 6 == 5:
+                            # Force a client-only browser network disconnect,
+                            # then verify the last good UI survives unchanged.
+                            def soak_abort(route):
+                                route.abort("failed")
+                            page.route("**/api/inventory", soak_abort)
+                            page.locator("#refresh").click()
+                            page.wait_for_function(
+                                "() => !document.querySelector('#refresh').disabled"
+                                " && !document.querySelector('#error').hidden",
+                                timeout=15000)
+                            require(page.locator("button.table-node:visible").count() == 1
+                                    and page.locator(".detail-heading h3").inner_text()
+                                    == target and node.get_attribute("aria-pressed")
+                                    == "true", "SOAK_ABORT_STATE_CHANGED")
+                            page.unroute("**/api/inventory", soak_abort)
+
+                        with page.expect_response(
+                                lambda r: r.url == base + "/api/inventory"
+                                and r.status == 200, timeout=30000):
+                            page.locator("#refresh").click()
+                        page.wait_for_function(
+                            "() => !document.querySelector('#refresh').disabled"
+                            " && document.querySelector('#error').hidden",
+                            timeout=30000)
+                        require(page.locator("button.table-node:visible").count() == 1
+                                and page.locator(".detail-heading h3").inner_text() == target
+                                and page.locator("button.table-node:visible").get_attribute(
+                                    "aria-pressed") == "true", "SOAK_REFRESH_STATE_CHANGED")
+                        page.locator("#table-filter").fill("")
+                        state = page.evaluate("""() => {
+                            const probe = window.__dbvoraRefreshProbe;
+                            return {
+                                tables: document.querySelectorAll(
+                                    '#tables button.table-node').length,
+                                paths: document.querySelectorAll('#edges path').length,
+                                dom: document.querySelectorAll('*').length,
+                                pressed: document.querySelectorAll(
+                                    '#tables button[aria-pressed="true"]').length,
+                                live: probe.live,
+                                maxLive: probe.maxLive,
+                                listeners: probe.resizeListeners,
+                                created: probe.created,
+                                disconnected: probe.disconnected
+                            };
+                        }""")
+                        require(state["tables"] == 1000 and state["paths"] == 997
+                                and state["pressed"] == 1 and state["live"] == 1
+                                and state["maxLive"] == 1 and state["listeners"] == 1
+                                and state["created"] == state["disconnected"] + 1
+                                and abs(state["dom"] - original_dom) <= 30,
+                                "SOAK_DOM_OBSERVER_LISTENER_GROWTH")
+                        if cycle % 8 == 7:
+                            heap_samples.append(after_gc_heap())
+                        require(at_limit == digest(db), "SOAK_CHANGED_SOURCE")
+                    cdp.detach()
+                    # A very wide gross-growth guard is deliberately *not*
+                    # a proof of zero leaks: collect quantitative evidence and
+                    # reject only clearly unbounded heap growth in this run.
+                    heap_growth = heap_samples[-1] - heap_samples[0]
+                    require(len(heap_samples) == 4
+                            and heap_growth <= 24 * 1024 * 1024,
+                            "SOAK_GROSS_JS_HEAP_GROWTH")
+                    result["real_sqlite_1000_soak"] = {
+                        "refresh_cycles": 24, "synthetic_disconnects": 4,
+                        "dom_elements": original_dom,
+                        "observed_js_heap_after_gc_bytes": heap_samples,
+                        "net_js_heap_change_bytes": heap_growth,
+                        "heap_scope": "single_chromium_run_not_long_term_proof"}
+                    result["checks"].append("sqlite_1000_24cycle_refresh_filter_observer")
+                    result["checks"].append("sqlite_1000_cdp_gc_heap_observation")
+
                     # Just one extra generated table must fail closed at the
                     # API boundary without exposing paths, rows, or SQL.
                     excessive = extend_synthetic_catalog(db, target_tables=1001)
