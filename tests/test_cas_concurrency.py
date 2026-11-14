@@ -58,6 +58,14 @@ class CompressedCasConcurrencyTests(unittest.TestCase):
             connection.commit()
         self.snapshot = self.take_snapshot()
         expected_hash = hashlib.sha256(self.snapshot.read_bytes()).hexdigest()
+        self.assertNotEqual(expected_hash, old["snapshot_sha256"])
+        snapshot_parts = self.snapshot.read_bytes()
+        missing_chunk_count = sum(
+            not (self.chunks / (
+                hashlib.sha256(snapshot_parts[offset:offset + cas.CHUNK_BYTES])
+                .hexdigest() + ".cz")).exists()
+            for offset in range(0, len(snapshot_parts), cas.CHUNK_BYTES))
+        self.assertGreater(missing_chunk_count, 0)
 
         # Ensure both threads have already observed the target new chunk as
         # absent by rendezvousing at the first chunk staging allocation.
@@ -67,12 +75,14 @@ class CompressedCasConcurrencyTests(unittest.TestCase):
         entered = [0]
 
         def rendezvous_staging(directory):
-            if Path(directory) == self.chunks:
-                with gate:
-                    index = entered[0]
-                    entered[0] += 1
-                if index < 2:
-                    barrier.wait()
+            # Both writers reach their first *new* chunk staging before
+            # either may publish it. Do not compare Windows drive/case path
+            # spellings to decide whether the injection actually fires.
+            with gate:
+                index = entered[0]
+                entered[0] += 1
+            if index < 2:
+                barrier.wait()
             return original_staging(directory)
 
         def worker(_index):
