@@ -1,3 +1,8 @@
+## 2026-11-14 P3 short write 후속검증 (최종설계 official 점수 불변)
+- 소스 SHA [`0abe50bbd219`](https://github.com/hibi89/DBVORA/commit/0abe50bbd2197f316c4626e00b02d1264abe068e), Windows/Linux full CI [#43567268531](https://github.com/hibi89/DBVORA/actions/runs/43567268531) 2/2 SUCCESS. Python706 발견, Ubuntu706PASS, Windows705PASS+POSIX-only1SKIP, FAIL0, OS당 mandatory12/12. R03 synthetic archive integrity evidence 보강; R01/R02/R04~07 점수 조정없음.
+- CAS-zlib v2 chunk/manifest stage 저장에서 short byte-write 또는 쓰기 반환값 거짓 보고를 publication *전* 차단, 기존 정상 세대 유지·청크 손상 검출 회귀. 첫 Windows 실패 #43566541865 → 진단 #43566989375에서 테스트의 경로 기준 injection 미발화 확인 → payload 기반 deterministic injection으로 바꾼 새 SHA 성공; 2개 실패 실행은 여전히 FAILURE 기록.
+- **미검증:** 실제 구매자 Win10/11, 다중 프로세스 경합·장기 OS 스케줄러, 물리 정전, 고객 PG/DB 및 상업권리/LICENSE/NOTICE·지원/환불/가격/실 크몽 등록·사용자 P100 가중 수용. 공식 UNASSESSED/과거 내부95, `[작업중]`/RELEASE HOLD 유지.
+
 ## 2026-11-14 P3 CAS 4세대·감사 manifest 동일 안전검증 최신
 - exact `hibi89/DBVORA@feature/p0-db-map` source [`7e3ba31590d9`](https://github.com/hibi89/DBVORA/commit/7e3ba31590d93626e7c93afab342167606f29e97), [release CI #43565286637](https://github.com/hibi89/DBVORA/actions/runs/43565286637), Windows2025/Ubuntu24.04 2/2 SUCCESS, Python703 tests discovered (Ubuntu703PASS/Win702PASS+1 POSIX SKIP), 0FAIL, mandatory12/12/OS.
 - **R03 증거 보강, 공식 점수 변화 없음:** 합성 SQLite CAS-zlib v2 4개 immutable manifest(원본, 중복, 변경2) 독립복원, 기존 세대 SHA 유지, orphan/손상 차단, 기존 정상 복원 가능 여부를 temporary filesystem에서만 검증. `cas_audit` manifest reader가 이미 복원기에 사용된 descriptor/ctime identity 검사를 재사용해 같은 size·mtime 경로 교체 공격을 fail-closed.
