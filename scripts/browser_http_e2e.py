@@ -448,6 +448,118 @@ def run(*, screenshots=None):
                             "HTTP_RECOVERY_GRAPH_FAILED")
                     result["checks"].append("sqlite_1000_http_outage_state_and_recovery")
 
+                    # Simulate a severed browser-to-localhost request without
+                    # touching the real local server, source DB or customer files.
+                    # The last verified 1,000-table inspector/filter must survive.
+                    page.locator("#table-filter").fill(last_name.upper())
+                    def stable_filtered_state():
+                        state = page.evaluate("""() => ({
+                            tables: document.querySelectorAll(
+                                '#tables button.table-node').length,
+                            visible: document.querySelectorAll(
+                                '#tables button.table-node:not([hidden])').length,
+                            edges: document.querySelectorAll('#edges path').length,
+                            pressed: document.querySelectorAll(
+                                '#tables button[aria-pressed="true"]').length,
+                            selected: document.querySelector(
+                                '.detail-heading h3')?.textContent,
+                            filter: document.querySelector('#table-filter').value,
+                            observers: window.__dbvoraRefreshProbe.live,
+                            listeners: window.__dbvoraRefreshProbe.resizeListeners
+                        })""")
+                        return (state["tables"] == 1000
+                                and state["visible"] == 1
+                                and state["edges"] == 0
+                                and state["pressed"] == 1
+                                and state["selected"] == last_name
+                                and state["filter"] == last_name.upper()
+                                and state["observers"] == 1
+                                and state["listeners"] == 1)
+
+                    def sever_inventory(route):
+                        route.abort("failed")
+                    page.route("**/api/inventory", sever_inventory)
+                    page.locator("#refresh").click()
+                    page.wait_for_function(
+                        "() => !document.querySelector('#refresh').disabled"
+                        " && !document.querySelector('#error').hidden",
+                        timeout=15000)
+                    require("연결이 중단" in page.locator("#error").inner_text()
+                            and stable_filtered_state() and at_limit == digest(db)
+                            and not errors, "NETWORK_ABORT_PRESERVATION_FAILED")
+                    page.unroute("**/api/inventory", sever_inventory)
+                    with page.expect_response(
+                            lambda r: r.url == base + "/api/inventory"
+                            and r.status == 200, timeout=30000):
+                        page.locator("#refresh").click()
+                    page.wait_for_function(
+                        "() => !document.querySelector('#refresh').disabled"
+                        " && document.querySelector('#error').hidden",
+                        timeout=30000)
+                    require(stable_filtered_state() and at_limit == digest(db),
+                            "NETWORK_ABORT_RECOVERY_FAILED")
+                    result["checks"].append("sqlite_1000_network_abort_recovery")
+
+                    # A slow but successful real localhost HTTP response must
+                    # preserve selection and never produce a spurious timeout.
+                    delayed_requests = []
+                    def delayed_inventory(route):
+                        delayed_requests.append(1)
+                        time.sleep(0.6)
+                        route.continue_()
+                    page.route("**/api/inventory", delayed_inventory)
+                    with page.expect_response(
+                            lambda r: r.url == base + "/api/inventory"
+                            and r.status == 200, timeout=30000):
+                        page.locator("#refresh").click()
+                    page.wait_for_function(
+                        "() => !document.querySelector('#refresh').disabled"
+                        " && document.querySelector('#error').hidden",
+                        timeout=30000)
+                    page.unroute("**/api/inventory", delayed_inventory)
+                    require(len(delayed_requests) == 1 and stable_filtered_state()
+                            and at_limit == digest(db),
+                            "DELAYED_HTTP_RESPONSE_STATE_FAILED")
+                    result["checks"].append("sqlite_1000_delayed_local_response")
+
+                    # Stall a single browser request indefinitely. The app must
+                    # abort its own fetch after 15 s and enable an explicit retry,
+                    # without rendering a stale response or evicting old data.
+                    held_requests = []
+                    def never_answer_inventory(route):
+                        held_requests.append(1)  # Intentionally not continued.
+                    page.route("**/api/inventory", never_answer_inventory)
+                    page.locator("#refresh").click()
+                    page.wait_for_function(
+                        "() => document.querySelector('#refresh').disabled",
+                        timeout=5000)
+                    require(stable_filtered_state() and at_limit == digest(db),
+                            "PENDING_HTTP_LOST_LAST_GOOD_STATE")
+                    page.wait_for_function(
+                        "() => !document.querySelector('#refresh').disabled"
+                        " && !document.querySelector('#error').hidden",
+                        timeout=26000)
+                    require(len(held_requests) == 1
+                            and "시간이 초과" in page.locator("#error").inner_text()
+                            and stable_filtered_state()
+                            and at_limit == digest(db) and not errors,
+                            "HTTP_TIMEOUT_ABORT_FAILED")
+                    page.unroute("**/api/inventory", never_answer_inventory)
+                    with page.expect_response(
+                            lambda r: r.url == base + "/api/inventory"
+                            and r.status == 200, timeout=30000):
+                        page.locator("#refresh").click()
+                    page.wait_for_function(
+                        "() => !document.querySelector('#refresh').disabled"
+                        " && document.querySelector('#error').hidden",
+                        timeout=30000)
+                    require(stable_filtered_state() and at_limit == digest(db),
+                            "HTTP_TIMEOUT_RECOVERY_FAILED")
+                    page.locator("#table-filter").fill("")
+                    require(page.locator("#edges path").count() == 997,
+                            "HTTP_TIMEOUT_GRAPH_RESET_FAILED")
+                    result["checks"].append("sqlite_1000_timeout_abort_and_retry")
+
                     # A narrow viewport must not acquire horizontal overflow
                     # after repeated real-server refresh (not client injection).
                     page.set_viewport_size({"width": 390, "height": 844})

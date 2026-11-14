@@ -208,17 +208,40 @@ function render(data) {
 // Register exactly once; render() may run on every manual refresh.
 window.addEventListener('resize', drawEdges, {passive: true});
 
+// Never leave Refresh disabled indefinitely if localhost stops responding.
+// Keep the last verified inventory, filter and inspector on transport failure.
+const INVENTORY_TIMEOUT_MS = 15000;
+let refreshPending = false;
+
 async function refresh() {
+  if (refreshPending) return; // Do not permit overlapping/stale responses.
+  refreshPending = true;
   const btn = $('refresh');
   btn.disabled = true;
   hideError();
+  const controller = new AbortController();
+  let timedOut = false;
+  const timeout = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, INVENTORY_TIMEOUT_MS);
   try {
-    const response = await fetch('/api/inventory', {cache: 'no-store', credentials: 'same-origin'});
+    const response = await fetch('/api/inventory', {
+      cache: 'no-store', credentials: 'same-origin', signal: controller.signal
+    });
     const data = await response.json();
     if (!response.ok) throw new Error(data?.error?.message || '메타데이터를 읽을 수 없습니다.');
     render(data);
-  } catch (error) { displayError(error.message || '연결 실패'); }
-  finally { btn.disabled = false; }
+  } catch (error) {
+    if (timedOut) displayError('메타데이터 요청 시간이 초과되었습니다. 다시 시도하세요.');
+    else if (error?.name === 'TypeError' || error?.name === 'AbortError') {
+      displayError('연결이 중단되었습니다. 다시 시도하세요.');
+    } else displayError(error?.message || '연결 실패');
+  } finally {
+    clearTimeout(timeout);
+    refreshPending = false;
+    btn.disabled = false;
+  }
 }
 $('refresh').addEventListener('click', refresh);
 $('table-filter').addEventListener('input', applyFilter);

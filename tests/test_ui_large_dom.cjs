@@ -55,7 +55,7 @@ async function verify() {
     ResizeObserver:class{observe(){} disconnect(){}},
     requestAnimationFrame:fn=>fn(),
     fetch:async()=>{meter.fetches++;return {ok:true,json:async()=>payload};},
-    Date,Map,Set,String,Number,Intl,console
+    Date,Map,Set,String,Number,Intl,console,setTimeout,clearTimeout,AbortController
   };
   const source=fs.readFileSync(path.resolve(__dirname,'../dbvora/web/app.js'),'utf8');
   assert.ok(!/\.innerHTML\s*=/.test(source));

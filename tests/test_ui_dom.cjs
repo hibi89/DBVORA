@@ -28,9 +28,15 @@ const data = {engine:'sqlite',db_id:'abc12345678901234567890',size_bytes:12345, 
     {name:marker, columns:[{name:'<svg onload=alert(9)>',type:'TEXT',pk_position:0,nullable_declared:true}],indexes:[],foreign_keys:[]}
   ]};
 const listeners = [];
+let failNextFetch = false;
 const sandbox = {
   document:doc, window:{addEventListener(name, fn){ listeners.push({name, fn}); }}, ResizeObserver:class {observe(){} disconnect(){}},
-  requestAnimationFrame: fn => fn(), fetch: async () => ({ok:true,json: async () => data}),
+  requestAnimationFrame: fn => fn(),
+  fetch: async () => {
+    if (failNextFetch) { failNextFetch = false; throw new TypeError('Failed to fetch'); }
+    return {ok:true,json: async () => data};
+  },
+  setTimeout, clearTimeout, AbortController,
   console, Date, Map, Number, String, Intl
 };
 const script = fs.readFileSync(path.resolve(__dirname, '../dbvora/web/app.js'), 'utf8');
@@ -81,6 +87,19 @@ setImmediate(async () => {
     ids['table-filter'].events.input();
     await ids.refresh.events.click();
     assert.equal(ids.tables.children.filter(x => !x.hidden).length, 1, 'filter persists after refresh');
+    const inspectorBeforeDisconnect = ids.detail.textContent;
+    failNextFetch = true;
+    await ids.refresh.events.click();
+    assert.equal(ids.refresh.disabled, false, 'network failure must enable refresh');
+    assert.equal(ids.error.hidden, false, 'network failure must be visible');
+    assert.ok(ids.error.textContent.includes('연결이 중단'), 'network failure is actionable');
+    assert.equal(ids.detail.textContent, inspectorBeforeDisconnect,
+      'network failure must keep last verified inspector');
+    assert.equal(ids.tables.children.filter(x => !x.hidden).length, 1,
+      'network failure must preserve local filter');
+    await ids.refresh.events.click();
+    assert.equal(ids.error.hidden, true, 'successful retry clears network error');
+    assert.equal(ids.tables.children.filter(x => !x.hidden).length, 1);
     await require('./test_ui_large_dom.cjs').verify();
     require('./test_workspace_html_dom.cjs').verify();
     console.log('UI DOM SIMULATION PASS: schema, XSS identifiers and resize listener idempotence');
