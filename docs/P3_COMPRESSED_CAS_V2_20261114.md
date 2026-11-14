@@ -1,0 +1,7 @@
+# Compressed immutable CAS v2 — 2026-11-14
+
+Synthetic-only. Zlib level 6 per immutable 64KiB block, full uncompressed SHA-256 content key, explicit v2 contract and .cz file extension. Existing raw CAS v1 and ZIP/ZSTD archives are untouched. Requires new separate manifest/chunk directories, synthetic-only consent and plaintext acknowledgement. Restores verify bounded decompression, every chunk hash, whole snapshot hash and SQLite integrity before exclusive publishing into a NEW output name. No customer DB, unattended execution, deletion, retention, encryption, signature, physical-power-loss certification or universal savings claim. Product and commercial release remain HOLD.
+
+Design comparison: A raw CAS v1 avoids compression CPU but stores plain duplicated blocks (in current same-fixture benchmark 1,177,960 bytes for two generations versus ZIP 31,216 bytes). B separate compressed CAS v2 adds CPU but can reduce new chunk storage and preserve content reuse. ZIP/ZSTD remains the release fallback. Real comparable measurements must be run again before making claims.
+
+Python API: dbvora.archive.compressed_cas.create_compressed(snapshot, chunks, manifests, synthetic_only=True, accept_plaintext=True), and restore_compressed(manifest, chunks, output, synthetic_only=True, accept_plaintext=True). Tests: python -m unittest -v tests.test_compressed_cas; then exact-SHA full release gate Windows/Linux.
