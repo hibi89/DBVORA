@@ -23,7 +23,7 @@ class _SafeParser(argparse.ArgumentParser):
     """Do not echo CLI parameters (which may contain a private local path)."""
 
     def error(self, message):
-        raise _CLIError("INVALID_ARGUMENT", "Invalid command arguments. Run --help for usage.")
+        raise _CLIError("INVALID_ARGUMENT", "명령 인자가 올바르지 않습니다. --help에서 사용법을 확인하세요.")
 
 
 class _CLIError(Exception):
@@ -37,54 +37,54 @@ def _parser():
     parser = _SafeParser(
         prog="python -m dbvora.archive_cli",
         description=(
-            "Offline prototype for SYNTHETIC SQLite only. Archives, snapshots and "
-            "restored SQLite contain UNENCRYPTED database records. No customer data."
+            "합성 SQLite 테스트 전용 오프라인 프로토타입입니다. 생성되는 스냅샷·아카이브와 "
+            "복원 데이터베이스는 암호화되지 않습니다. 고객 데이터에는 사용하지 마세요."
         ),
     )
     subs = parser.add_subparsers(dest="command", required=True, parser_class=_SafeParser)
 
-    snapshot = subs.add_parser("snapshot", help="SQLite online backup to new plaintext snapshot")
-    snapshot.add_argument("--source", required=True, help="Absolute path to a synthetic SQLite fixture")
-    snapshot.add_argument("--output-dir", required=True, help="Existing absolute output directory")
+    snapshot = subs.add_parser("snapshot", help="합성 SQLite 스냅샷을 암호화 없이 새 파일로 생성")
+    snapshot.add_argument("--source", required=True, help="합성 테스트용 SQLite 파일의 절대 경로")
+    snapshot.add_argument("--output-dir", required=True, help="이미 존재하는 출력 폴더의 절대 경로")
 
-    archive = subs.add_parser("archive", help="ZIP or optional installed ZSTD; new file only")
-    archive.add_argument("--snapshot", required=True, help="Absolute path to DBVORA-generated snapshot")
+    archive = subs.add_parser("archive", help="ZIP 또는 선택 설치한 ZSTD로 새 아카이브 생성")
+    archive.add_argument("--snapshot", required=True, help="DBVORA가 생성한 스냅샷 파일의 절대 경로")
     archive.add_argument("--output-dir", required=True, help="Existing absolute output directory")
     archive.add_argument("--codec", required=True, choices=("zip", "zstd"))
     archive.add_argument("--level", type=int, choices=(1, 3, 9), default=None,
-                         help="ZSTD level (1, 3 or 9). Do not specify for ZIP")
+                         help="ZSTD 수준(1, 3 또는 9). ZIP에서는 지정하지 마세요.")
 
-    restore = subs.add_parser("restore", help="Verified restore to a NEW plaintext SQLite file")
-    restore.add_argument("--archive", required=True, help="Absolute path to generated .zip/.dbvz artifact")
-    restore.add_argument("--output-dir", required=True, help="Existing absolute *separate* output directory")
+    restore = subs.add_parser("restore", help="검증 후 새 SQLite 파일로 복원(암호화되지 않음)")
+    restore.add_argument("--archive", required=True, help="생성된 .zip 또는 .dbvz 아카이브의 절대 경로")
+    restore.add_argument("--output-dir", required=True, help="기존에 만들어 둔 별도 출력 폴더의 절대 경로")
 
-    preview = subs.add_parser("preview", help="Read-only verify candidate archives before selection")
-    preview.add_argument("--archive-dir", required=True, help="Existing absolute synthetic archive directory")
+    preview = subs.add_parser("preview", help="후보 아카이브를 읽기 전용으로 확인하고 선택")
+    preview.add_argument("--archive-dir", required=True, help="합성 테스트용 아카이브가 있는 기존 폴더의 절대 경로")
 
-    selected = subs.add_parser("restore-selected", help="Restore a previewed archive to a new file")
-    selected.add_argument("--archive", required=True, help="Absolute generated .zip/.dbvz path from preview")
-    selected.add_argument("--artifact-sha256", required=True, help="Exact artifact SHA-256 shown by preview")
-    selected.add_argument("--snapshot-sha256", required=True, help="Exact restored-content SHA-256 shown by preview")
-    selected.add_argument("--output-dir", required=True, help="Existing absolute separate restore directory")
+    selected = subs.add_parser("restore-selected", help="미리보기에서 확인한 아카이브를 새 파일로 복원")
+    selected.add_argument("--archive", required=True, help="미리보기에서 선택한 생성 .zip 또는 .dbvz 파일의 절대 경로")
+    selected.add_argument("--artifact-sha256", required=True, help="미리보기 결과에 표시된 아카이브 SHA-256 값")
+    selected.add_argument("--snapshot-sha256", required=True, help="미리보기 결과에 표시된 복원 내용 SHA-256 값")
+    selected.add_argument("--output-dir", required=True, help="기존에 만들어 둔 별도 복원 폴더의 절대 경로")
 
-    receipt = subs.add_parser("receipt", help="Unsigned receipt for an independently checked artifact")
-    receipt.add_argument("--artifact", required=True, help="Absolute path to a DBVORA artifact")
+    receipt = subs.add_parser("receipt", help="독립 확인한 아티팩트에 대한 미서명 확인 기록")
+    receipt.add_argument("--artifact", required=True, help="DBVORA 아티팩트의 절대 경로")
     receipt.add_argument("--parent-receipt-name", default=None,
-                         help="Optional existing verified receipt basename in same directory")
+                         help="같은 폴더에 있는 기존 검증 영수증 파일명(선택)")
     receipt.add_argument("--accept-unsigned", action="store_true",
-                         help="Acknowledge receipts are NOT signed or authenticated")
+                         help="영수증이 서명되거나 발행자를 인증하지 않음을 확인합니다.")
 
-    audit = subs.add_parser("audit", help="Read-only independent catalog/receipt verification")
-    audit.add_argument("--output-dir", required=True, help="Existing absolute archive directory")
+    audit = subs.add_parser("audit", help="카탈로그와 영수증을 별도로 읽기 전용 검증")
+    audit.add_argument("--output-dir", required=True, help="기존 아카이브 폴더의 절대 경로")
     audit.add_argument("--require-all-verified", action="store_true",
-                       help="Exit nonzero unless at least one archive has a valid unsigned receipt and all entries pass")
+                       help="유효한 미서명 영수증과 모든 항목의 통과를 확인하지 못하면 오류로 종료합니다.")
 
     for child in (snapshot, archive, restore, preview, selected, receipt):
         child.add_argument("--synthetic-only", action="store_true",
-                           help="Confirm this command is operating only on synthetic test data")
+                           help="합성 테스트 데이터에만 실행함을 확인합니다.")
     for child in (snapshot, archive, restore, preview, selected):
         child.add_argument("--accept-plaintext", action="store_true",
-                           help="Acknowledge archive/snapshot/restore content is NOT encrypted")
+                           help="아카이브·스냅샷·복원 데이터가 암호화되지 않음을 확인합니다.")
     return parser
 
 
@@ -92,25 +92,25 @@ def _absolute_generated(path, *, suffixes):
     p = Path(path)
     match = PUBLISHED.fullmatch(p.name)
     if not p.is_absolute() or match is None or match.group(1) not in suffixes:
-        raise _CLIError("GENERATED_ARTIFACT_REQUIRED", "Select an absolute DBVORA-generated artifact.")
+        raise _CLIError("GENERATED_ARTIFACT_REQUIRED", "DBVORA가 생성한 아티팩트의 절대 경로를 선택하세요.")
     return p
 
 
 def _require_write_ack(args):
     if not args.synthetic_only:
-        raise _CLIError("SYNTHETIC_ONLY_REQUIRED", "This prototype requires --synthetic-only.")
+        raise _CLIError("SYNTHETIC_ONLY_REQUIRED", "프로토타입은 --synthetic-only 확인 없이는 실행하지 않습니다.")
     if args.command == "receipt":
         if not args.accept_unsigned:
-            raise _CLIError("UNSIGNED_ACK_REQUIRED", "This receipt requires --accept-unsigned.")
+            raise _CLIError("UNSIGNED_ACK_REQUIRED", "영수증 확인은 --accept-unsigned가 필요합니다.")
     elif not args.accept_plaintext:
-        raise _CLIError("PLAINTEXT_ACK_REQUIRED", "This operation requires --accept-plaintext.")
+        raise _CLIError("PLAINTEXT_ACK_REQUIRED", "이 작업은 --accept-plaintext 확인이 필요합니다.")
 
 
 def _no_source_dir_output(source, output_dir):
     # Keep generated files out of the source artifact's directory. This is not
     # permission to archive customer databases; --synthetic-only is an assertion.
     if Path(source).parent.resolve() == Path(output_dir).resolve():
-        raise _CLIError("SEPARATE_OUTPUT_REQUIRED", "Use a separate existing output directory.")
+        raise _CLIError("SEPARATE_OUTPUT_REQUIRED", "원본 폴더와 분리된 기존 출력 폴더를 선택하세요.")
 
 
 def _redact_paths(obj):
@@ -135,7 +135,7 @@ def main(argv=None):
                         and item.get("receipt_status") == "RECEIPT_AND_CONTENT_VERIFIED_UNSIGNED"
                         for item in records)):
                     raise _CLIError("AUDIT_VERIFICATION_FAILED",
-                                    "Audit contains missing, damaged, or unverified artifacts or receipts.")
+                                    "일부 아카이브 또는 영수증이 누락·손상·미검증 상태입니다. 원본을 보존하고 항목을 검토하세요.")
                 expected_receipts = {
                     "dbvora-receipt-" + item["name"][7:39] + ".json"
                     for item in records
@@ -157,8 +157,8 @@ def main(argv=None):
                     "records": [item for item in catalog["records"]
                                 if item.get("kind") in ("zip", "dbvz")],
                     "guidance": (
-                        "Select only a CONTENT_VERIFIED_PUBLISH_UNPROVEN record. "
-                        "Pass its exact artifact and snapshot SHA-256 values to restore-selected."
+                        "CONTENT_VERIFIED_PUBLISH_UNPROVEN 상태의 항목만 선택하세요. "
+                        "미리보기의 아카이브와 복원 내용 SHA-256 값을 정확히 입력해 restore-selected를 실행하세요."
                     ),
                 }
             elif args.command == "snapshot":
@@ -169,7 +169,7 @@ def main(argv=None):
                 _no_source_dir_output(args.snapshot, args.output_dir)
                 if args.codec == "zip":
                     if args.level is not None:
-                        raise _CLIError("UNSUPPORTED_LEVEL", "Compression level applies to ZSTD only.")
+                        raise _CLIError("UNSUPPORTED_LEVEL", "압축 수준은 ZSTD에만 지정할 수 있습니다.")
                     result = make_zip_archive(args.snapshot, args.output_dir)
                 else:
                     result = create_zstd_archive(args.snapshot, args.output_dir,
@@ -185,7 +185,7 @@ def main(argv=None):
                             or not HEX_SHA.fullmatch(args.snapshot_sha256)):
                         raise _CLIError(
                             "INVALID_SELECTION",
-                            "Use both SHA-256 values shown by preview, then choose a separate output directory.",
+                            "미리보기의 두 SHA-256 값을 입력하고 별도 출력 폴더를 선택하세요.",
                         )
                     preview = inspect_recovery_artifact(artifact)
                     if (preview.get("status") != "CONTENT_VERIFIED_PUBLISH_UNPROVEN"
@@ -193,7 +193,7 @@ def main(argv=None):
                             or preview.get("snapshot_sha256") != args.snapshot_sha256):
                         raise _CLIError(
                             "SELECTION_CHANGED",
-                            "Selected archive no longer matches its verified preview. Run preview again or choose another verified archive; no restore output was created.",
+                            "선택한 아카이브가 검증된 미리보기와 달라졌습니다. 미리보기를 다시 실행하거나 검증된 항목을 선택하세요. 복원 파일은 생성되지 않았습니다.",
                         )
                     try:
                         result = restore_fn(
@@ -203,7 +203,7 @@ def main(argv=None):
                     except ArchiveError as exc:
                         raise _CLIError(
                             exc.code,
-                            "Restore did not complete safely. Review the selected archive and separate destination; the source archive was not written.",
+                            "복원이 안전하게 완료되지 않았습니다. 선택한 아카이브와 분리된 출력 폴더를 확인하세요. 원본 아카이브는 변경하지 않았습니다.",
                         ) from None
                     result["selected_artifact_sha256"] = preview["artifact_sha256"]
                     result["selection_verified"] = True
@@ -214,13 +214,16 @@ def main(argv=None):
                          ensure_ascii=False, sort_keys=True))
         return 0
     except (ArchiveError, _CLIError) as exc:
-        code, message = exc.code, exc.message
+        code = exc.code
+        message = (exc.message if isinstance(exc, _CLIError) else
+                   "아카이브 검증 또는 복원이 안전하게 완료되지 않았습니다. 입력을 확인하고 원본을 보존하세요.")
     except (OSError, ValueError, TypeError):
-        code, message = "OPERATION_FAILED", "The local operation failed safely."
+        code, message = "OPERATION_FAILED", "로컬 작업이 완료되지 않았습니다. 원본을 보존하고 입력을 다시 확인하세요."
     except Exception:
         # Never print a traceback containing the source path or copied customer data.
-        code, message = "UNEXPECTED_FAILURE", "The local operation did not complete."
-    print(json.dumps({"ok": False, "error": {"code": code, "message": message}}, sort_keys=True),
+        code, message = "UNEXPECTED_FAILURE", "작업을 완료하지 못했습니다. 원본 파일을 보존하고 다시 확인하세요."
+    print(json.dumps({"ok": False, "error": {"code": code, "message": message}},
+                     ensure_ascii=False, sort_keys=True),
           file=sys.stderr)
     return 2
 

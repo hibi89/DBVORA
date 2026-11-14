@@ -219,7 +219,7 @@ def run(*, screenshots=None):
                             "FILTER_RESET_FAILED")
                     result["checks"].append("local_table_filter_no_network")
 
-                    def screenshot(label):
+                    def screenshot(label, *, full_page=True):
                         if folder is None:
                             return
                         # Only overwrites the empty file generated in this call.
@@ -228,7 +228,7 @@ def run(*, screenshots=None):
                                 suffix=".png", delete=False) as handle:
                             destination = Path(handle.name)
                         try:
-                            page.screenshot(path=str(destination), full_page=True)
+                            page.screenshot(path=str(destination), full_page=full_page)
                             require(destination.stat().st_size > 2000, "BAD_SCREENSHOT")
                             result["screenshots"].append(destination.name)
                         except BaseException:
@@ -236,6 +236,25 @@ def run(*, screenshots=None):
                             raise
 
                     screenshot("desktop")
+                    guide_summary = page.locator("#safety-guidance-toggle")
+                    guide_summary.focus()
+                    page.keyboard.press("Enter")
+                    guide_copy = page.locator("#safety-guidance-copy").inner_text()
+                    require(page.locator("#safety-guidance").get_attribute("open") == ""
+                            and "SQLite" in guide_copy
+                            and "--synthetic-only" in guide_copy
+                            and "암호화되지 않습니다" in guide_copy,
+                            "KOREAN_SAFETY_GUIDE_OR_KEYBOARD_FAILED")
+                    result["checks"].append("korean_safety_guide_keyboard_consent")
+                    screenshot("safety-guide-desktop")
+                    page.set_viewport_size({"width": 390, "height": 844})
+                    page.wait_for_timeout(250)
+                    require(not page.evaluate(
+                        "() => document.documentElement.scrollWidth > window.innerWidth + 1"),
+                        "SAFETY_GUIDE_MOBILE_OVERFLOW")
+                    screenshot("safety-guide-mobile")
+                    page.set_viewport_size({"width": 1440, "height": 900})
+                    page.wait_for_timeout(150)
                     page.set_viewport_size({"width": 390, "height": 844})
                     page.wait_for_timeout(250)
                     require(not page.evaluate(
@@ -459,6 +478,7 @@ def run(*, screenshots=None):
                     def fail_inventory(route):
                         route.fulfill(status=503, content_type="application/json",
                                       body=json.dumps({"error": {
+                                          "code": "TEMPORARY_UNAVAILABLE",
                                           "message": "Synthetic temporary outage"}}))
                     page.route("**/api/inventory", fail_inventory)
                     with page.expect_response(
@@ -469,8 +489,9 @@ def run(*, screenshots=None):
                         "() => !document.querySelector('#refresh').disabled"
                         " && !document.querySelector('#error').hidden",
                         timeout=90000)
-                    require(page.locator("#error").inner_text()
-                            == "Synthetic temporary outage"
+                    localized_error = page.locator("#error").inner_text()
+                    require(localized_error ==
+                            "조회가 잠시 중단되었습니다. 새로고침을 눌러 다시 시도하세요. 마지막 정상 화면은 유지됩니다."
                             and page.locator("#tables button.table-node").count() == 1000
                             and page.locator("button.table-node:visible").count() == 1
                             and page.locator(".detail-heading h3").inner_text() == last_name
@@ -481,6 +502,14 @@ def run(*, screenshots=None):
                             and page.locator("#edges path").count() == 0
                             and at_limit == digest(db),
                             "HTTP_OUTAGE_DESTROYED_LAST_GOOD_STATE")
+                    screenshot("localized-error-desktop", full_page=False)
+                    page.set_viewport_size({"width": 390, "height": 844})
+                    page.wait_for_timeout(250)
+                    require(not page.evaluate(
+                        "() => document.documentElement.scrollWidth > window.innerWidth + 1"),
+                        "LOCALIZED_ERROR_MOBILE_OVERFLOW")
+                    screenshot("localized-error-mobile", full_page=False)
+                    page.set_viewport_size({"width": 1440, "height": 900})
                     page.unroute("**/api/inventory", fail_inventory)
                     with page.expect_response(
                             lambda r: r.url == base + "/api/inventory"
@@ -499,6 +528,7 @@ def run(*, screenshots=None):
                     require(page.locator("#edges path").count() == 997,
                             "HTTP_RECOVERY_GRAPH_FAILED")
                     result["checks"].append("sqlite_1000_http_outage_state_and_recovery")
+                    result["checks"].append("localized_error_recovery_responsive_screenshots")
 
                     # Simulate a severed browser-to-localhost request without
                     # touching the real local server, source DB or customer files.

@@ -129,7 +129,8 @@ def verify() -> dict:
                 page.wait_for_selector('#postgres-load')
                 if pg_requests:
                     raise AssertionError('POSTGRES_LOOKUP_MUST_BE_EXPLICIT')
-                page.locator('#postgres-load').click()
+                page.locator('#postgres-load').focus()
+                page.keyboard.press('Enter')
                 page.locator('#postgres-status').filter(has_text='TLS 인증 또는 PostgreSQL 연결에 실패했습니다').wait_for(timeout=15000)
                 body = page.locator('body').inner_text()
                 if len(pg_requests) != 1 or dsn in body or bad_ca in body:
@@ -156,7 +157,8 @@ def verify() -> dict:
                 page.goto('http://127.0.0.1:' + str(port) + '/', wait_until='domcontentloaded')
                 if pg_requests:
                     raise AssertionError('POSTGRES_LOOKUP_MUST_BE_EXPLICIT_AFTER_RESTART')
-                page.locator('#postgres-load').click()
+                page.locator('#postgres-load').focus()
+                page.keyboard.press('Enter')
                 page.locator('#postgres-status').filter(has_text='TLS 검증').wait_for(timeout=15000)
                 names = page.locator('#postgres-table-list button').all_text_contents()
                 if not {'public.users', 'public.events', 'public.event_view'}.issubset(set(names)):

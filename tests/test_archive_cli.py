@@ -8,7 +8,7 @@ import shutil
 import tempfile
 import unittest
 
-from dbvora.archive_cli import main
+from dbvora.archive_cli import _parser, main
 from tests.fixtures.make_sqlite import create_fixture
 
 
@@ -167,17 +167,21 @@ class ArchiveCliTests(unittest.TestCase):
         self.assertEqual(list(self.restores.iterdir()), [])
 
     def test_no_confirmation_produces_no_artifacts(self):
-        code, err, _ = self.run_cli("snapshot", "--source", str(self.source),
-                                    "--output-dir", str(self.snapshots), "--accept-plaintext")
+        code, err, raw = self.run_cli("snapshot", "--source", str(self.source),
+                                      "--output-dir", str(self.snapshots), "--accept-plaintext")
         self.assertEqual(code, 2)
         self.assertEqual(err["error"]["code"], "SYNTHETIC_ONLY_REQUIRED")
+        self.assertIn("합성 SQLite", err["error"]["message"])
+        self.assertNotIn(str(self.source), raw)
         self.assertEqual(list(self.snapshots.iterdir()), [])
 
     def test_plaintext_confirmation_mandatory(self):
-        code, err, _ = self.run_cli("snapshot", "--source", str(self.source),
-                                    "--output-dir", str(self.snapshots), "--synthetic-only")
+        code, err, raw = self.run_cli("snapshot", "--source", str(self.source),
+                                      "--output-dir", str(self.snapshots), "--synthetic-only")
         self.assertEqual(code, 2)
         self.assertEqual(err["error"]["code"], "PLAINTEXT_ACK_REQUIRED")
+        self.assertIn("--accept-plaintext", err["error"]["message"])
+        self.assertNotIn(str(self.source), raw)
         self.assertEqual(list(self.snapshots.iterdir()), [])
 
     def test_separate_source_and_output_required(self):
@@ -249,6 +253,19 @@ class ArchiveCliTests(unittest.TestCase):
         )
         self.assertEqual(code, 0)
         self.assertEqual(snap["result"]["snapshot_sha256"], restored["result"]["restored_sha256"])
+
+
+    def test_restore_selected_help_is_korean_and_explains_default_denial(self):
+        parser = _parser()
+        subparsers = next(action.choices for action in parser._actions
+                          if hasattr(action, "choices") and "restore-selected" in action.choices)
+        help_text = subparsers["restore-selected"].format_help()
+        self.assertIn("미리보기", help_text)
+        self.assertIn("SHA-256", help_text)
+        self.assertIn("별도", help_text)
+        self.assertIn("--synthetic-only", help_text)
+        self.assertIn("--accept-plaintext", help_text)
+        self.assertIn("암호화되지", parser.format_help())
 
 
 if __name__ == "__main__":

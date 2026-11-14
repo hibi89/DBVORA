@@ -61,3 +61,12 @@
 }
 
 .postgres-stats-load[hidden] { display:none; }
+.safety-guide{margin:0 0 18px;border:1px solid #36504e;background:#101b20;border-radius:9px;color:var(--text)}
+.safety-guide details{padding:0 17px}
+.safety-guide summary{padding:14px 2px;color:#d7efcf;font-weight:750;cursor:pointer;line-height:1.5}
+.safety-guide summary:focus-visible{outline:2px solid var(--lime);outline-offset:3px;border-radius:4px}
+.safety-guide-copy{padding:0 2px 15px;color:#b1c1c2;font-size:12px;line-height:1.75;overflow-wrap:anywhere;word-break:keep-all}
+.safety-guide-copy p{margin:8px 0}
+.safety-guide-copy strong{color:#e4f3dc}
+.safety-guide-copy code{font-size:11px;color:#c4ee9e}
+.error{line-height:1.65;overflow-wrap:anywhere;word-break:keep-all}

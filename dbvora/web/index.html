@@ -4,29 +4,40 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>DBVORA — Database Observatory</title>
+  <title>DBVORA — 데이터베이스 구조 지도</title>
   <link rel="stylesheet" href="/assets/style.css">
   <script src="/assets/app.js" defer></script>
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="mark">DB<span>V</span></span><span class="brand-divider"></span><span class="brand-name">DBVORA</span><span class="brand-subtitle">DATABASE OBSERVATORY</span></div>
-    <div class="top-right"><span class="local-tag"><i></i> LOCAL · READ ONLY</span><span class="version">v0.2 / P0</span></div>
+    <div class="brand"><span class="mark">DB<span>V</span></span><span class="brand-divider"></span><span class="brand-name">DBVORA</span><span class="brand-subtitle">데이터베이스 관측</span></div>
+    <div class="top-right"><span class="local-tag"><i></i> 로컬 · 읽기 전용</span><span class="version">v0.2 / P0</span></div>
   </header>
   <main class="layout">
     <section class="intro">
-      <div><p class="eyebrow">SCHEMA INTELLIGENCE <span> / </span> WORKSPACE 01</p><h1>Database <em>Overview.</em></h1><p class="lede">데이터 구조와 관계를 한눈에 탐색합니다. 실제 데이터 행은 표시하지 않습니다.</p></div>
-      <button id="refresh" class="refresh" type="button" aria-label="새로고침">↻ <span>Refresh</span></button>
+      <div><p class="eyebrow">데이터베이스 구조 <span> / </span> 작업 공간 01</p><h1>데이터베이스 <em>구조도</em></h1><p class="lede">데이터 구조와 관계를 한눈에 탐색합니다. 실제 데이터 행은 표시하지 않습니다.</p></div>
+      <button id="refresh" class="refresh" type="button" aria-label="새로고침">↻ <span>새로고침</span></button>
     </section>
-    <div id="error" class="error" role="alert" hidden></div>
+    <section class="safety-guide" aria-label="데이터 사용과 복원 안전 안내">
+      <details id="safety-guidance">
+        <summary id="safety-guidance-toggle" aria-controls="safety-guidance-copy">읽기 범위·복원 안전 안내</summary>
+        <div id="safety-guidance-copy" class="safety-guide-copy">
+          <p><strong>SQLite:</strong> 실행 명령에서 지정한 파일의 구조와 크기 메타데이터만 로컬에서 읽습니다. 실제 데이터 행과 접속 정보는 표시하거나 전송하지 않으며, 원본 파일을 수정하지 않습니다.</p>
+          <p><strong>관측 기록:</strong> 영구 원장은 서버 실행 때 <code>--observation-ledger</code>로 별도 지정한 경우에만 읽습니다. 기록 추가는 별도 CLI 명령에서 명시적으로 선택해야 합니다.</p>
+          <p><strong>PostgreSQL:</strong> 구조 조회와 통계는 각각 버튼을 눌렀을 때만 요청합니다. 통계는 추정치이며 정확한 행 수가 아닙니다.</p>
+          <p><strong>복원:</strong> 복원은 별도 CLI에서 합성 테스트 데이터만 지원합니다. 먼저 읽기 전용 미리보기를 실행하고 두 SHA-256 값을 확인해야 합니다. <code>--synthetic-only</code>와 <code>--accept-plaintext</code> 확인이 없으면 거부되며, 복원 파일은 별도 출력 폴더에만 새로 생성됩니다. 아카이브와 복원 DB는 암호화되지 않습니다.</p>
+        </div>
+      </details>
+    </section>
+    <div id="error" class="error" role="alert" aria-label="조회 오류와 복구 안내" hidden></div>
     <section class="stats" aria-label="데이터베이스 요약">
-      <div class="stat"><span class="stat-label">DATABASE SIZE <span class="subdot"></span> MEASURED</span><strong id="size">—</strong><small>메인 파일 기준 · WAL/SHM 제외</small></div>
-      <div class="stat"><span class="stat-label">TABLES</span><strong id="tables-count">—</strong><small>확인된 테이블</small></div>
-      <div class="stat"><span class="stat-label">RELATIONSHIPS</span><strong id="links-count">—</strong><small>선언된 Foreign Keys</small></div>
+      <div class="stat"><span class="stat-label">데이터베이스 크기 <span class="subdot"></span> 측정값</span><strong id="size">—</strong><small>메인 파일 기준 · WAL/SHM 제외</small></div>
+      <div class="stat"><span class="stat-label">테이블</span><strong id="tables-count">—</strong><small>확인된 테이블</small></div>
+      <div class="stat"><span class="stat-label">관계</span><strong id="links-count">—</strong><small>선언된 외래키</small></div>
       <div class="stat"><span class="stat-label">CPU / RAM</span><strong class="muted-value">N/A</strong><small>DB 단위 측정 미지원</small></div>
     </section>
     <section class="growth-observation" aria-label="로컬 데이터베이스 두 시점 용량 비교">
-      <div><strong>MAIN FILE CHANGE</strong><span id="growth-status" role="status" aria-live="polite">첫 측정 중…</span></div>
+      <div><strong>메인 파일 크기 변화</strong><span id="growth-status" role="status" aria-live="polite">첫 측정 중…</span></div>
       <small id="growth-scope">브라우저 세션 내 두 시점의 실제 메인 파일 크기만 비교 · WAL/SHM 제외 · 예측 아님</small>
       <div id="growth-history" class="growth-history" role="status" aria-live="polite">관측 이력: 0건 · 브라우저 메모리 한정</div>
       <div id="growth-trend" class="growth-history" role="status" aria-live="polite">추세 판단 대기 · 서로 다른 시각의 관측 3건 필요</div>
@@ -37,31 +48,31 @@
     </section>
     <section class="workspace">
       <div class="panel map-panel">
-        <div class="panel-title"><div><p class="eyebrow">01 / TOPOLOGY</p><h2>Structure map</h2></div><span class="legend"><i></i> DECLARED RELATIONSHIP</span></div>
+        <div class="panel-title"><div><p class="eyebrow">01 / 구조</p><h2>데이터베이스 구조도</h2></div><span class="legend"><i></i> 선언된 관계</span></div>
         <section id="database-selector" class="database-selector" aria-label="로컬 데이터베이스 선택" hidden>
-          <div class="database-selector-head"><strong>LOCAL DATABASES</strong><span id="workspace-summary" role="status">—</span></div>
+          <div class="database-selector-head"><strong>로컬 데이터베이스</strong><span id="workspace-summary" role="status">—</span></div>
           <div id="database-list" class="database-list" role="group" aria-label="데이터베이스 목록"></div>
           <div id="database-topology" class="database-topology" role="group" aria-label="모든 로컬 데이터베이스 구성도"></div>
           <small>명시적으로 선택한 로컬 DB만 탐색 · 데이터베이스 사이의 관계를 자동 추정하지 않음</small>
         </section>
-        <div class="map-controls"><label for="table-filter">TABLE SEARCH</label><input id="table-filter" type="search" autocomplete="off" spellcheck="false" maxlength="128" placeholder="테이블 이름 검색" aria-controls="tables"><span id="filter-status" role="status" aria-live="polite">—</span></div>
+        <div class="map-controls"><label for="table-filter">테이블 검색</label><input id="table-filter" type="search" autocomplete="off" spellcheck="false" maxlength="128" placeholder="테이블 이름 검색" aria-controls="tables"><span id="filter-status" role="status" aria-live="polite">—</span></div>
         <div class="diagram" id="diagram" aria-label="DB 테이블과 외래키 연결 구조도">
           <svg id="edges" class="edges" aria-hidden="true"></svg>
-          <div class="database-node" id="database-node"><span class="node-hex">◈</span><div><b>SQLite Database</b><span id="db-short">Locally connected</span></div></div>
+          <div class="database-node" id="database-node"><span class="node-hex">◈</span><div><b>SQLite 데이터베이스</b><span id="db-short">로컬 연결</span></div></div>
           <div id="tables" class="table-grid"><p class="placeholder">스키마를 불러오는 중…</p></div>
           <p id="filter-empty" class="filter-empty" hidden>일치하는 테이블이 없습니다.</p>
         </div>
-        <div class="map-footer"><span><b class="status-light"></b> 구조 인벤토리</span><span id="observed">OBSERVED —</span></div>
+        <div class="map-footer"><span><b class="status-light"></b> 구조 인벤토리</span><span id="observed">관측 시각 —</span></div>
       </div>
       <aside class="panel detail-panel">
-        <div class="panel-title"><div><p class="eyebrow">02 / INSPECTOR</p><h2>Table inspector</h2></div><span class="inspect-symbol">⌘</span></div>
-        <div id="detail" class="detail"><div class="unselected"><span>◎</span><strong>Inspect a table</strong><p>왼쪽 테이블을 선택하면 컬럼과 인덱스, 외래키 정보를 확인할 수 있습니다.</p></div></div>
-        <div class="detail-foot">READ-ONLY METADATA <span>↗</span></div>
+        <div class="panel-title"><div><p class="eyebrow">02 / 상세 정보</p><h2>테이블 정보</h2></div><span class="inspect-symbol">⌘</span></div>
+        <div id="detail" class="detail"><div class="unselected"><span>◎</span><strong>테이블을 선택하세요</strong><p>왼쪽 테이블을 선택하면 컬럼과 인덱스, 외래키 정보를 확인할 수 있습니다.</p></div></div>
+        <div class="detail-foot">읽기 전용 메타데이터 <span>↗</span></div>
       </aside>
     </section>
     <section class="postgres-panel" aria-labelledby="postgres-title">
       <div class="postgres-panel-head">
-        <div><p class="eyebrow">03 / POSTGRESQL</p><h2 id="postgres-title">PostgreSQL catalog</h2>
+        <div><p class="eyebrow">03 / POSTGRESQL</p><h2 id="postgres-title">PostgreSQL 구조</h2>
           <p class="postgres-copy">서버 환경에 미리 설정한 PostgreSQL 연결을 사용합니다. 조회를 눌렀을 때만 TLS 인증과 읽기 전용 메타데이터 검사를 시작합니다. 실제 행 데이터와 접속 정보는 표시하지 않습니다.</p></div>
         <div class="postgres-actions">
           <button id="postgres-load" class="refresh postgres-load" type="button">PostgreSQL 메타데이터 조회</button>
@@ -75,7 +86,7 @@
         <div id="postgres-detail" class="postgres-detail" aria-live="polite"><p class="empty-state">조회 버튼을 눌러 PostgreSQL 구조를 확인하세요.</p></div>
       </div>
     </section>
-    <footer class="footer"><span>DBVORA / LOCAL SOVEREIGN DATA INTELLIGENCE</span><span>NO CLOUD SYNC · NO DATA ROW EXPORT</span></footer>
+    <footer class="footer"><span>DBVORA / 로컬 데이터 구조 탐색</span><span>클라우드 동기화 없음 · 데이터 행 전송 없음</span></footer>
   </main>
 </body>
 </html>

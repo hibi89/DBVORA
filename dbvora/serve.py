@@ -22,7 +22,7 @@ def _port_in_use(port: int) -> bool:
 
 
 def _report_error(code: str, message: str, exit_code: int) -> int:
-    print(json.dumps({'error': {'code': code, 'message': message}}, sort_keys=True),
+    print(json.dumps({'error': {'code': code, 'message': message}}, ensure_ascii=False, sort_keys=True),
           file=sys.stderr)
     return exit_code
 
@@ -41,18 +41,26 @@ def main(argv=None) -> int:
                          observation_ledger_path=args.observation_ledger,
                          postgres_dsn=os.environ.get('DBVORA_POSTGRES_DSN'))
     except (InventoryError, ValueError) as exc:
-        message = exc.message if isinstance(exc, InventoryError) else 'Invalid server port.'
+        if isinstance(exc, InventoryError):
+            message = {
+                'FILE_UNAVAILABLE': '선택한 데이터베이스를 읽을 수 없습니다. 파일 위치와 읽기 권한을 확인하세요.',
+                'INVALID_DATABASE': '선택한 파일이 유효한 SQLite 데이터베이스인지 확인하세요.',
+                'DB_READ_FAILED': 'SQLite 구조를 안전하게 읽지 못했습니다. 파일 형식과 읽기 권한을 확인하세요.',
+                'INVALID_OBSERVATION_LEDGER': '관측 원장은 데이터베이스와 분리된 별도 파일이어야 합니다.',
+            }.get(exc.code, '선택한 데이터베이스 설정을 안전하게 확인하지 못했습니다.')
+        else:
+            message = '포트 번호는 1부터 65535 사이여야 합니다.'
         return _report_error('STARTUP_FAILED', message, 2)
     except (ImportError, RuntimeError):
         return _report_error('UI_DEPENDENCY_MISSING',
-                             'Install the local UI extra before launching the viewer.', 4)
+                             '웹 화면 구성요소가 없습니다. Python 환경에 로컬 UI 추가 항목을 설치한 뒤 다시 실행하세요.', 4)
     try:
         if _port_in_use(args.port):
             return _report_error('PORT_IN_USE',
-                                 'This local port is already in use. Choose another port.', 3)
+                                 '이 로컬 포트는 사용 중입니다. 다른 포트를 선택하세요.', 3)
     except OSError:
         return _report_error('SERVER_START_FAILED',
-                             'The local port could not be checked safely.', 2)
+                             '로컬 포트 상태를 안전하게 확인하지 못했습니다. 포트 설정을 확인하세요.', 2)
     try:
         import uvicorn
     except ImportError:
@@ -68,7 +76,7 @@ def main(argv=None) -> int:
             return _report_error('PORT_IN_USE',
                                  'This local port is already in use. Choose another port.', 3)
         return _report_error('SERVER_START_FAILED',
-                             'The local viewer could not start safely.', 2)
+                             '로컬 화면을 시작하지 못했습니다. 선택한 파일과 포트 상태를 확인하세요.', 2)
     return 0
 
 

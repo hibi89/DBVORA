@@ -31,10 +31,27 @@ function formatBytes(value) {
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   let n = value, index = 0;
   while (n >= 1024 && index < units.length - 1) { n /= 1024; index++; }
-  return `${n.toLocaleString('en-US', {maximumFractionDigits: index ? 2 : 0})} ${units[index]}`;
+  return `${n.toLocaleString('ko-KR', {maximumFractionDigits: index ? 2 : 0})} ${units[index]}`;
 }
 function clear(node) { node.replaceChildren(); }
-function displayError(message) { const area = $('error'); area.textContent = message; area.hidden = false; }
+const INVENTORY_UI_ERRORS = Object.freeze({
+  CATALOG_LIMIT: '안전한 표시 한도를 넘었습니다. 데이터베이스 범위를 줄인 뒤 다시 조회하세요.',
+  CHANGED_DURING_READ: '검사 중 데이터베이스 파일이 바뀌어 결과를 버렸습니다. 파일 쓰기가 끝난 뒤 다시 새로고침하세요.',
+  DB_READ_FAILED: 'SQLite 구조를 안전하게 읽지 못했습니다. 파일 형식과 읽기 권한을 확인한 뒤 다시 시도하세요.',
+  FILE_UNAVAILABLE: '선택한 데이터베이스를 읽을 수 없습니다. 파일 위치와 읽기 권한을 확인하세요.',
+  INVALID_DATABASE_COUNT: '서로 다른 SQLite 파일을 2개 이상 8개 이하로 선택하세요.',
+  DUPLICATE_DATABASE: '서로 다른 데이터베이스 파일을 선택하세요.',
+  WORKSPACE_LIMIT: '선택한 데이터베이스의 테이블 수가 안전 한도를 넘었습니다. 범위를 줄여 다시 실행하세요.',
+  TEMPORARY_UNAVAILABLE: '조회가 잠시 중단되었습니다. 새로고침을 눌러 다시 시도하세요. 마지막 정상 화면은 유지됩니다.',
+  REQUEST_TIMEOUT: '조회 시간이 초과되었습니다. 새로고침을 눌러 다시 시도하세요. 마지막 정상 화면은 유지됩니다.',
+  LOCAL_SERVER_UNAVAILABLE: '로컬 서버 연결이 끊겼습니다. 서버를 확인한 뒤 새로고침을 눌러 다시 시도하세요.',
+  UNKNOWN: '메타데이터를 불러오지 못했습니다. 파일 상태를 확인한 뒤 새로고침을 눌러 다시 시도하세요.'
+});
+function displayError(code) {
+  const area = $('error');
+  area.textContent = INVENTORY_UI_ERRORS[code] || INVENTORY_UI_ERRORS.UNKNOWN;
+  area.hidden = false;
+}
 function hideError() { $('error').hidden = true; }
 function badge(text, klass) { return el('span', `mini-badge ${klass || ''}`, text); }
 
@@ -268,14 +285,14 @@ function inspect(tableName) {
   const title = el('div', 'detail-heading');
   title.append(el('div', 'detail-icon', '▦'));
   const titleText = el('div');
-  titleText.append(el('span', 'detail-kicker', 'SELECTED TABLE'), el('h3', '', table.name));
+  titleText.append(el('span', 'detail-kicker', '선택한 테이블'), el('h3', '', table.name));
   title.append(titleText);
   details.append(title);
   const meta = el('div', 'detail-meta');
-  meta.append(badge(`${table.columns.length} COLUMNS`, 'neutral'), badge(`${table.indexes.length} INDEXES`, 'neutral'), badge(`${table.foreign_keys.length} FOREIGN KEYS`, 'neutral'));
+  meta.append(badge(`${table.columns.length}개 컬럼`, 'neutral'), badge(`${table.indexes.length}개 인덱스`, 'neutral'), badge(`${table.foreign_keys.length}개 외래키`, 'neutral'));
   details.append(meta);
   const storage = el('section', 'storage-measurement');
-  storage.append(el('h4', 'section-label', 'ALLOCATED BTREE PAGES'));
+  storage.append(el('h4', 'section-label', '할당된 B-tree 페이지'));
   storage.append(el('p', 'storage-note', 'SQLite dbstat 기준 할당된 B-tree 페이지(인덱스 포함). 실제 디스크 사용량 또는 데이터 행 크기가 아닙니다.'));
   const measure = el('button', 'storage-measure', '테이블 용량 측정');
   measure.type = 'button';
@@ -328,7 +345,7 @@ function inspect(tableName) {
   });
   storage.append(measure, storageStatus);
   details.append(storage);
-  details.append(el('h4', 'section-label', 'COLUMNS'));
+  details.append(el('h4', 'section-label', '컬럼'));
   const cols = el('div', 'columns');
   for (const field of table.columns) {
     const row = el('div', 'column-row');
@@ -343,26 +360,26 @@ function inspect(tableName) {
   }
   if (!table.columns.length) cols.append(el('p', 'empty-state', '컬럼 정보 없음'));
   details.append(cols);
-  details.append(el('h4', 'section-label', 'INDEXES'));
+  details.append(el('h4', 'section-label', '인덱스'));
   const indexes = el('div', 'info-list');
   for (const index of table.indexes) {
     const line = el('div', 'info-row');
     const info = el('div');
     info.append(el('strong', '', index.name));
-    info.append(el('small', '', index.key_columns.map((item) => item === null ? '(expression)' : item).join(', ') || '—'));
-    line.append(info, badge(index.unique ? 'UNIQUE' : 'INDEX', 'neutral'));
+    info.append(el('small', '', index.key_columns.map((item) => item === null ? '(표현식)' : item).join(', ') || '—'));
+    line.append(info, badge(index.unique ? '고유 인덱스' : '인덱스', 'neutral'));
     indexes.append(line);
   }
   if (!table.indexes.length) indexes.append(el('p', 'empty-state', '인덱스 없음'));
   details.append(indexes);
-  details.append(el('h4', 'section-label', 'FOREIGN KEYS'));
+  details.append(el('h4', 'section-label', '외래키'));
   const keys = el('div', 'info-list');
   for (const fk of table.foreign_keys) {
     const line = el('div', 'info-row');
     const info = el('div');
     info.append(el('strong', '', fk.to_table));
     info.append(el('small', '', `${fk.from_columns.join(', ')} → ${fk.to_columns.map((x) => x || '(PK)').join(', ')}`));
-    line.append(info, badge('DECLARED', 'primary'));
+    line.append(info, badge('선언됨', 'primary'));
     keys.append(line);
   }
   if (!table.foreign_keys.length) keys.append(el('p', 'empty-state', '선언된 외래키 없음'));
@@ -479,8 +496,8 @@ function render(data) {
       node.setAttribute('aria-label', db.label + ' 구조 탐색');
       node.setAttribute('aria-pressed', 'false');
       node.append(el('strong', '', db.label),
-        el('span', '', 'SQLite · ' + db.tables.length + ' tables'),
-        el('small', '', formatBytes(db.size_bytes) + ' · main file'));
+        el('span', '', 'SQLite · ' + db.tables.length + '개 테이블'),
+        el('small', '', formatBytes(db.size_bytes) + ' · 메인 파일'));
       node.addEventListener('click', () => showWorkspaceDatabase(db.db_id));
       topology.append(node);
     }
@@ -516,7 +533,7 @@ function renderSingle(data) {
   $('tables-count').textContent = String(data.tables.length);
   $('links-count').textContent = String(data.relationships.filter((r) => r.evidence === 'declared_foreign_key').length);
   $('db-short').textContent = `${data.engine.toUpperCase()} · ${data.db_id.slice(0, 8)}`;
-  $('observed').textContent = `OBSERVED ${new Date(data.observed_at).toLocaleString('ko-KR')}`;
+  $('observed').textContent = `관측 시각 ${new Date(data.observed_at).toLocaleString('ko-KR')}`;
   const grid = $('tables');
   clear(grid); nodeElements = new Map();
   const cards = [];
@@ -526,8 +543,8 @@ function renderSingle(data) {
     card.setAttribute('aria-label', `${table.name} 테이블 상세보기`);
     card.setAttribute('aria-pressed', 'false');
     const header = el('span', 'node-top');
-    header.append(el('span', 'table-symbol', '▤'), el('span', 'node-count', `${table.columns.length} COL`));
-    card.append(header, el('strong', 'table-name', table.name), el('span', 'node-bottom', `${table.foreign_keys.length} FK · ${table.indexes.length} IDX`));
+    header.append(el('span', 'table-symbol', '▤'), el('span', 'node-count', `${table.columns.length}개 컬럼`));
+    card.append(header, el('strong', 'table-name', table.name), el('span', 'node-bottom', `외래키 ${table.foreign_keys.length}개 · 인덱스 ${table.indexes.length}개`));
     card.addEventListener('click', () => inspect(table.name));
     cards.push(card);
     nodeElements.set(table.name, card);
@@ -569,16 +586,19 @@ async function refresh() {
       cache: 'no-store', credentials: 'same-origin', signal: controller.signal
     });
     const data = await response.json();
-    if (!response.ok) throw new Error(data?.error?.message || '메타데이터를 읽을 수 없습니다.');
+    if (!response.ok) {
+      displayError(typeof data?.error?.code === 'string' ? data.error.code : 'UNKNOWN');
+      return;
+    }
     render(data);
     recordMeasurements(data);
     if (!workspace) loadPersistentObservations(inventory?.db_id);
     displayGrowth();
   } catch (error) {
-    if (timedOut) displayError('메타데이터 요청 시간이 초과되었습니다. 다시 시도하세요.');
+    if (timedOut) displayError('REQUEST_TIMEOUT');
     else if (error?.name === 'TypeError' || error?.name === 'AbortError') {
-      displayError('연결이 중단되었습니다. 다시 시도하세요.');
-    } else displayError(error?.message || '연결 실패');
+      displayError('LOCAL_SERVER_UNAVAILABLE');
+    } else displayError('UNKNOWN');
   } finally {
     clearTimeout(timeout);
     refreshPending = false;
@@ -616,7 +636,7 @@ function renderPostgresTable(table, selectedButton) {
   const detail = $('postgres-detail');
   clear(detail);
   const heading = el('div', 'postgres-selected-table');
-  heading.append(el('p', 'eyebrow', 'READ-ONLY CATALOG'),
+  heading.append(el('p', 'eyebrow', '읽기 전용 카탈로그'),
     el('h3', '', table.schema + '.' + table.name),
     el('small', '', '관계 유형: ' + table.relation_kind));
   detail.append(heading);
@@ -625,7 +645,7 @@ function renderPostgresTable(table, selectedButton) {
   detail.append(pgSection('컬럼', columns));
   detail.append(pgSection('기본 키', Array.isArray(table.primary_key_columns) ? table.primary_key_columns : []));
   const indexes = Array.isArray(table.indexes) ? table.indexes.map(index =>
-    index.name + (index.unique ? ' · UNIQUE' : '') + (index.partial ? ' · PARTIAL' : '') +
+    index.name + (index.unique ? ' · 고유' : '') + (index.partial ? ' · 부분 인덱스' : '') +
     ' · ' + ((index.key_columns || []).filter(Boolean).join(', ') || '키 컬럼 미확인')) : [];
   detail.append(pgSection('인덱스', indexes));
   const foreignKeys = Array.isArray(table.foreign_keys) ? table.foreign_keys.map(fk => {
@@ -727,7 +747,7 @@ function postgresTableKey(table) {
 }
 function formatPgCounter(value) {
   return Number.isSafeInteger(value) && value >= 0
-    ? value.toLocaleString('en-US') : '정밀 표시 불가';
+    ? value.toLocaleString('ko-KR') : '정밀 표시 불가';
 }
 function postgresStatisticsLines(statistics) {
   if (!statistics || statistics.status !== 'observed') {
@@ -740,13 +760,13 @@ function postgresStatisticsLines(statistics) {
     return [explanation, '수치는 표시하지 않습니다. 사용 불가를 0으로 대체하지 않습니다.'];
   }
   return [
-    '추정 live rows: ' + formatPgCounter(statistics.estimated_live_rows) +
+    '추정 활성 행 수: ' + formatPgCounter(statistics.estimated_live_rows) +
       ' · pg_stat_user_tables · 정확한 행 수 아님',
-    '추정 dead rows: ' + formatPgCounter(statistics.estimated_dead_rows) +
+    '추정 정리 대기 행 수: ' + formatPgCounter(statistics.estimated_dead_rows) +
       ' · pg_stat_user_tables · 정확한 행 수 아님',
-    'Heap: ' + (Number.isSafeInteger(statistics.heap_bytes) && statistics.heap_bytes >= 0
+    '테이블 저장 공간: ' + (Number.isSafeInteger(statistics.heap_bytes) && statistics.heap_bytes >= 0
       ? formatBytes(statistics.heap_bytes) : '정밀 표시 불가') + ' · pg_relation_size',
-    'Indexes: ' + (Number.isSafeInteger(statistics.index_bytes) && statistics.index_bytes >= 0
+    '인덱스 저장 공간: ' + (Number.isSafeInteger(statistics.index_bytes) && statistics.index_bytes >= 0
       ? formatBytes(statistics.index_bytes) : '정밀 표시 불가') + ' · pg_indexes_size',
     '통계 추정치는 갱신이 지연될 수 있습니다.'
   ];
