@@ -38,3 +38,10 @@
 - 실제 PG16 localhost TLS verify-full 읽기전용, FK·HTML·거부 인증서 5/5: https://github.com/hibi89/DBVORA/actions/runs/43545900975
 - 실제 Windows core-only unsigned EXE 생성·실행: https://github.com/hibi89/DBVORA/actions/runs/43546585469
 - 사용자 실제 Windows 10/11 수용과 고객 배포·라이선스는 여전히 미확인. 2026-11-14 오후 1시(KST) 통합 사용자 요청 알림으로 모음.
+
+
+## 2026-11-15 KST — SBOM candidate evidence, no legal clearance
+
+At source/test SHA `3fd075226ef5c7e4aa1d66d3392c627315fd5cbc`, PostgreSQL TLS workflow [#43636834428](https://github.com/hibi89/DBVORA/actions/runs/43636834428) generated `dbvora-python-sbom-3fd075226ef5c7e4aa1d66d3392c627315fd5cbc` from the CI-installed metadata profile `ui,postgres,test + Playwright 1.56.0`. Artifact 14129504441 is 1,479 bytes with archive digest `sha256:8a084776d83bc44ef7414cb2fe40cefefa68ecd94875fe4b28b5bad14d23db1c`. The inventory candidate is metadata-only and is evidence of the tested profile, not a legal approval or complete redistribution bill of materials.
+
+The repository still has no owner-approved root LICENSE/NOTICE or customer redistribution terms. Transitive dependency license texts, a locked Windows build-specific inventory, and legal interpretation remain unresolved. R05-04 therefore remains OWNER_GATE and the release hold is unchanged.

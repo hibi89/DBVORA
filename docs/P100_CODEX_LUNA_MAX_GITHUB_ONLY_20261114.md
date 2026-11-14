@@ -1,3 +1,5 @@
+> **[2026-11-15 KST · R05/R06 exact-scope acceptance · source/test SHA 3fd075226ef5c7e4aa1d66d3392c627315fd5cbc]** Full [#43636834475](https://github.com/hibi89/DBVORA/actions/runs/43636834475) PASS (Ubuntu 773 PASS/0 skip; Windows 772 PASS + one named POSIX-only skip, 773 discovered); Chromium [#43636834445](https://github.com/hibi89/DBVORA/actions/runs/43636834445) 33/33 on both OS; PostgreSQL TLS/UI [#43636834428](https://github.com/hibi89/DBVORA/actions/runs/43636834428) PASS; blueprint [#43636834707](https://github.com/hibi89/DBVORA/actions/runs/43636834707) PASS. R05-01/02/03/05 and R06-01/02 are PASS_SCOPED; R05-04 remains OWNER_GATE pending owner/legal redistribution review, R06-03 remains OWNER_SCOPE_GATE. Details: [P5_SECURITY_ACCEPTANCE_20261115.md](P5_SECURITY_ACCEPTANCE_20261115.md), [P6_AX_CONTRACTS_20261115.md](P6_AX_CONTRACTS_20261115.md). Overall UNASSESSED / RELEASE HOLD.
+
 > **[2026-11-15 KST · latest scoped evidence]** Functional source/test SHA `4debf5aa580f49265d90de6f441cb1eda3382cbb`: R04-03 PASS_SCOPED. Full [#43623040821](https://github.com/hibi89/DBVORA/actions/runs/43623040821) PASS (Ubuntu 765/765, 0 skips; Windows 765 PASS + one named POSIX-only skip); blueprint [#43623041398](https://github.com/hibi89/DBVORA/actions/runs/43623041398) PASS. README removes its old 21.1% reduction phrase, states CI samples do not prove customer performance/savings, and marks direct PostgreSQL/Supabase performance comparison unmeasured/unavailable. A required static regression test enforces the public README boundary. Details: [P4_03_PERFORMANCE_CLAIM_BOUNDARIES_20261115.md](P4_03_PERFORMANCE_CLAIM_BOUNDARIES_20261115.md). Overall UNASSESSED / RELEASE HOLD.
 > **[2026-11-15 KST · latest scoped evidence]** Functional source/test SHA `eb191c9783102f108057073f42334503f4ab9e85`: R04-02 PASS_SCOPED. Full [#43622284063](https://github.com/hibi89/DBVORA/actions/runs/43622284063) PASS (Ubuntu 764/764, no skip; Windows 764 PASS + one named POSIX-only skip); blueprint [#43622284359](https://github.com/hibi89/DBVORA/actions/runs/43622284359) PASS. Per-method 3-trial summaries include create/restore wall time, Python-process CPU, two-boundary sampled RSS, artifact file lengths and shared-volume free delta. Per-process disk I/O unavailable and ZSTD child process excluded. Detailed exact values and ranges: [P4_02_RESOURCE_BENCHMARK_20261115.md](P4_02_RESOURCE_BENCHMARK_20261115.md). Overall UNASSESSED / RELEASE HOLD.
 > **[2026-11-15 KST · latest scoped evidence]** Functional source/test SHA `3919a1e3e0287f553f2b491834a67791309257ad`: R04-01 PASS_SCOPED. Full [#43620565261](https://github.com/hibi89/DBVORA/actions/runs/43620565261) PASS (Ubuntu 761/761, 0 skips; Windows 761 PASS + one named POSIX-only skip); blueprint [#43620565587](https://github.com/hibi89/DBVORA/actions/runs/43620565587) PASS. Three same-input trials for ZIP, ZSTD level 3, raw CAS v1, zlib CAS v2 independently restored and SHA-verified both generations. Runner/environment metrics and limitations: [P4_01_REPEAT_BENCHMARK_20261115.md](P4_01_REPEAT_BENCHMARK_20261115.md). Overall UNASSESSED / RELEASE HOLD.
@@ -48,7 +50,7 @@
 모든 행의 기본 DoD: **(a)** 기존 구현/요구 갭 확인 **(b)** 필요한 최소 코드와 자동화 테스트 **(c)** 안전·원본불변·비밀보호 확인 **(d)** 원격 GitHub commit SHA **(e)** 같은 SHA의 실제 Actions 링크+PASS/FAIL/SKIP 또는 명시적 NOT_RUN **(f)** STATUS/HANDOFF 반영. `RECHECK`는 과거 근거를 검토할 것이라는 뜻이지 현재 PASS가 아니다.
 
 ### A. 기준선·기능 갭 (B00–B02; 3)
-| ID | 실행 단위/검증 산출물 | 초기 판정 |
+| ID | 실행 단위/검증 산출물 | 현재 판정 |
 | --- | --- | --- |
 | B00 | REQUIREMENTS 7개·금지·OWNER 게이트 전체를 항목별 추적표에 고정; 누락시 즉시 반영 | RECHECK |
 | B01 | API/CLI/UI/압축/리소스/테스트↔R01–R07 맵; 기능마다 구현/미검증 구분 | RECHECK |
@@ -95,17 +97,17 @@
 | R04-01 | ZIP/ZSTD/raw CAS/compressed CAS 동일 합성 입력 2세대·3 trial·runner metadata, 독립 복원 및 SHA 검증; owner hardware not implied | PASS_SCOPED |
 | R04-02 | 3-trial min/median/max for wall time, Python-process CPU, boundary RSS, file lengths, and shared-volume free delta; explicitly state per-process IO unavailable/cache not cleared | PASS_SCOPED |
 | R04-03 | Public README runner-sample disclaimer, direct provider comparison unavailable, regression guard for numeric savings/superiority language | PASS_SCOPED |
-| R05-01 | localhost Host/Origin/Fetch/CSP/GET-only, DNS rebinding/CSRF/XSS/임의 API 경로·row 노출0 시험 | RECHECK |
-| R05-02 | symlink/hardlink/inode+ctime 교체·TOCTOU·path traversal/ZIP slip 및 create-only restore 검증 | RECHECK |
-| R05-03 | PG credential/TLS/오류·로그·CI artifact/스크린샷에서 비밀·실파일 경로·사용자 row 노출0 확인 | OPEN |
-| R05-04 | 실제 사용 의존성 LICENSE/NOTICE/SBOM 후보와 재배포 권리 검토표; 소유자/법적 확정은 별도 OWNER_GATE | OPEN |
-| R05-05 | ZIP/manifest SHA 자기일치와 신원 인증·서명을 구별, 공격자 양쪽 변조 위협/한계·복원 거부 테스트 | OPEN |
+| R05-01 | localhost Host/Origin/Fetch/CSP/GET-only, DNS rebinding/CSRF/XSS/임의 API 경로·row 노출0 시험 | PASS_SCOPED |
+| R05-02 | symlink/hardlink/inode+ctime 교체·TOCTOU·path traversal/ZIP slip 및 create-only restore 검증 | PASS_SCOPED |
+| R05-03 | PG credential/TLS/오류·로그·CI artifact/스크린샷에서 비밀·실파일 경로·사용자 row 노출0 확인 | PASS_SCOPED |
+| R05-04 | 실제 사용 의존성 LICENSE/NOTICE/SBOM 후보와 재배포 권리 검토표; 소유자/법적 확정은 별도 OWNER_GATE | OWNER_GATE |
+| R05-05 | ZIP/manifest SHA 자기일치와 신원 인증·서명을 구별, 공격자 양쪽 변조 위협/한계·복원 거부 테스트 | PASS_SCOPED |
 
 ### F. 확장·Windows 상품 사용성 (R06-01..03, R07-01..06; 9)
 | ID | 실행 단위/검증 산출물 | 초기 판정 |
 | --- | --- | --- |
-| R06-01 | 외부 AX 소비용 **read-only, versioned** 메타데이터 스키마·오류·출처, raw row/token 없는 계약 | OPEN |
-| R06-02 | HAE/LA 없이 독립 실행, mock 소비자 스키마 v1 호환·미지원 버전 거부·네트워크 기본OFF | OPEN |
+| R06-01 | 외부 AX 소비용 **read-only, versioned** 메타데이터 스키마·오류·출처, raw row/token 없는 계약 | PASS_SCOPED |
+| R06-02 | HAE/LA 없이 독립 실행, mock 소비자 스키마 v1 호환·미지원 버전 거부·네트워크 기본OFF | PASS_SCOPED |
 | R06-03 | 실제 HAE/LA/SOVIA 통합은 초기 필수 아님; 별도 요구 확대가 없는지 문서 확인, 확대는 사전 승인 | OWNER_SCOPE_GATE |
 | R07-01 | 최신 기능 SHA 기반 unsigned ZIP/EXE 산출·내부 SHA manifest, 소스와 바이너리 산출 재현 검증 | OPEN |
 | R07-02 | GitHub-hosted Windows 실제 portable launch/종료/재시작/제거·기존 폴더/port 충돌·기본OFF | OPEN |

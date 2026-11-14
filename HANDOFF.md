@@ -1,17 +1,14 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
-> 1. **목표·범위**: feature/p0-db-map에서 R01–R07 최종설계의 GitHub 구현·검증을 계속한다. main/develop 병합과 상용 출시는 제외.
-> 2. **이번 완료**: R04-03 공개 성능 주장 경계를 명시하고 README 회귀 검사와 full release gate에 포함했다(PASS_SCOPED).
-> 3. **기능/검증 SHA**: 4debf5aa580f49265d90de6f441cb1eda3382cbb.
-> 4. **전체 회귀**: [#43623040821](https://github.com/hibi89/DBVORA/actions/runs/43623040821) 성공. Ubuntu 765/765·0 skip; Windows 765 pass + 지정 POSIX-only skip 1.
-> 5. **Blueprint**: [#43623041398](https://github.com/hibi89/DBVORA/actions/runs/43623041398) 성공.
-> 6. **주장 경계**: README의 과거 21.1% 절감 표현을 제거하고, 합성 CI가 고객 성능/운영 절감을 입증하지 않는다고 명시했다.
-> 7. **직접 비교**: PostgreSQL/Supabase 성능·가격·저장비 직접 benchmark는 미실행이므로 비교 불가. UI의 PG 경로는 읽기 전용 메타데이터용이다.
-> 8. **회귀 가드**: tests/test_performance_claim_boundaries.py가 README percentage/direct superiority 표현을 차단하고 제한 문구를 요구한다.
-> 9. **다음 작업**: R05-01/02 기존 localhost 보안·파일 identity/restore 경계를 현재 SHA에서 재점검하고 필요한 보완을 구현한다.
-> 10. **공식 상태**: 전체 완성률 UNASSESSED, RELEASE HOLD; 사용자·물리·권리 OWNER_GATE 유지.
-
-
-
+> 1. **목표·범위**: `feature/p0-db-map`에서 R01–R07 최종설계와 G90 검증을 GitHub-only로 계속한다. main/develop 병합·상용 출시·사용자 PC 작업은 제외한다.
+> 2. **이번 완료**: R05-01/02/03/05 및 R06-01/02를 합성 범위 PASS_SCOPED로 판정했다. 버전형 API/오프라인 보고 스키마와 HAE/LA 모의 소비자 테스트를 추가했다.
+> 3. **기능/검증 SHA**: `3fd075226ef5c7e4aa1d66d3392c627315fd5cbc`.
+> 4. **전체 회귀**: [#43636834475](https://github.com/hibi89/DBVORA/actions/runs/43636834475) PASS. Ubuntu 773 PASS/0 skip; Windows 772 PASS + 1 지정 POSIX-only skip (773 discovered); 모든 gate 단계 PASS.
+> 5. **Chromium**: [#43636834445](https://github.com/hibi89/DBVORA/actions/runs/43636834445) Ubuntu/Windows 각 33/33 PASS; loopback Host/Origin/method 및 합성 DNS-rebinding 요청 검증 포함.
+> 6. **PostgreSQL**: [#43636834428](https://github.com/hibi89/DBVORA/actions/runs/43636834428) PASS — ephemeral synthetic PostgreSQL 16, verify-full TLS/read-only role, catalog/statistics, wrong-CA 거부 및 390px UI 검증.
+> 7. **Blueprint**: [#43636834707](https://github.com/hibi89/DBVORA/actions/runs/43636834707) PASS.
+> 8. **남은 보안·권리 범위**: 실 DNS/proxy 공격, privileged parent swap, 물리 정전/전원차단, 서명은 검증하지 않았다. R05-04는 SBOM 후보만 생성됐으며 owner/legal 권리 승인이 필요하다.
+> 9. **다음 작업**: R07-01 — 최신 기능 SHA가 Windows source ZIP/EXE 및 내부 SHA evidence와 일치하는지 GitHub-hosted Windows에서 검증한다. 이어 R07-02/03.
+> 10. **공식 상태**: 전체 완성률 UNASSESSED, RELEASE HOLD. R06-03/R07-04..06 및 소유자·물리·상업 gate 유지.
 
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
 > 1. **목표·범위**: R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.
