@@ -15,6 +15,8 @@ on:
       - ".github/workflows/dbvora-release-gate.yml"
       - ".github/workflows/dbvora-pg-tls-live.yml"
       - ".github/workflows/dbvora-browser-http-e2e.yml"
+      - ".github/workflows/dbvora-owner-preview.yml"
+      - ".github/workflows/dbvora-windows-demo-exe.yml"
   workflow_dispatch:
 
 permissions:

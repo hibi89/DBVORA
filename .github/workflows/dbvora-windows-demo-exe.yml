@@ -11,6 +11,7 @@ on:
       - "dbvora/inventory.py"
       - "dbvora/web/**"
       - "tests/**"
+      - ".github/workflows/dbvora-release-gate.yml"
       - ".github/workflows/dbvora-windows-demo-exe.yml"
   workflow_dispatch:
 
