@@ -125,8 +125,13 @@ def append_observation(path: str | Path, *, db_id: str, observed_at: str,
 
 def read_observations(path: str | Path, *, db_id: str) -> list[dict]:
     _validate(db_id, "2026-01-01T00:00:00Z", 0, "sqlite_main_file_excluding_wal_shm")
-    if not Path(path).exists():
+    file = Path(path)
+    if file.is_symlink():
+        raise ObservationError("symlink ledger is not allowed")
+    if not file.exists():
         return []
+    if not file.is_file():
+        raise ObservationError("ledger must be a regular file")
     conn = _connect(path)
     try:
         rows = _rows(conn, db_id)
