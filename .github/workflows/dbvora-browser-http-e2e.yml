@@ -14,6 +14,7 @@ on:
       - "tests/fixtures/**"
       - "scripts/browser_http_e2e.py"
       - "scripts/pg_tls_ui_http_e2e.py"
+      - "tests/test_ui_dom.cjs"
       - "contracts/**"
       - ".github/workflows/dbvora-browser-http-e2e.yml"
       - ".github/workflows/dbvora-pg-tls-live.yml"
