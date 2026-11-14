@@ -1,3 +1,10 @@
+> **[2026-11-15 KST · latest exact source/test SHA b908e5aec99f98652a3a2f6fd3f9259ab06a85c8]**
+> **DONE-SCOPED** R03-07 preview-bound restore workflow CLI for ZIP/ZSTD. Full [#43614189891](https://github.com/hibi89/DBVORA/actions/runs/43614189891) Ubuntu 747 PASS/0 SKIP; Windows 747 PASS + 1 named POSIX-only skip; unsigned ZIP [#43614189894](https://github.com/hibi89/DBVORA/actions/runs/43614189894) and blueprint [#43614190193](https://github.com/hibi89/DBVORA/actions/runs/43614190193) PASS.
+> Preview is read-only. Restore requires the selected artifact SHA and snapshot SHA from preview; it repeats checks, validates restored bytes/integrity, and creates only a new file in a separate output directory. Changed selection and same input/output directory stop safely.
+> **NEXT-1** R03-05/06: inspect existing concurrency and interrupted-write recovery paths/tests; mark scoped only with exact GitHub evidence, minimally fix any uncovered gap. Keep physical reboot/power-loss R03-10 OWNER_GATE.
+> **NEXT-2** Continue remaining R01–R07/G90 items in dependency order; High independent review remains a later gate at the frozen final functional SHA.
+> **NEXT-3** Update STATUS/HANDOFF/NEXT_TASK and task evidence after each major pass. Overall UNASSESSED / RELEASE HOLD; GitHub-only, synthetic tests, no paid infra or external data.
+
 > **[2026-11-15 KST · latest exact source/test SHA f844ce751ffd2d050f3fe1e8a62b699aa5959dc3]**
 > **DONE-SCOPED** R03-04 daily/weekly synthetic slot process-restart acceptance. Full [#43612179872](https://github.com/hibi89/DBVORA/actions/runs/43612179872) Ubuntu 744 PASS/0 SKIP; Windows 743 PASS + 1 named POSIX-only skip; blueprint [#43612180225](https://github.com/hibi89/DBVORA/actions/runs/43612180225) PASS.
 > Same daily slot stays HOLD after injected child-process termination following reservation; next date runs. Weekly same-ISO-week replay stays held; following week can run. Synthetic source hash/size/mtime unchanged. This is not physical reboot/power-loss or installed OS scheduler proof.

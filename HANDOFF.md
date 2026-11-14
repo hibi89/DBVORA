@@ -1,5 +1,17 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
 > 1. **목표·범위**: R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.
+> 2. **이번 완료**: R03-07 안전한 선택 복원 CLI를 추가했다. 읽기 전용 미리보기에서 ZIP/ZSTD 후보와 SHA를 확인한 뒤, 두 미리보기 SHA가 일치할 때 새 별도 출력 경로에만 복원한다.
+> 3. **기능/검증 SHA**: b908e5aec99f98652a3a2f6fd3f9259ab06a85c8 (preview-bound restore 코드·합성 테스트 포함).
+> 4. **전체 회귀**: [#43614189891](https://github.com/hibi89/DBVORA/actions/runs/43614189891) 정확 SHA PASS. Ubuntu 747/747 PASS·0 SKIP; Windows 747 PASS + 지정 POSIX 전용 SKIP 1; 필수 게이트 통과.
+> 5. **기능/패키징 게이트**: [unsigned ZIP #43614189894](https://github.com/hibi89/DBVORA/actions/runs/43614189894) 및 [blueprint #43614190193](https://github.com/hibi89/DBVORA/actions/runs/43614190193) 정확 SHA PASS.
+> 6. **안전 수용**: 두 hash 재검증, ZIP/ZSTD 내용·SQLite 무결성 확인, 변한/손상 후보·동일 입력/출력 폴더 거부, 기존 새 파일 전용 게시기를 사용해 원본/기존 출력 덮어쓰기 방지.
+> 7. **실패 이력**: 최초 SHA 0331b28은 preview synthetic 동의 인자 누락으로 세 신규 테스트 실패([#43613832902](https://github.com/hibi89/DBVORA/actions/runs/43613832902)); 인자 등록을 수정한 b908e5aec99f98652a3a2f6fd3f9259ab06a85c8에서 전체 게이트 PASS.
+> 8. **안전 경계**: 합성 데이터만 사용. 서명/진위 및 출판 내구성 미증명. CLI 선택 흐름으로 검증했으며 브라우저/사용자 PC·실물 복원·물리 정전 테스트는 하지 않았다.
+> 9. **다음 작업**: 의존성 순서상 R03-05/06 경합·중단 복구 기존 구현과 테스트를 재검토하고 필요한 최소 갭만 보완한다. R03-10 물리 전원중단은 OWNER_GATE.
+> 10. **공식 상태**: 전체 완성률 UNASSESSED, 과거 기술평가 95% 비공식, [작업중]/RELEASE HOLD, 사용자·물리·권리 수용 OWNER_GATE 유지.
+
+> **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
+> 1. **목표·범위**: R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.
 > 2. **이번 완료**: R03-04 일/주 합성 러너의 슬롯 예약 후 프로세스 종료·재시작 수용을 검증했다. 기존 runner 구현은 유지하고 테스트만 추가했다.
 > 3. **기능/검증 SHA**: f844ce751ffd2d050f3fe1e8a62b699aa5959dc3 (tests/test_daily_restart.py 포함).
 > 4. **전체 회귀**: [#43612179872](https://github.com/hibi89/DBVORA/actions/runs/43612179872) 정확 SHA PASS. Ubuntu 744/744 PASS; Windows 743 PASS + 지정 POSIX 전용 SKIP 1; 필수 게이트 통과.

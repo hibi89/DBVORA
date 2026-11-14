@@ -2,6 +2,8 @@
 
 > **[2026-11-15 KST · latest scoped execution evidence]** Functional source/test SHA f844ce751ffd2d050f3fe1e8a62b699aa5959dc3: R03-04 PASS_SCOPED for synthetic process-restart behavior. Full release [#43612179872](https://github.com/hibi89/DBVORA/actions/runs/43612179872) passed: Ubuntu 744/744, Windows 743 PASS + one named POSIX-only skip; blueprint [#43612180225](https://github.com/hibi89/DBVORA/actions/runs/43612180225) passed. Daily interrupted slot remains HOLD on same-day restart; next-day slot runs. Weekly same-ISO-week replay holds; next week runs. Synthetic source hash/size/mtime unchanged. Physical reboot/power-loss and real OS scheduler remain OWNER_GATE. Detailed evidence: [P3_04_SYNTHETIC_RESTART_ACCEPTANCE_20261115.md](P3_04_SYNTHETIC_RESTART_ACCEPTANCE_20261115.md). Overall completion UNASSESSED / RELEASE HOLD.
 
+> **[2026-11-15 KST · latest scoped evidence]** Functional source/test SHA b908e5aec99f98652a3a2f6fd3f9259ab06a85c8: R03-07 PASS_SCOPED for preview-bound safe restore workflow CLI. Full [#43614189891](https://github.com/hibi89/DBVORA/actions/runs/43614189891) exact SHA PASS (Ubuntu 747/747, Windows 747 PASS + 1 named POSIX-only skip); unsigned ZIP [#43614189894](https://github.com/hibi89/DBVORA/actions/runs/43614189894) and blueprint [#43614190193](https://github.com/hibi89/DBVORA/actions/runs/43614190193) PASS. Detailed evidence: [P3_07_SAFE_RESTORE_WORKFLOW_20261115.md](P3_07_SAFE_RESTORE_WORKFLOW_20261115.md). First attempt at 0331b28 failed three preview tests because of a missing CLI acknowledgement flag; corrected on the final SHA. Overall UNASSESSED / RELEASE HOLD; owner gates remain.
+
 # DBVORA 최종설계 100% — GPT-6 Instant 실행·High 최종검수 마스터 플랜
 
 > 기준 2026-11-14 KST / hibi89/DBVORA / feature/p0-db-map / 기능 기준 SHA 8bb07273f3829248bae8516ac467bfbf7eb4f751
@@ -46,7 +48,7 @@
 | R03-04 | 보관복구 | 하루/주 실제 실행 러너 | 합성 임시 DB 대상 슬롯 실행·중복 방지·프로세스 재시작 HOLD 검증; OS 자동등록·서비스 기본 OFF | Instant | PASS_SCOPED |
 | R03-05 | 보관복구 | 동일 요청 중복 실행·다중 프로세스 경쟁 | 동시 writer/read/restore, 성공 세대 불변, 요청당 최대 한 번 게시, 실패 명확한 HOLD | Instant | EVIDENCE_RECHECK |
 | R03-06 | 보관복구 | ENOSPC/short-write/process kill 중단 복구 | 별도 프로세스 중단 및 재시도·고립 청크 HOLD, 원본/기존 정상 세대 SHA 보존 | Instant | EVIDENCE_RECHECK |
-| R03-07 | 보관복구 | 복구 대상 선택·미리보기·실제 별도 복원 UX | 새 출력경로만 사용, 해시·내용 검증, 원본 overwrite 0, 복원 실패 안내와 사용자 선택 | Instant | OPEN |
+| R03-07 | 보관복구 | 복구 대상 선택·미리보기·실제 별도 복원 UX(CLI) | 새 출력경로만 사용, 해시·내용 검증, 원본 overwrite 0, 복원 실패 안내와 사용자 선택 | Instant | PASS_SCOPED |
 | R03-08 | 보관복구 | 세대 보존·고립 파일·저장량 예측 | 보존 preview 및 승인 전 read-only 목록; 원본·백업 자동 삭제 0, 손상 보수적 처리 | Instant | OPEN |
 | R03-09 | 보관복구 | NTFS/ACL·경로 경쟁·실 디스크 오류 경계 | Windows 합성 오류 검증·create-only·path alias/권한, 실물 내구성은 구분 | Instant | OPEN |
 | R03-10 | 보관복구 | 소유자 실제 장치 전원중단/복원 수용 | 위험한 전원차단은 사전 승인·백업/장치 확보 뒤 수행; GitHub CI는 대체 불가 | Owner | OWNER_GATE |
