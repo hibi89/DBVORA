@@ -6,6 +6,7 @@ const SVG = 'http://www.w3.org/2000/svg';
 let inventory = null;
 let selected = null;
 let nodeElements = new Map();
+let edgeByTable = new Map();
 let observer = null;
 
 function el(tag, klass, content) {
@@ -26,16 +27,31 @@ function displayError(message) { const area = $('error'); area.textContent = mes
 function hideError() { $('error').hidden = true; }
 function badge(text, klass) { return el('span', `mini-badge ${klass || ''}`, text); }
 
+// Updating the selected table must not rebuild hundreds of SVG paths.
+function highlightEdges(tableName, active) {
+  if (tableName === null) return;
+  for (const edge of edgeByTable.get(tableName) || []) {
+    edge.setAttribute('class', active ? 'edge active' : 'edge');
+  }
+}
+
 function inspect(tableName) {
   if (!inventory) return;
   const table = inventory.tables.find((item) => item.name === tableName);
   if (!table) return;
-  selected = tableName;
-  for (const [name, button] of nodeElements) {
-    const isActive = name === tableName;
-    button.classList.toggle('active', isActive);
-    button.setAttribute('aria-pressed', String(isActive));
+  const previous = nodeElements.get(selected);
+  if (previous) {
+    previous.classList.toggle('active', false);
+    previous.setAttribute('aria-pressed', 'false');
   }
+  highlightEdges(selected, false);
+  selected = tableName;
+  const current = nodeElements.get(selected);
+  if (current) {
+    current.classList.toggle('active', true);
+    current.setAttribute('aria-pressed', 'true');
+  }
+  highlightEdges(selected, true);
   const details = $('detail');
   clear(details);
   const title = el('div', 'detail-heading');
@@ -86,22 +102,30 @@ function inspect(tableName) {
   }
   if (!table.foreign_keys.length) keys.append(el('p', 'empty-state', '선언된 외래키 없음'));
   details.append(keys);
-  drawEdges();
 }
 
 function drawEdges() {
   const svg = $('edges');
   clear(svg);
+  edgeByTable = new Map();
   if (!inventory) return;
   const board = $('diagram').getBoundingClientRect();
   if (!board.width || !board.height) return;
   svg.setAttribute('viewBox', `0 0 ${board.width} ${board.height}`);
+  // Compute each visible table's position once even when it has many FKs.
+  const rectangles = new Map();
+  const position = (name, element) => {
+    if (!rectangles.has(name)) rectangles.set(name, element.getBoundingClientRect());
+    return rectangles.get(name);
+  };
+  const paths = [];
   for (const link of inventory.relationships) {
     if (link.evidence !== 'declared_foreign_key') continue;
     const from = nodeElements.get(link.from_table);
     const to = nodeElements.get(link.to_table);
     if (!from || !to || from.hidden || to.hidden) continue;
-    const a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
+    const a = position(link.from_table, from);
+    const b = position(link.to_table, to);
     const x1 = a.left + a.width / 2 - board.left;
     const x2 = b.left + b.width / 2 - board.left;
     const y1 = a.top + a.height / 2 - board.top;
@@ -110,8 +134,13 @@ function drawEdges() {
     const path = document.createElementNS(SVG, 'path');
     path.setAttribute('d', `M ${x1} ${y1} C ${x1} ${y1 - bend}, ${x2} ${y2 + bend}, ${x2} ${y2}`);
     path.setAttribute('class', selected === link.from_table || selected === link.to_table ? 'edge active' : 'edge');
-    svg.append(path);
+    paths.push(path);
+    for (const name of new Set([link.from_table, link.to_table])) {
+      if (!edgeByTable.has(name)) edgeByTable.set(name, []);
+      edgeByTable.get(name).push(path);
+    }
   }
+  if (paths.length) svg.append(...paths);
 }
 
 // Filter only the already loaded schema names. Never transmit a query or fetch rows.
@@ -128,6 +157,11 @@ function applyFilter() {
   $('filter-status').textContent = `${count} / ${nodeElements.size} 테이블`;
   $('filter-empty').hidden = count !== 0 || nodeElements.size === 0;
   if (count === 0) {
+    const prior = nodeElements.get(selected);
+    if (prior) {
+      prior.classList.toggle('active', false);
+      prior.setAttribute('aria-pressed', 'false');
+    }
     selected = null;
     clear($('detail'));
     $('detail').append(el('p', 'empty-state', query ? '검색 결과가 없습니다.' : '검사할 테이블이 없습니다.'));
@@ -146,6 +180,7 @@ function render(data) {
   $('observed').textContent = `OBSERVED ${new Date(data.observed_at).toLocaleString('ko-KR')}`;
   const grid = $('tables');
   clear(grid); nodeElements = new Map();
+  const cards = [];
   for (const table of data.tables) {
     const card = el('button', 'table-node');
     card.type = 'button';
@@ -155,15 +190,15 @@ function render(data) {
     header.append(el('span', 'table-symbol', '▤'), el('span', 'node-count', `${table.columns.length} COL`));
     card.append(header, el('strong', 'table-name', table.name), el('span', 'node-bottom', `${table.foreign_keys.length} FK · ${table.indexes.length} IDX`));
     card.addEventListener('click', () => inspect(table.name));
-    grid.append(card);
+    cards.push(card);
     nodeElements.set(table.name, card);
   }
+  if (cards.length) grid.append(...cards);
   if (!data.tables.length) grid.append(el('p', 'placeholder', '이 데이터베이스에는 사용자 테이블이 없습니다.'));
   if (selected && nodeElements.has(selected)) inspect(selected);
   else if (data.tables.length) inspect(data.tables[0].name);
   else { selected = null; clear($('detail')); $('detail').append(el('p', 'empty-state', '검사할 테이블이 없습니다.')); }
   applyFilter();
-  requestAnimationFrame(drawEdges);
   if (observer) observer.disconnect();
   observer = new ResizeObserver(drawEdges);
   observer.observe($('diagram'));

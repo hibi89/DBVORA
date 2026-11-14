@@ -160,6 +160,92 @@ def run(*, screenshots=None):
                             "TABLE_ROWS_LEAKED")
                     result["checks"].append("no_rows_no_source_mutation")
 
+                    # Client-only 1,000-table fixture: no new DB access or
+                    # API calls. Actual Chromium measures this browser's work.
+                    page.set_viewport_size({"width": 1440, "height": 900})
+                    large = page.evaluate("""() => {
+                        const tables = Array.from({length: 1000}, (_, i) => {
+                            const name = 'synthetic_table_' + String(i).padStart(4, '0');
+                            return {name, columns: [{name: 'id', type: 'INTEGER',
+                                pk_position: 1, nullable_declared: false}],
+                                indexes: [], foreign_keys: i ? [{
+                                to_table: 'synthetic_table_' + String(i-1).padStart(4, '0'),
+                                from_columns: ['id'], to_columns: ['id']}] : []};
+                        });
+                        const relationships = tables.slice(1).map((table, i) => ({
+                            from_table: table.name, to_table: tables[i].name,
+                            evidence: 'declared_foreign_key'
+                        }));
+                        const source = {engine: 'sqlite', db_id: 'a'.repeat(24),
+                            size_bytes: 4096, observed_at: '2026-11-14T00:00:00Z',
+                            tables, relationships};
+                        const started = performance.now();
+                        window.render(source);
+                        const renderMs = performance.now() - started;
+                        const buttons = document.querySelectorAll('#tables button.table-node');
+                        const paths = document.querySelectorAll('#edges path');
+                        const firstEdge = paths[0];
+                        const selectStart = performance.now();
+                        buttons[999].click();
+                        const selectMs = performance.now() - selectStart;
+                        const reusedEdge = firstEdge ===
+                            document.querySelector('#edges path');
+                        const filter = document.getElementById('table-filter');
+                        const filterStart = performance.now();
+                        filter.value = 'SYNTHETIC_TABLE_0999';
+                        filter.dispatchEvent(new Event('input', {bubbles:true}));
+                        const filterMs = performance.now() - filterStart;
+                        const filtered = document.querySelectorAll(
+                            '#tables button.table-node:not([hidden])').length;
+                        const selectedName = document.querySelector(
+                            '#detail .detail-heading h3')?.textContent;
+                        const filterStatus = document.querySelector(
+                            '#filter-status').textContent;
+                        const filteredEdges = document.querySelectorAll(
+                            '#edges path').length;
+                        filter.value = 'NO_SYNTHETIC_MATCH';
+                        filter.dispatchEvent(new Event('input', {bubbles:true}));
+                        const empty = !document.getElementById('filter-empty').hidden;
+                        const noPressed = document.querySelectorAll(
+                            '#tables button[aria-pressed="true"]').length === 0;
+                        filter.value = '';
+                        filter.dispatchEvent(new Event('input', {bubbles:true}));
+                        return {render_ms: renderMs, select_ms: selectMs,
+                            filter_ms: filterMs, initial_tables: buttons.length,
+                            initial_edges: paths.length, reused_edge: reusedEdge,
+                            filtered, selected_name: selectedName,
+                            filter_status: filterStatus, filtered_edges: filteredEdges,
+                            empty, no_pressed: noPressed,
+                            restored_tables: document.querySelectorAll(
+                                '#tables button.table-node:not([hidden])').length,
+                            restored_edges: document.querySelectorAll(
+                                '#edges path').length};
+                    }""")
+                    require(large["initial_tables"] == 1000
+                            and large["initial_edges"] == 999
+                            and large["reused_edge"]
+                            and large["filtered"] == 1
+                            and large["selected_name"] == "synthetic_table_0999"
+                            and large["filter_status"] == "1 / 1000 테이블"
+                            and large["filtered_edges"] == 0
+                            and large["empty"] and large["no_pressed"]
+                            and large["restored_tables"] == 1000
+                            and large["restored_edges"] == 999,
+                            "LARGE_LOCAL_UI_REGRESSION")
+                    require(unchanged == digest(db), "LARGE_UI_CHANGED_SOURCE")
+                    result["large_synthetic_ui_metrics_ms"] = {
+                        "render": round(large["render_ms"], 3),
+                        "select": round(large["select_ms"], 3),
+                        "filter": round(large["filter_ms"], 3)}
+                    result["checks"].append("large_1000_table_client_only")
+
+                    # Resume the real localhost SQLite inventory for the
+                    # existing XSS/refresh/HTTP security acceptance.
+                    page.locator("#refresh").click()
+                    page.wait_for_function(
+                        "() => document.querySelector('#tables-count').textContent === '3'",
+                        timeout=15000)
+
                     dangerous = "<img src=x onerror=alert(2)>"
                     with closing(sqlite3.connect(db)) as con:
                         con.execute('CREATE TABLE "' + dangerous + '" ("<svg onload=alert(3)>" TEXT)')

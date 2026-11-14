@@ -81,6 +81,7 @@ setImmediate(async () => {
     ids['table-filter'].events.input();
     await ids.refresh.events.click();
     assert.equal(ids.tables.children.filter(x => !x.hidden).length, 1, 'filter persists after refresh');
+    await require('./test_ui_large_dom.cjs').verify();
     require('./test_workspace_html_dom.cjs').verify();
     console.log('UI DOM SIMULATION PASS: schema, XSS identifiers and resize listener idempotence');
   } catch(e) { console.error(e); process.exitCode=1; }
