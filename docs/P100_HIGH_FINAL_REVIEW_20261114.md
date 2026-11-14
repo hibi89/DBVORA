@@ -1,3 +1,5 @@
+> **2026-11-14 KST 독립 검수자 안내:** 아래 항목의 기존 `Instant` 표현은 초기 작성 당시 실행 담당자 명칭이다. **최신 실행자는 Codex GPT-6 Luna Max**, 범위/조건은 [Codex GitHub-only P100 정본](P100_CODEX_LUNA_MAX_GITHUB_ONLY_20261114.md). High는 Codex가 제출한 최종 **기능 SHA**에서 H01–H12를 독립 재검수한다. 현장/법적 승인 없으면 공식 UNASSESSED/RELEASE HOLD를 유지한다.
+
 # DBVORA 100% 최종 High 독립 검수 기준
 
 > 2026-11-14 KST / 검수자: GPT-6 High 역할 / 구현 주체: GPT-6 Instant / 기준 실행 플랜: P100_INSTANT_EXECUTION_PLAN_20261114.md
