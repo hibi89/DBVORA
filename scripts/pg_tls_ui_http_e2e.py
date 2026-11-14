@@ -242,6 +242,8 @@ def verify() -> dict:
                     raise AssertionError('MIXED_REPORT_SECRET_ROW_OR_PATH_LEAK')
                 mixed_view = browser.new_page(viewport={'width': 1280, 'height': 900})
                 mixed_page_errors = []
+                mixed_requests = []
+                mixed_view.on('request', lambda request: mixed_requests.append(request.url))
                 mixed_view.on('pageerror', lambda error: mixed_page_errors.append(type(error).__name__))
                 mixed_view.set_content(mixed_page, wait_until='domcontentloaded')
                 if mixed_view.locator('#cross-database-links').count() != 1:
@@ -271,6 +273,8 @@ def verify() -> dict:
                     raise AssertionError('MIXED_REPORT_SELECTION_STATE_INVALID')
                 if CANARY in mixed_view.locator('body').inner_text() or dsn in mixed_view.locator('body').inner_text():
                     raise AssertionError('MIXED_REPORT_ROW_OR_DSN_LEAK')
+                if mixed_requests:
+                    raise AssertionError('MIXED_OFFLINE_MAP_NETWORK_REQUEST')
                 _capture_sanitized_screenshot(mixed_view, screenshot_root, 'mixed-map-desktop.png')
                 mixed_view.set_viewport_size({'width': 390, 'height': 844})
                 if mixed_view.evaluate('document.documentElement.scrollWidth') > 390:

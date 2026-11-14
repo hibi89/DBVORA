@@ -178,8 +178,9 @@ class MultiEngineTests(unittest.TestCase):
 
 
     def test_same_name_collision_uses_explicit_database_and_column_identity(self):
-        with sqlite3.connect(self.file) as db:
+        with closing(sqlite3.connect(self.file)) as db:
             db.execute('CREATE TABLE accounts (id INTEGER PRIMARY KEY)')
+            db.commit()
         sqlite_catalog = inspect_sqlite(self.file)
         link = {
             'from_db': 1, 'from_schema': None, 'from_table': 'accounts', 'from_column': 'id',
@@ -201,6 +202,8 @@ class MultiEngineTests(unittest.TestCase):
         self.assertIs(edge['verified'], False)
         self.assertEqual(report['cross_database_edges_verified'], 0)
         page = render_report(report)
+        exported = export_report([sqlite_catalog, self.pg], self.out, declared_links=[link])
+        self.assertEqual(exported['declared_cross_database_count'], 1)
         self.assertIn('id="cross-database-links"', page)
         self.assertIn('Relationships are never inferred.', page)
         payload = page.split('<script type="application/json" id="catalog">', 1)[1].split('</script>', 1)[0]

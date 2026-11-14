@@ -1,5 +1,5 @@
 """Subprocess and mocked-Postgres mixed CLI acceptance, synthetic fixtures only."""
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import closing, redirect_stderr, redirect_stdout
 from io import StringIO
 import hashlib
 import json
@@ -168,11 +168,13 @@ class MixedCliTests(unittest.TestCase):
 
 
     def test_explicit_cross_database_links_file_is_scoped_and_unverified(self):
-        with sqlite3.connect(self.source) as db:
+        with closing(sqlite3.connect(self.source)) as db:
             db.executescript('CREATE TABLE left_table(id INTEGER PRIMARY KEY);')
+            db.commit()
         second = self.root / 'second.sqlite'
-        with sqlite3.connect(second) as db:
+        with closing(sqlite3.connect(second)) as db:
             db.executescript('CREATE TABLE right_table(id INTEGER PRIMARY KEY);')
+            db.commit()
         manifest = self.root / 'links.json'
         manifest.write_text(json.dumps([{
             'from_db': 1, 'from_schema': None, 'from_table': 'left_table', 'from_column': 'id',
