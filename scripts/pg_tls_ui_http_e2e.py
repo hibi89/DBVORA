@@ -241,8 +241,19 @@ def verify() -> dict:
                 if dsn in mixed_page or str(database) in mixed_page or CANARY in mixed_page:
                     raise AssertionError('MIXED_REPORT_SECRET_ROW_OR_PATH_LEAK')
                 page.set_viewport_size({'width': 1280, 'height': 900})
+                mixed_page_errors = []
+                page.on('pageerror', lambda error: mixed_page_errors.append(type(error).__name__))
                 page.set_content(mixed_page, wait_until='domcontentloaded')
-                page.locator('#cross-database-links button').wait_for(timeout=5000)
+                if page.locator('#cross-database-links').count() != 1:
+                    raise AssertionError('MIXED_LINK_LIST_ELEMENT_MISSING')
+                if mixed_page_errors:
+                    raise AssertionError('MIXED_MAP_SCRIPT_ERROR:' + ','.join(mixed_page_errors[:3]))
+                model = json.loads(page.locator('#catalog').text_content())
+                declared = model.get('declared_cross_database_links', [])
+                if len(declared) != 1:
+                    raise AssertionError('MIXED_LINK_MODEL_MISSING')
+                if page.locator('#cross-database-links button').count() != 1:
+                    raise AssertionError('MIXED_LINK_BUTTON_NOT_RENDERED')
                 node_names = page.locator('#databases button.node .table-key').all_text_contents()
                 if node_names.count('users') != 1 or node_names.count('public.users') != 1:
                     raise AssertionError('SAME_NAME_DATABASE_NODES_NOT_SCOPED')
