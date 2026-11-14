@@ -156,7 +156,7 @@ class WindowsSyntheticPublicationTests(unittest.TestCase):
     def test_archive_publisher_maps_native_denial_and_preserves_stage(self):
         root, stage, target = self.fixture()
         original = stage.read_bytes()
-        with patch.object(publish, '_windows_volume_type', return_value='NTFS'), \\
+        with patch.object(publish, '_windows_volume_type', return_value='NTFS'), \
                 patch.object(publish, '_native_move_write_through',
                              side_effect=publish.WinPublishError('MOVE_FAILED')):
             with self.assertRaises(safe_zip.ArchiveError) as error:
@@ -169,7 +169,7 @@ class WindowsSyntheticPublicationTests(unittest.TestCase):
     def test_archive_publisher_rejects_unsupported_volume_before_move(self):
         root, stage, target = self.fixture()
         original = stage.read_bytes()
-        with patch.object(publish, '_windows_volume_type', return_value='ReFS'), \\
+        with patch.object(publish, '_windows_volume_type', return_value='ReFS'), \
                 patch.object(publish, '_native_move_write_through') as move:
             with self.assertRaises(safe_zip.ArchiveError) as error:
                 safe_zip._publish_new_ntfs(stage, root, target)
