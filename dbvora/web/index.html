@@ -59,6 +59,18 @@
         <div class="detail-foot">READ-ONLY METADATA <span>↗</span></div>
       </aside>
     </section>
+    <section class="postgres-panel" aria-labelledby="postgres-title">
+      <div class="postgres-panel-head">
+        <div><p class="eyebrow">03 / POSTGRESQL</p><h2 id="postgres-title">PostgreSQL catalog</h2>
+          <p class="postgres-copy">서버 환경에 미리 설정한 PostgreSQL 연결을 사용합니다. 조회를 눌렀을 때만 TLS 인증과 읽기 전용 메타데이터 검사를 시작합니다. 실제 행 데이터와 접속 정보는 표시하지 않습니다.</p></div>
+        <button id="postgres-load" class="refresh postgres-load" type="button">PostgreSQL 메타데이터 조회</button>
+      </div>
+      <p id="postgres-status" class="postgres-status" role="status" aria-live="polite">조회 전 · 서버 설정이 없으면 비활성화됩니다.</p>
+      <div class="postgres-browser">
+        <div id="postgres-table-list" class="postgres-table-list" role="group" aria-label="PostgreSQL 테이블과 뷰"></div>
+        <div id="postgres-detail" class="postgres-detail" aria-live="polite"><p class="empty-state">조회 버튼을 눌러 PostgreSQL 구조를 확인하세요.</p></div>
+      </div>
+    </section>
     <footer class="footer"><span>DBVORA / LOCAL SOVEREIGN DATA INTELLIGENCE</span><span>NO CLOUD SYNC · NO DATA ROW EXPORT</span></footer>
   </main>
 </body>

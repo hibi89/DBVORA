@@ -585,6 +585,117 @@ async function refresh() {
     btn.disabled = false;
   }
 }
+
+// PostgreSQL is fetched only after an explicit local button click. The DSN
+// remains in the server environment; the browser receives catalog metadata.
+let postgresRequestPending = false;
+const POSTGRES_UI_ERRORS = {
+  POSTGRES_DISABLED: 'PostgreSQL 서버 설정이 없습니다. 로컬 서버 환경변수 DBVORA_POSTGRES_DSN을 확인하세요.',
+  POSTGRES_CONFIG_INVALID: '서버 측 PostgreSQL 설정을 확인할 수 없습니다.',
+  PG_CONNECTION_FAILED: 'TLS 인증 또는 PostgreSQL 연결에 실패했습니다. 서버 인증서와 연결 상태를 확인하세요.',
+  DRIVER_UNAVAILABLE: '선택적 PostgreSQL 드라이버가 설치되지 않았습니다.',
+  CATALOG_LIMIT: '안전한 표시 한도를 넘는 PostgreSQL 카탈로그입니다.',
+  INVALID_CATALOG: 'PostgreSQL 카탈로그 응답을 검증할 수 없습니다.',
+  PG_CATALOG_QUERY_FAILED: '읽기 전용 PostgreSQL 카탈로그 조회에 실패했습니다.'
+};
+function pgSection(title, values) {
+  const section = el('section', 'postgres-detail-section');
+  section.append(el('h3', '', title));
+  if (!values.length) {
+    section.append(el('p', 'empty-state', '없음'));
+    return section;
+  }
+  const list = el('ul', 'postgres-metadata-list');
+  for (const value of values) list.append(el('li', '', value));
+  section.append(list);
+  return section;
+}
+function renderPostgresTable(table, selectedButton) {
+  const detail = $('postgres-detail');
+  clear(detail);
+  const heading = el('div', 'postgres-selected-table');
+  heading.append(el('p', 'eyebrow', 'READ-ONLY CATALOG'),
+    el('h3', '', table.schema + '.' + table.name),
+    el('small', '', '관계 유형: ' + table.relation_kind));
+  detail.append(heading);
+  const columns = Array.isArray(table.columns) ? table.columns.map(column =>
+    column.name + ' · ' + column.type + ' · ' + (column.nullable_declared ? 'NULL 허용' : 'NOT NULL')) : [];
+  detail.append(pgSection('컬럼', columns));
+  detail.append(pgSection('기본 키', Array.isArray(table.primary_key_columns) ? table.primary_key_columns : []));
+  const indexes = Array.isArray(table.indexes) ? table.indexes.map(index =>
+    index.name + (index.unique ? ' · UNIQUE' : '') + (index.partial ? ' · PARTIAL' : '') +
+    ' · ' + ((index.key_columns || []).filter(Boolean).join(', ') || '키 컬럼 미확인')) : [];
+  detail.append(pgSection('인덱스', indexes));
+  const foreignKeys = Array.isArray(table.foreign_keys) ? table.foreign_keys.map(fk => {
+    const target = fk.to_schema && fk.to_table ? fk.to_schema + '.' + fk.to_table : '인벤토리 밖 대상';
+    return fk.constraint + ': ' + (fk.from_columns || []).join(', ') + ' → ' + target +
+      ' (' + (fk.to_columns || []).join(', ') + ')';
+  }) : [];
+  detail.append(pgSection('외래 키', foreignKeys));
+  for (const button of $('postgres-table-list').children) button.setAttribute('aria-pressed', button === selectedButton ? 'true' : 'false');
+}
+function renderPostgresCatalog(data) {
+  if (!data || data.contract_version !== 'dbvora.pg_catalog.v1' ||
+      data.engine !== 'postgresql' || !Array.isArray(data.tables) || data.tables.length > 300) {
+    throw new Error('PostgreSQL 메타데이터 응답을 검증할 수 없습니다.');
+  }
+  const list = $('postgres-table-list');
+  clear(list);
+  clear($('postgres-detail'));
+  for (const table of data.tables) {
+    if (!table || typeof table.schema !== 'string' || typeof table.name !== 'string' ||
+        !Array.isArray(table.columns) || !Array.isArray(table.indexes) || !Array.isArray(table.foreign_keys)) {
+      throw new Error('PostgreSQL 메타데이터 응답을 검증할 수 없습니다.');
+    }
+    const button = el('button', 'postgres-table-select', table.schema + '.' + table.name);
+    button.type = 'button';
+    button.setAttribute('aria-pressed', 'false');
+    button.addEventListener('click', () => renderPostgresTable(table, button));
+    list.append(button);
+  }
+  const first = list.children[0];
+  if (first) renderPostgresTable(data.tables[0], first);
+  else $('postgres-detail').append(el('p', 'empty-state', '사용자 테이블 또는 뷰가 없습니다.'));
+}
+async function loadPostgresCatalog() {
+  if (postgresRequestPending) return;
+  const button = $('postgres-load');
+  const status = $('postgres-status');
+  postgresRequestPending = true;
+  button.disabled = true;
+  status.textContent = 'TLS 인증을 포함한 읽기 전용 메타데이터 조회 중…';
+  status.classList.toggle('is-error', false);
+  clear($('postgres-table-list'));
+  clear($('postgres-detail'));
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch('/api/postgres', {
+      method: 'GET', cache: 'no-store', credentials: 'same-origin', signal: controller.signal
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      const code = data && data.error && data.error.code;
+      status.textContent = POSTGRES_UI_ERRORS[code] || 'PostgreSQL 메타데이터를 사용할 수 없습니다.';
+      status.classList.toggle('is-error', true);
+      return;
+    }
+    renderPostgresCatalog(data);
+    status.textContent = 'TLS 검증 · 읽기 전용 · ' + data.tables.length + '개 테이블/뷰 · 행 데이터 미조회';
+    status.classList.toggle('is-error', false);
+  } catch (error) {
+    status.textContent = error && error.name === 'AbortError'
+      ? 'PostgreSQL 메타데이터 요청 시간이 초과되었습니다. 다시 시도하세요.'
+      : 'PostgreSQL 연결을 완료하지 못했습니다. 서버 인증서와 연결 상태를 확인하세요.';
+    status.classList.toggle('is-error', true);
+  } finally {
+    clearTimeout(timeout);
+    postgresRequestPending = false;
+    button.disabled = false;
+  }
+}
+$('postgres-load').addEventListener('click', loadPostgresCatalog);
+
 $('refresh').addEventListener('click', refresh);
 $('table-filter').addEventListener('input', applyFilter);
 refresh();

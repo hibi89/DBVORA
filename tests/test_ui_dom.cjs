@@ -19,7 +19,7 @@ class Element {
   getBoundingClientRect() { return {left: 100, top: 100, width: 120, height: 100}; }
   get classList() { return {toggle: (name, yes) => { if (yes && !this.className.includes(name)) this.className += ' ' + name; }}; }
 }
-const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','database-topology','workspace-summary','growth-status','growth-scope','growth-history','growth-trend','growth-samples','persistent-growth-status','persistent-growth-trend','persistent-growth-samples'].map(id => [id, new Element('div')]));
+const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','database-topology','workspace-summary','growth-status','growth-scope','growth-history','growth-trend','growth-samples','persistent-growth-status','persistent-growth-trend','persistent-growth-samples','postgres-load','postgres-status','postgres-table-list','postgres-detail'].map(id => [id, new Element('div')]));
 ids.diagram.getBoundingClientRect = () => ({left: 0, top: 0, width: 800, height: 600});
 const doc = {getElementById: id => ids[id], createElement: tag => new Element(tag), createElementNS: (_, tag) => new Element(tag)};
 const marker = '<img src=x onerror=alert(7)>';
@@ -34,6 +34,8 @@ const listeners = [];
 let failNextFetch = false;
 let storageFetches = 0;
 let observationFetches = 0;
+let postgresFetches = 0;
+const postgresInventory = {contract_version:'dbvora.pg_catalog.v1',engine:'postgresql',tables:[{schema:'public',name:'events',relation_kind:'r',columns:[{name:'user_id',type:'bigint',nullable_declared:false}],primary_key_columns:['id'],indexes:[{name:'idx_events_user_id',unique:false,partial:false,key_columns:['user_id']}],foreign_keys:[{constraint:'events_user_id_fkey',from_columns:['user_id'],to_schema:'public',to_table:'users',to_columns:['id']}]}]};
 let currentInventory = data;
 let currentObservations = {
   contract:'dbvora.local-observation.v1', database:data.db_id,
@@ -49,6 +51,10 @@ const sandbox = {
   requestAnimationFrame: fn => fn(),
   fetch: async (url) => {
     if (failNextFetch) { failNextFetch = false; throw new TypeError('Failed to fetch'); }
+    if (url === '/api/postgres') {
+      postgresFetches++;
+      return {ok:true,status:200,json: async () => postgresInventory};
+    }
     if (url.startsWith('/api/observations?')) {
       observationFetches++;
       return {ok:true,status:200,json: async () => currentObservations};
@@ -91,6 +97,16 @@ setImmediate(async () => {
     assert.equal(ids.edges.children.length, 1);
     assert.ok(ids.detail.textContent.includes('customers'));
     assert.equal(storageFetches, 0, 'dbstat must never scan automatically');
+    assert.equal(postgresFetches, 0, 'PostgreSQL must not connect before explicit action');
+    await ids['postgres-load'].events.click();
+    assert.equal(postgresFetches, 1, 'explicit PostgreSQL button requests the local GET-only API');
+    assert.ok(ids['postgres-status'].textContent.includes('1개 테이블/뷰'));
+    assert.equal(ids['postgres-table-list'].children.length, 1);
+    ids['postgres-table-list'].children[0].events.click();
+    assert.ok(ids['postgres-detail'].textContent.includes('public.events'));
+    assert.ok(ids['postgres-detail'].textContent.includes('user_id'));
+    assert.ok(ids['postgres-detail'].textContent.includes('users'));
+    assert.ok(!ids['postgres-detail'].textContent.includes('SYNTHETIC_ROW_MUST_NEVER_BE_EXPORTED'));
     const getMeasure = () => ids.detail.children.flatMap(root => {
       const items = [];
       const walk = node => { if (node.className.split(/\s+/).includes('storage-measure')) items.push(node);

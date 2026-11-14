@@ -4,6 +4,7 @@ import stat
 import hashlib
 
 from dbvora.connectors.sqlite_reader import validate_path
+from dbvora.connectors.postgres_reader import PostgresInventoryError, inspect_postgres
 from dbvora.errors import InventoryError
 from dbvora.inventory import inspect_sqlite
 from dbvora.observation_ledger import (
@@ -21,7 +22,7 @@ except ImportError as exc:
 WEB = Path(__file__).resolve().parent / 'web'
 
 
-def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], port: int = 8765, *, observation_ledger_path: str | Path | None = None) -> FastAPI:
+def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], port: int = 8765, *, observation_ledger_path: str | Path | None = None, postgres_dsn: str | None = None) -> FastAPI:
     if not (1 <= port <= 65535):
         raise ValueError('Port must be between 1 and 65535.')
     # The CLI selects every source at startup. No HTTP path/SQL input is
@@ -49,6 +50,9 @@ def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], 
                                  'Select a separate local observation ledger file.')
     by_db_id = {hashlib.sha256(str(p).encode('utf-8')).hexdigest()[:24]: p
                 for p in selected_paths}
+    # PostgreSQL details come only from the local server environment.
+    postgres_dsn_valid = postgres_dsn is None or (type(postgres_dsn) is str and 1 <= len(postgres_dsn) <= 4096)
+    postgres_dsn = postgres_dsn if postgres_dsn_valid else None
     app = FastAPI(title='DBVORA local viewer', docs_url=None, redoc_url=None, openapi_url=None)
     allowed_hosts = {f'127.0.0.1:{port}', '127.0.0.1', f'localhost:{port}', 'localhost'}
     allowed_origins = {f'http://127.0.0.1:{port}', f'http://localhost:{port}'}
@@ -159,6 +163,34 @@ def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], 
                              'database': database_ids[0],
                              'scope': 'sqlite_main_file_excluding_wal_shm',
                              'records': rows})
+
+    @app.get('/api/postgres')
+    async def postgres_catalog(request: Request):
+        """Explicit, bounded TLS/read-only catalog lookup; never returns table rows."""
+        if request.query_params or await request.body():
+            return JSONResponse(status_code=422, content={
+                'error': {'code': 'INVALID_QUERY', 'message': 'This metadata endpoint accepts no query parameters.'}})
+        if not postgres_dsn_valid:
+            return JSONResponse(status_code=422, content={
+                'error': {'code': 'POSTGRES_CONFIG_INVALID', 'message': 'Server-side PostgreSQL configuration is invalid.'}})
+        if postgres_dsn is None:
+            return JSONResponse(status_code=404, content={
+                'error': {'code': 'POSTGRES_DISABLED', 'message': 'PostgreSQL is not configured for this local viewer.'}})
+        try:
+            return JSONResponse(inspect_postgres(postgres_dsn, require_tls=True, include_statistics=False))
+        except PostgresInventoryError as exc:
+            messages = {
+                'INVALID_DSN': 'Server-side PostgreSQL configuration is invalid.',
+                'TLS_REQUIRED': 'Verified TLS is required for PostgreSQL metadata.',
+                'DRIVER_UNAVAILABLE': 'The optional PostgreSQL driver is not installed.',
+                'CATALOG_LIMIT': 'The PostgreSQL catalog exceeds the safe display limit.',
+                'INVALID_CATALOG': 'PostgreSQL returned an invalid catalog response.',
+                'PG_CONNECTION_FAILED': 'PostgreSQL TLS verification or connection failed. Check the server certificate and availability.',
+                'PG_CATALOG_QUERY_FAILED': 'The read-only PostgreSQL catalog query failed.',
+            }
+            status = 503 if exc.code == 'DRIVER_UNAVAILABLE' else 502 if exc.code.startswith('PG_') else 422
+            return JSONResponse(status_code=status, content={'error': {
+                'code': exc.code, 'message': messages.get(exc.code, 'PostgreSQL metadata is unavailable.')}})
 
     @app.get('/health')
     async def health():

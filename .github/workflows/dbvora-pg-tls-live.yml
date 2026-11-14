@@ -9,6 +9,11 @@ on:
       - "dbvora/connectors/postgres_statistics.py"
       - "dbvora/multi_engine_report.py"
       - "scripts/pg_tls_local_acceptance.py"
+      - "dbvora/api.py"
+      - "dbvora/serve.py"
+      - "dbvora/web/**"
+      - "scripts/pg_tls_ui_http_e2e.py"
+      - "tests/test_postgres_api.py"
       - ".github/workflows/dbvora-pg-tls-live.yml"
   workflow_dispatch:
 
@@ -32,8 +37,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install only local PG client driver
-        run: python -m pip install --disable-pip-version-check -e ".[postgres]"
+      - name: Install synthetic API and browser test dependencies
+        run: python -m pip install --disable-pip-version-check -e ".[ui,postgres,test]" playwright==1.56.0
+      - name: Install Chromium for synthetic local UI
+        run: |
+          python -m playwright install-deps chromium
+          python -m playwright install chromium
       - name: Generate ephemeral test-only localhost TLS certificate
         shell: bash
         run: |
@@ -101,6 +110,7 @@ jobs:
           export DBVORA_SYNTHETIC_PG_DSN="host=localhost port=55439 dbname=dbvora_test user=dbvora_reader sslrootcert=$DBVORA_PG_TLS_DIR/ca.crt"
           export DBVORA_SYNTHETIC_BAD_CA="$DBVORA_PG_TLS_DIR/wrong.crt"
           python -m scripts.pg_tls_local_acceptance
+          python -m scripts.pg_tls_ui_http_e2e
       - name: Destroy ephemeral container and certificate files
         if: always()
         shell: bash
