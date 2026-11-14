@@ -19,7 +19,7 @@ class Element {
   getBoundingClientRect() { return {left: 100, top: 100, width: 120, height: 100}; }
   get classList() { return {toggle: (name, yes) => { if (yes && !this.className.includes(name)) this.className += ' ' + name; }}; }
 }
-const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','database-topology','workspace-summary','growth-status','growth-scope','growth-history','growth-trend'].map(id => [id, new Element('div')]));
+const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','database-topology','workspace-summary','growth-status','growth-scope','growth-history','growth-trend','growth-samples'].map(id => [id, new Element('div')]));
 ids.diagram.getBoundingClientRect = () => ({left: 0, top: 0, width: 800, height: 600});
 const doc = {getElementById: id => ids[id], createElement: tag => new Element(tag), createElementNS: (_, tag) => new Element(tag)};
 const marker = '<img src=x onerror=alert(7)>';
@@ -61,6 +61,7 @@ setImmediate(async () => {
     assert.equal(ids['database-selector'].hidden, true, 'single DB must hide chooser');
     assert.ok(ids['growth-status'].textContent.includes('첫 측정'), 'baseline no fabricated trend');
     assert.ok(ids['growth-history'].textContent.includes('1건'), 'one verified baseline sample');
+    assert.equal(ids['growth-samples'].children.length, 1, 'baseline has one timestamped ledger row');
     assert.ok(ids['growth-trend'].textContent.includes('3건 필요'), 'one sample is not a trend');
     assert.equal(ids['database-topology'].children.length, 0, 'single DB topology remains hidden');
     assert.equal(ids['tables-count'].textContent, '3');
@@ -131,6 +132,8 @@ setImmediate(async () => {
       'new comparison must use the last accepted 07:05 baseline, not stale 07:03');
     assert.ok(ids['growth-history'].textContent.includes('3건'),
       'newer observation is appended after stale sample rejected');
+    assert.equal(ids['growth-samples'].children.length, 3, 'ledger lists three accepted chronological samples');
+    assert.ok(ids['growth-samples'].textContent.includes('15,417 B'), 'latest observed main-file bytes are visible');
     assert.ok(ids['growth-trend'].textContent.includes('증가 +3 KB'),
       'three chronological samples report measured first-to-last net change');
     assert.ok(ids['growth-trend'].textContent.includes('예측 아님'),
