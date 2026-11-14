@@ -15,7 +15,7 @@ import stat
 
 from dbvora.archive.safe_zip import (
     ArchiveError, _directory, _staging_file, _sync_staged_file,
-    _sync_directory,
+    _sync_directory, _publish_new_ntfs,
 )
 from dbvora.archive.recovery_catalog import PUBLISHED, _snapshot_metadata, _verify_one
 
@@ -200,12 +200,20 @@ def create_receipt(artifact_path: str | Path, *, parent_receipt_name: str | None
             # File can change after verification; fast pre-link metadata check.
             if _snapshot_metadata(path) != before:
                 raise ArchiveError("RACE_DETECTED", "Artifact changed before receipt publication.")
-            os.link(stage, receipt_path, follow_symlinks=False)
-            linked = True
-            _sync_directory(folder)
+            if os.name == "nt":
+                # The same verified create-only Win32 move used for archives.
+                # No directory-fsync bypass and no replace-existing fallback.
+                _publish_new_ntfs(stage, folder, receipt_path)
+            else:
+                os.link(stage, receipt_path, follow_symlinks=False)
+                linked = True
+                _sync_directory(folder)
         except FileExistsError:
             raise ArchiveError("RECEIPT_EXISTS", "Existing receipt must not be replaced.") from None
         except ArchiveError:
+            if os.name == "nt" and stage.exists() and os.path.lexists(receipt_path):
+                # A concurrent new-name winner is not a second success.
+                raise ArchiveError("RECEIPT_EXISTS", "Existing receipt must not be replaced.") from None
             raise
         except OSError:
             raise ArchiveError("RECEIPT_PUBLISH_FAILED", "Could not durably publish a receipt.") from None

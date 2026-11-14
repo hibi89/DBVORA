@@ -184,7 +184,13 @@ class ReceiptTests(unittest.TestCase):
     def test_fail_before_link_preserves_unrecorded_archive(self):
         snap = self.snapshot()
         before = self.identity(snap['snapshot_path'])
-        with patch('dbvora.archive.receipts.os.link', side_effect=OSError('simulated failed link')):
+        if os.name == 'nt':
+            from dbvora.archive import windows_ntfs_publish as native
+            failure = patch.object(native, '_native_move_write_through',
+                                   side_effect=native.WinPublishError('MOVE_FAILED'))
+        else:
+            failure = patch('dbvora.archive.receipts.os.link', side_effect=OSError('simulated failed link'))
+        with failure:
             with self.assertRaises(ArchiveError):
                 create_receipt(snap['snapshot_path'])
         self.assertEqual(inspect_receipt(self.out, Path(snap['snapshot_path']).name)['error_code'],
@@ -195,7 +201,14 @@ class ReceiptTests(unittest.TestCase):
     def test_directory_fsync_failure_rolls_back_new_receipt(self):
         snap = self.snapshot()
         original = self.identity(snap['snapshot_path'])
-        with patch('dbvora.archive.receipts._sync_directory', side_effect=ArchiveError('PUBLISH_FAILED', 'injected')):
+        if os.name == 'nt':
+            from dbvora.archive import windows_ntfs_publish as native
+            failure = patch.object(native, '_native_move_write_through',
+                                   side_effect=native.WinPublishError('MOVE_FAILED'))
+        else:
+            failure = patch('dbvora.archive.receipts._sync_directory',
+                            side_effect=ArchiveError('PUBLISH_FAILED', 'injected'))
+        with failure:
             with self.assertRaises(ArchiveError):
                 create_receipt(snap['snapshot_path'])
         self.assertEqual(inspect_receipt(self.out, Path(snap['snapshot_path']).name)['error_code'],
