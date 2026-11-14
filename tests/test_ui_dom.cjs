@@ -210,7 +210,7 @@ setImmediate(async () => {
     await ids.refresh.events.click();
     assert.equal(ids.refresh.disabled, false, 'network failure must enable refresh');
     assert.equal(ids.error.hidden, false, 'network failure must be visible');
-    assert.ok(ids.error.textContent.includes('연결이 중단'), 'network failure is actionable');
+    assert.ok(ids.error.textContent.includes('연결이 끊겼습니다'), 'network failure is actionable');
     assert.equal(ids.detail.textContent, inspectorBeforeDisconnect,
       'network failure must keep last verified inspector');
     assert.equal(ids['growth-status'].textContent, growthBeforeDisconnect,
