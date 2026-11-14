@@ -828,7 +828,7 @@ def run(*, screenshots=None):
                       window.fetch = (url, options) => {
                         if (String(url).startsWith('/api/table-storage?')) {
                           return new Promise((resolve, reject) =>
-                            window.__storagePending.push({resolve, reject}));
+                            window.__storagePending.push({resolve, reject, signal: options.signal}));
                         }
                         return window.__storageFetchOriginal(url, options);
                       };
@@ -837,6 +837,8 @@ def run(*, screenshots=None):
                     multi_page.wait_for_function(
                         "() => window.__storagePending.length === 1")
                     multi_page.locator('#database-topology button.topology-database').nth(1).click()
+                    require(multi_page.evaluate('() => window.__storagePending[0].signal.aborted'),
+                            'MULTI_RACE_PREVIOUS_SCAN_NOT_ABORTED')
                     require(multi_page.locator('#tables-count').inner_text() == '2'
                             and multi_page.locator('.storage-status').inner_text().startswith('측정 전'),
                             'MULTI_RACE_SWITCH_PRECONDITION')
@@ -856,6 +858,8 @@ def run(*, screenshots=None):
                     multi_page.wait_for_function(
                         "() => window.__storagePending.length === 1")
                     multi_page.locator('#database-topology button.topology-database').first.click()
+                    require(multi_page.evaluate('() => window.__storagePending[0].signal.aborted'),
+                            'MULTI_RACE_PREVIOUS_FAILURE_SCAN_NOT_ABORTED')
                     multi_page.evaluate("""() => window.__storagePending.shift().reject(
                       new TypeError('synthetic stale transport error'))""")
                     multi_page.wait_for_timeout(100)
