@@ -1,0 +1,67 @@
+name: DBVORA unsigned owner preview ZIP (synthetic only)
+
+on:
+  push:
+    branches:
+      - feature/p0-db-map
+    paths:
+      - "dbvora/**"
+      - "scripts/build_portable.py"
+      - "pyproject.toml"
+      - ".github/workflows/dbvora-owner-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dbvora-unsigned-owner-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-preview:
+    name: Build and verify unsigned source preview (NOT FOR SALE)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact source without persistent token
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Create source-only ZIP with manifest (synthetic tools)
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          python -m scripts.build_portable --output "$GITHUB_WORKSPACE/dist" > "$GITHUB_WORKSPACE/dist/unsigned-build-report.json"
+      - name: Verify fresh ZIP and manifest independently
+        run: |
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          from scripts.build_portable import verify_zip
+          candidates = list(Path("dist").glob("dbvora-dev-preview-*.zip"))
+          assert len(candidates) == 1, "EXPECTED_ONE_UNSIGNED_PREVIEW"
+          archive = candidates[0]
+          evidence = verify_zip(archive)
+          build = json.loads(Path("dist/unsigned-build-report.json").read_text("utf-8"))
+          assert evidence["status"] == "PASS_UNSIGNED_SOURCE_INTEGRITY_ONLY"
+          assert evidence["ready_for_customer_data"] is False
+          assert evidence["signed"] is False
+          assert build["sha256"] == hashlib.sha256(archive.read_bytes()).hexdigest()
+          assert build["status"] == "PASS_UNSIGNED_SOURCE_INTEGRITY_ONLY"
+          print(json.dumps({"status":"PASS_UNSIGNED_OWNER_PREVIEW_ONLY", "zip_sha256":build["sha256"], "files":evidence["files"], "source_commit":"${{ github.sha }}", "ready_for_customer_data":False}, sort_keys=True))
+          PY
+      - name: Run packaged synthetic-only no-dependency self-check
+        run: python -m dbvora.offline_selftest
+      - name: Upload unsigned owner QA preview (expires, never a sale release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbvora-UNSIGNED-OWNER-PREVIEW-${{ github.sha }}
+          path: |
+            dist/dbvora-dev-preview-*.zip
+            dist/unsigned-build-report.json
+          if-no-files-found: error
+          retention-days: 7
