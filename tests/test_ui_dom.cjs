@@ -133,7 +133,7 @@ setImmediate(async () => {
     assert.ok(ids['growth-history'].textContent.includes('3건'),
       'newer observation is appended after stale sample rejected');
     assert.equal(ids['growth-samples'].children.length, 3, 'ledger lists three accepted chronological samples');
-    assert.ok(ids['growth-samples'].textContent.includes('15,417 B'), 'latest observed main-file bytes are visible');
+    assert.ok(ids['growth-samples'].textContent.includes('15.06 KB'), 'latest observed main-file bytes are visible');
     assert.ok(ids['growth-trend'].textContent.includes('증가 +3 KB'),
       'three chronological samples report measured first-to-last net change');
     assert.ok(ids['growth-trend'].textContent.includes('예측 아님'),
