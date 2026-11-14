@@ -73,6 +73,17 @@ def _read(root: Path, key: str) -> bytes:
         raise CompressedCasError("CHUNK_UNAVAILABLE") from None
 
 
+def _write_staged_exact(staged: Path, payload: bytes) -> None:
+    """Refuse publication when a staged write is short or its bytes differ.
+
+    Python file writes may report fewer bytes without an exception. The
+    immutable CAS manifest must never be published from such a staging file.
+    """
+    written = staged.write_bytes(payload)
+    if written != len(payload) or staged.read_bytes() != payload:
+        raise CompressedCasError("STAGED_WRITE_UNVERIFIED")
+
+
 def _put(root: Path, raw: bytes) -> tuple[str, bool]:
     key = hashlib.sha256(raw).hexdigest()
     final = root / (key + ".cz")
@@ -85,7 +96,7 @@ def _put(root: Path, raw: bytes) -> tuple[str, bool]:
         raise CompressedCasError("COMPRESSED_CHUNK_TOO_LARGE")
     staged = _staging_file(root)
     try:
-        staged.write_bytes(data)
+        _write_staged_exact(staged, data)
         _sync_staged_file(staged)
         if os.name == "nt":
             _publish_new_ntfs(staged, root, final)
@@ -149,7 +160,7 @@ def create_compressed(snapshot_path: str | Path, chunk_dir: str | Path,
             raise CompressedCasError("MANIFEST_LIMIT")
         staged = _staging_file(manifests)
         try:
-            staged.write_bytes(encoded)
+            _write_staged_exact(staged, encoded)
             published = _publish_new(staged, manifests, ".json")
         finally:
             staged.unlink(missing_ok=True)
