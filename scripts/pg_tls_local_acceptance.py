@@ -12,6 +12,9 @@ import json
 import os
 from pathlib import Path
 import sys
+from unittest.mock import patch
+
+from dbvora.connectors import postgres_reader as pg
 
 from dbvora.connectors.postgres_reader import PostgresInventoryError, inspect_postgres
 from dbvora.multi_engine_report import assemble_workspace, render_report
@@ -32,6 +35,8 @@ def verify() -> dict:
         "customer_ready": False,
     }
     phase = "ENVIRONMENT"
+    last_query = "NONE"
+    safe_sqlstate = "NONE"
     try:
         import psycopg
         dsn = os.environ.get("DBVORA_SYNTHETIC_PG_DSN", "")
@@ -66,7 +71,31 @@ def verify() -> dict:
         result["checks"].append("real_postgres_verified_tls_readonly")
         # Exercise actual production connector, not the synthetic catalog fake.
         phase = "CONNECTOR"
-        catalog = inspect_postgres(dsn, include_statistics=True)
+        original_rows = pg._rows
+        def traced_rows(connection, statement, *args):
+            nonlocal last_query, safe_sqlstate
+            if statement == pg.TABLES:
+                last_query = "TABLES"
+            elif statement == pg.COLUMNS:
+                last_query = "COLUMNS"
+            elif statement == pg.PRIMARY_KEY:
+                last_query = "PRIMARY_KEY"
+            elif statement == pg.INDEXES:
+                last_query = "INDEXES"
+            elif statement == pg.FOREIGN_KEYS:
+                last_query = "FOREIGN_KEYS"
+            else:
+                last_query = "OTHER"
+            try:
+                return original_rows(connection, statement, *args)
+            except Exception as exc:
+                candidate = getattr(exc, "sqlstate", "")
+                safe_sqlstate = (candidate if isinstance(candidate, str)
+                                 and len(candidate) == 5 and candidate.isalnum()
+                                 else "UNKNOWN")
+                raise
+        with patch.object(pg, "_rows", traced_rows):
+            catalog = inspect_postgres(dsn, include_statistics=True)
         phase = "CATALOG"
         tables = {table["name"]: table for table in catalog["tables"]}
         if not _EXPECTED.issubset(tables):
@@ -116,7 +145,8 @@ def verify() -> dict:
         result["status"] = "PASS_SYNTHETIC_LOCAL_POSTGRES_TLS_ONLY"
     except PostgresInventoryError as exc:
         # These are stable public connector codes; never include libpq errors.
-        result["error_code"] = "CONNECTOR_" + exc.code
+        result["error_code"] = ("CONNECTOR_" + exc.code + "_AT_" + last_query
+                                + "_STATE_" + safe_sqlstate)
     except Exception:
         # Deliberately suppress exception messages that may include a DSN.
         # The fixed phase name makes CI failures diagnosable without secrets.
