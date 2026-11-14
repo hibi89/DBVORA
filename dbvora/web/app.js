@@ -7,6 +7,7 @@ let inventory = null;
 let workspace = null;
 let selectedDatabase = null;
 let selected = null;
+let workspaceFilters = new Map();
 // Session samples stay in memory; persistent samples use a local GET-only API.
 let lastMeasurements = new Map();
 let growthComparisons = new Map();
@@ -428,7 +429,9 @@ function drawEdges() {
 // Filter only the already loaded schema names. Never transmit a query or fetch rows.
 function applyFilter() {
   if (!inventory) return;
-  const query = String($('table-filter').value || '').trim().toLocaleLowerCase();
+  const rawQuery = String($('table-filter').value || '');
+  if (workspace && selectedDatabase) workspaceFilters.set(selectedDatabase, rawQuery);
+  const query = rawQuery.trim().toLocaleLowerCase();
   let count = 0;
   let first = null;
   for (const [name, button] of nodeElements) {
@@ -459,8 +462,12 @@ function showWorkspaceDatabase(dbId) {
   if (!workspace) return;
   const database = workspace.databases.find((db) => db.db_id === dbId);
   if (!database) return;
+  if (selectedDatabase && selectedDatabase !== dbId) {
+    workspaceFilters.set(selectedDatabase, String($('table-filter').value || ''));
+  }
   if (selectedDatabase !== dbId) selected = null;
   selectedDatabase = dbId;
+  $('table-filter').value = workspaceFilters.get(dbId) || '';
   const localLinks = workspace.relationships.filter((link) =>
     link.database_id === dbId && link.evidence === 'declared_foreign_key' &&
     link.target_in_inventory === true);
@@ -481,6 +488,8 @@ function render(data) {
     if (!Array.isArray(data.databases) || data.databases.length < 2 ||
         !Array.isArray(data.relationships)) throw new Error('Invalid workspace metadata');
     workspace = data;
+    const activeDatabaseIds = new Set(data.databases.map((db) => db.db_id));
+    workspaceFilters = new Map([...workspaceFilters].filter(([dbId]) => activeDatabaseIds.has(dbId)));
     $('database-selector').hidden = false;
     $('workspace-summary').textContent =
       `${data.database_count} DB · ${data.table_count} 테이블 · 합계 ${formatBytes(data.total_main_db_size_bytes)}`;

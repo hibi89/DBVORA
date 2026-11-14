@@ -879,6 +879,23 @@ def run(*, screenshots=None):
                     require(multi_page.locator('#tables-count').inner_text() == '3'
                             and nodes.nth(0).get_attribute('aria-pressed') == 'true',
                             'MULTI_TOPOLOGY_CLICK_SELECTION')
+                    expected_sizes = multi_page.evaluate("""async () => {
+                      const data = await (await fetch('/api/inventory')).json();
+                      const formatBytes = value => {
+                        if (typeof value !== 'number' || !Number.isFinite(value)) return '—';
+                        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+                        let n = value, index = 0;
+                        while (n >= 1024 && index < units.length - 1) { n /= 1024; index++; }
+                        return n.toLocaleString('ko-KR', {maximumFractionDigits: index ? 2 : 0}) +
+                          ' ' + units[index];
+                      };
+                      return Object.fromEntries(data.databases.map(db =>
+                        [db.db_id, formatBytes(db.size_bytes)]));
+                    }""")
+                    db_a, db_b = (nodes.nth(0).get_attribute('data-db-id'),
+                                  nodes.nth(1).get_attribute('data-db-id'))
+                    require(multi_page.locator('#size').inner_text() == expected_sizes[db_a],
+                            'MULTI_SELECTED_DATABASE_SIZE_A')
                     result['checks'].append('multi_topology_two_nodes_keyboard_click')
                     # R01-07: hold a real browser fetch Promise until after
                     # switching DBs; stale success/failure must not leak.
@@ -899,8 +916,13 @@ def run(*, screenshots=None):
                     multi_page.locator('#database-topology button.topology-database').nth(1).click()
                     require(multi_page.evaluate('() => window.__storagePending[0].signal.aborted'),
                             'MULTI_RACE_PREVIOUS_SCAN_NOT_ABORTED')
+                    switched_inspector = multi_page.locator('.detail-heading h3').inner_text()
+                    switched_tables = [button.inner_text() for button in
+                                       multi_page.locator('#tables button.table-node').all()]
                     require(multi_page.locator('#tables-count').inner_text() == '2'
-                            and multi_page.locator('.storage-status').inner_text().startswith('측정 전'),
+                            and multi_page.locator('.storage-status').inner_text().startswith('측정 전')
+                            and multi_page.locator('#size').inner_text() == expected_sizes[db_b]
+                            and switched_inspector in switched_tables,
                             'MULTI_RACE_SWITCH_PRECONDITION')
                     multi_page.evaluate("""() => window.__storagePending.shift().resolve({
                       ok: true, json: async () => ({
@@ -913,11 +935,16 @@ def run(*, screenshots=None):
                     multi_page.wait_for_timeout(100)
                     require(multi_page.locator('#tables-count').inner_text() == '2'
                             and multi_page.locator('.storage-status').inner_text().startswith('측정 전')
+                            and multi_page.locator('#size').inner_text() == expected_sizes[db_b]
+                            and multi_page.locator('.detail-heading h3').inner_text() == switched_inspector
                             and not multi_errors, 'MULTI_RACE_STALE_SUCCESS_LEAK')
                     multi_page.locator('.storage-measure').click()
                     multi_page.wait_for_function(
                         "() => window.__storagePending.length === 1")
                     multi_page.locator('#database-topology button.topology-database').first.click()
+                    failed_switch_inspector = multi_page.locator('.detail-heading h3').inner_text()
+                    failed_switch_tables = [button.inner_text() for button in
+                                            multi_page.locator('#tables button.table-node').all()]
                     require(multi_page.evaluate('() => window.__storagePending[0].signal.aborted'),
                             'MULTI_RACE_PREVIOUS_FAILURE_SCAN_NOT_ABORTED')
                     multi_page.evaluate("""() => window.__storagePending.shift().reject(
@@ -925,6 +952,8 @@ def run(*, screenshots=None):
                     multi_page.wait_for_timeout(100)
                     require(multi_page.locator('#tables-count').inner_text() == '3'
                             and multi_page.locator('.storage-status').inner_text().startswith('측정 전')
+                            and multi_page.locator('#size').inner_text() == expected_sizes[db_a]
+                            and failed_switch_inspector in failed_switch_tables
                             and not multi_errors, 'MULTI_RACE_STALE_FAILURE_LEAK')
                     # A table switch within the same DB also aborts the old
                     # opt-in scan; selection identity must remain correct.
@@ -948,22 +977,33 @@ def run(*, screenshots=None):
                     }""")
                     result['checks'].append('multi_table_switch_aborts_storage')
                     result['checks'].append('multi_delayed_storage_success_failure_isolated')
+                    multi_page.locator('#table-filter').fill('ORDERS')
+                    require(multi_page.locator('#tables button.table-node:visible').count() == 1
+                            and multi_page.locator('.detail-heading h3').inner_text() == 'orders',
+                            'MULTI_FILTER_SCOPE_A')
                     multi_page.locator('#database-list button').nth(1).click()
                     require(multi_page.locator('#tables-count').inner_text() == '2'
                             and multi_page.locator('#edges path').count() == 1
                             and multi_page.locator('#database-list button').nth(1).get_attribute(
-                                'aria-pressed') == 'true', 'MULTI_DATABASE_SWITCH_FAILED')
+                                'aria-pressed') == 'true'
+                            and multi_page.locator('#table-filter').input_value() == ''
+                            and multi_page.locator('#tables button.table-node:visible').count() == 2
+                            and multi_page.locator('#size').inner_text() == expected_sizes[db_b],
+                            'MULTI_DATABASE_SWITCH_FAILED')
                     multi_page.locator('#tables button.table-node').filter(
                         has_text='shipments').click()
                     require(multi_page.locator('.detail-heading h3').inner_text() == 'shipments'
                             and multi_page.locator('#edges path.active').count() == 1,
                             'MULTI_DATABASE_INSPECTOR_WRONG')
+                    multi_page.locator('#table-filter').fill('SHIPMENTS')
+                    require(multi_page.locator('#tables button.table-node:visible').count() == 1
+                            and multi_page.locator('#size').inner_text() == expected_sizes[db_b],
+                            'MULTI_FILTER_SCOPE_B')
                     multi_page.locator('.storage-measure').click()
                     multi_page.wait_for_function(
                         "() => document.querySelector('.storage-status').textContent"
                         ".includes('할당된 B-tree') || document.querySelector('.storage-status')"
                         ".textContent.includes('측정 불가')", timeout=15000)
-                    multi_page.locator('#table-filter').fill('SHIPMENTS')
                     multi_page.locator('#refresh').click()
                     multi_page.wait_for_function(
                         "() => !document.querySelector('#refresh').disabled"
@@ -971,15 +1011,26 @@ def run(*, screenshots=None):
                     require(multi_page.locator('#database-list button').nth(1).get_attribute(
                                 'aria-pressed') == 'true'
                             and multi_page.locator('#tables button.table-node:visible').count() == 1
-                            and multi_page.locator('.detail-heading h3').inner_text() == 'shipments',
+                            and multi_page.locator('.detail-heading h3').inner_text() == 'shipments'
+                            and multi_page.locator('#size').inner_text() == expected_sizes[db_b],
                             'MULTI_REFRESH_SELECTION_NOT_PRESERVED')
-                    multi_page.locator('#table-filter').fill('')
                     multi_page.locator('#database-list button').first.click()
                     require(multi_page.locator('#tables-count').inner_text() == '3'
                             and multi_page.locator('#edges path').count() == 1
                             and multi_page.locator('button.table-node').count() == 3
+                            and multi_page.locator('#table-filter').input_value() == 'ORDERS'
+                            and multi_page.locator('#tables button.table-node:visible').count() == 1
+                            and multi_page.locator('.detail-heading h3').inner_text() == 'orders'
+                            and multi_page.locator('#size').inner_text() == expected_sizes[db_a]
                             and not multi_errors, 'MULTI_SWITCH_BACK_FAILED')
+                    multi_page.locator('#database-list button').nth(1).click()
+                    require(multi_page.locator('#table-filter').input_value() == 'SHIPMENTS'
+                            and multi_page.locator('#tables button.table-node:visible').count() == 1
+                            and multi_page.locator('.detail-heading h3').inner_text() == 'shipments'
+                            and multi_page.locator('#size').inner_text() == expected_sizes[db_b],
+                            'MULTI_FILTER_SCOPE_RESTORED')
                     result['checks'].append('multi_live_two_databases_isolated_navigation')
+                    result['checks'].append('multi_selected_database_size_and_filter_scope')
                     # This view has already completed one successful
                     # explicit refresh above: compare two measured observations.
                     require("직전 측정 대비 변화 없음" in
