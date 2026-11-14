@@ -74,8 +74,11 @@ def verify() -> dict:
         raise RuntimeError('LOOPBACK_SYNTHETIC_DATABASE_REQUIRED')
     with tempfile.TemporaryDirectory(prefix='dbvora-pg-ui-') as tmp:
         database = Path(tmp) / 'ui.sqlite'
-        with sqlite3.connect(database) as connection:
+        connection = sqlite3.connect(database)
+        try:
             connection.execute('CREATE TABLE synthetic_ui_only (id INTEGER PRIMARY KEY)')
+        finally:
+            connection.close()
         port = free_port()
         bad_dsn = dsn + ' sslrootcert=' + bad_ca
         wrong_server = start_server(database, bad_dsn, port)
@@ -87,7 +90,7 @@ def verify() -> dict:
                 pg_requests = []
                 page.on('request', lambda request: pg_requests.append(request.url)
                         if request.url.endswith('/api/postgres') else None)
-                page.goto('http://127.0.0.1:' + str(port) + '/', wait_until='networkidle')
+                page.goto('http://127.0.0.1:' + str(port) + '/', wait_until='domcontentloaded')
                 page.wait_for_selector('#postgres-load')
                 if pg_requests:
                     raise AssertionError('POSTGRES_LOOKUP_MUST_BE_EXPLICIT')
@@ -111,7 +114,7 @@ def verify() -> dict:
                 pg_requests = []
                 page.on('request', lambda request: pg_requests.append(request.url)
                         if request.url.endswith('/api/postgres') else None)
-                page.goto('http://127.0.0.1:' + str(port) + '/', wait_until='networkidle')
+                page.goto('http://127.0.0.1:' + str(port) + '/', wait_until='domcontentloaded')
                 if pg_requests:
                     raise AssertionError('POSTGRES_LOOKUP_MUST_BE_EXPLICIT_AFTER_RESTART')
                 page.locator('#postgres-load').click()
