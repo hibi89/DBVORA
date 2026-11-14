@@ -1,3 +1,15 @@
+## 2026-11-14 KST — 사용자 P100 새 목표 / 인수인계 10항
+1. **목표·기술**: DBVORA 전체 최종설계 100%, 이번 주말 크몽 상품화 준비, 0원; Python3.11+ SQLite·PG 읽기전용 관제, ZIP/ZSTD 안전 복원, 오프라인 UI.
+2. **완료/결정**: 과거 feature/P95 원본 11파일 합성 PG 6/6·unittest 11/11 근거 유지. A 소유자 PC 단독 검증 vs B 무료 표준 GitHub Ubuntu/Windows full release gate + 소유자 Windows 후속 비교, B 채택. 신규 CI와 P100 수용 체크리스트 작성.
+3. **테스트**: 이번 CI 생성 전 GitHub Actions 해당 저장소 실행 0건; 새 CI 결과는 실행 후 별도 확인, 현재 성공 단정 금지. 종전 정확 소스 합성6+11 PASS는 별도 이력.
+4. **진행/차단**: P100 [작업중]; 전체 >=553 Python·Node·원본 ZIP·Win/NTFS 실제 수용·실 TLS PG·라이선스·고객/판매 승인 PENDING. 공식 점수 UNASSESSED, 과거 내부95.
+5. **실패/전환**: container 외부 github.com DNS 실패를 다시 확인했으므로 동일 git clone 반복하지 말 것. GitHub connector 정본 fetch/commit, GitHub-hosted 표준 runner로 전환. Actions 실패 시 근거 분류 후 코드 원인 1회 개선, 가용성·과금 문제는 HOLD.
+6. **저장소/SHA**: `hibi89/DBVORA@feature/p0-db-map`, 변경 전 HEAD `b69ee453f460cc4a97ccfea6b4ab5748a2420c2e`, 후속 커밋 및 중앙 `kmong-productization` SHA는 원격 최신 브랜치 조회. main/develop 불변.
+7. **배포/실행**: `python -m scripts.verify_release_gate`, Linux/Windows GitHub-hosted 실행 예정; Vercel/Production 미적용; 판매 ZIP 미승인.
+8. **백업/보안**: feature Git history rollback, 합성 전용. 고객 DB/원본 아카이브/비밀번호·키·환경/권한/원본 코드 main/develop 미변경. GitHub 저장소 실제 Public(기존 문서 Private 오기).
+9. **다음/승인**: Actions 실행 상태/로그 확인→FAIL 정확 수정→전체 양OS PASS 확인→소유자 Win 실제 QA(휴대폰으로 CI 확인 가능)→허가된 합성 PG TLS→권리/고객·판매 사용자 승인; 비용 발생 시 사전 승낙. 전체 정책 100점 가중치 별도 확정.
+10. **시각/범위/문서 기준**: 2026-11-14 KST, connector 원격 branch/content/source inventory 확인, CI 작성 자체는 미검증; 실제 TEST/P100 변경 후 SHA 재확인 필요. `docs/DBVORA_P100_ACCEPTANCE_20261114.md`를 새 정본 작업표로 사용.
+
 ## 2026-11-13 KST — DBVORA P95 내부 기술범위 달성 (최종 인수인계 10항)
 1. **목표·용도·기술:** `hibi89/DBVORA@feature/p0-db-map`, 고객 소유 DB 구조·용량/선택형 read-only PostgreSQL 추정 통계·수동 DBA 검토/ZIP·ZSTD 복구·로컬 HTML. 사용자 내부 목표 95.
 2. **완료·차별점/설계 선택:** A 전체 사설 checkout 장애에서 유료 CI/새 환경으로 우회 vs B 실제 GitHub connector fetch된 원본의 `git blob` SHA와 바이트 일치 검증→11개 핵심 원본 파일로 합성 PG 종단 검증, B 선택(무료·원본/설정 불변). 앞서 도입한 PostgreSQL 스키마→stats→FK→manual reviews→HTML+new-only safe publisher 실제 실행 확인. 가중 P0 25+P1 13+P2 20+P3 19+P4 18=**95/100 내부 기술범위**.

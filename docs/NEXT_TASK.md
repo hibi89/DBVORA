@@ -1,3 +1,8 @@
+## 2026-11-14 KST — 사용자 최종설계 P100 지시(기존 P95 완료와 별개)
+- 최초 미완료 단위: **원격 정본 전체 소스 자동 검증**. `.github/workflows/dbvora-release-gate.yml` 신설, GitHub-hosted Ubuntu 24.04 / Windows 2025 Python3.11 + Node22의 `python -m scripts.verify_release_gate` 실제 결과/커밋 확인.
+- 이후 Windows 사용자 실기기→합성 PostgreSQL TLS read-only(별도 승인·무비밀 공유)→법적 라이선스/고객 인수/판매 GO. 이전 P95는 내부범위 기록, **공식 최종 100점 UNASSESSED**, 판매 HOLD.
+- 검증 근거/실행 지시와 A/B 비용 선택은 `docs/DBVORA_P100_ACCEPTANCE_20261114.md`. 이 문서/CI만으로 점수 또는 100%를 올리지 않는다.
+
 ## 2026-11-13 KST — DBVORA P95 내부 범위 달성 / 판매 P100 게이트 진행 대기
 - GitHub 원본 11개 소스/테스트/pyproject Git Blob SHA **모두 일치**하는 최소 실제 원본 세트 Linux Python3.13.5로 실행. `python -m scripts.pg_synthetic_acceptance` **6/6 PASS(exit0)**, `python -W error::ResourceWarning -m unittest -v tests.test_pg_synthetic_acceptance tests.test_pg_html_script` **11 PASS/0 FAIL/0 SKIP** + quiet repeat PASS. 진짜 PG reader/statistics/FK/manual hints/offline HTML/원본 safe_zip new-only file publish 포함; 데이터는 합성 전용, external network/real PG/customer 없음. [P1-11 원본11 SHA·완료 증거](P1_11_P95_EXACT_SOURCE_ACCEPTANCE_20261113.md).
 - 내부 가중 P0 **25/25**+P1 **13/15**+P2 **20/20**+P3 **19/20**+P4 **18/20**=**95/100 내부 설계 대비 기능 목표** 달성. 중앙 DBVORA `[작업중]` 목표 달성 후 해제. **판매 RELEASE HOLD, P100 아님**.

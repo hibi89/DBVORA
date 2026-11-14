@@ -1,0 +1,56 @@
+name: DBVORA offline full release gate
+
+on:
+  push:
+    branches:
+      - feature/p0-db-map
+    paths:
+      - "dbvora/**"
+      - "scripts/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "README_PORTABLE.txt"
+      - "docs/DBVORA_P100_ACCEPTANCE_20261114.md"
+      - ".github/workflows/dbvora-release-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dbvora-offline-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-gate:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            python: "3.11"
+          - os: windows-2025
+            python: "3.11"
+    env:
+      PYTHONIOENCODING: utf-8
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout exact commit (no persisted token)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install local UI requirements only (no PG credentials)
+        run: python -m pip install --disable-pip-version-check -e ".[ui]"
+      - name: Execute full fail-closed release gate (synthetic only)
+        run: python -m scripts.verify_release_gate
