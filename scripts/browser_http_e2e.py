@@ -147,6 +147,8 @@ def run(*, screenshots=None):
                             and page.locator("#links-count").inner_text() == "1",
                             "SCHEMA_MAP_WRONG")
                     result["checks"].append("real_http_schema_fk")
+                    require("첫 측정" in page.locator("#growth-status").inner_text(),
+                            "GROWTH_BASELINE_NOT_EXPLICIT")
                     page.locator("button.table-node").filter(has_text="orders").click()
                     require(page.locator(".detail-heading h3").inner_text() == "orders"
                             and page.locator("#edges path.active").count() == 1,
@@ -829,6 +831,20 @@ def run(*, screenshots=None):
                             and multi_page.locator('button.table-node').count() == 3
                             and not multi_errors, 'MULTI_SWITCH_BACK_FAILED')
                     result['checks'].append('multi_live_two_databases_isolated_navigation')
+                    require("첫 측정" in multi_page.locator('#growth-status').inner_text(),
+                            'MULTI_GROWTH_BASELINE_NOT_SCOPED')
+                    multi_page.locator('#refresh').click()
+                    multi_page.wait_for_function(
+                        "() => !document.querySelector('#refresh').disabled",
+                        timeout=30000)
+                    require("직전 측정 대비 변화 없음" in
+                            multi_page.locator('#growth-status').inner_text(),
+                            'MULTI_GROWTH_TWO_REAL_SAMPLES_MISSING')
+                    multi_page.locator('#database-list button').nth(1).click()
+                    require("직전 측정 대비 변화 없음" in
+                            multi_page.locator('#growth-status').inner_text(),
+                            'MULTI_GROWTH_DB_ISOLATION')
+                    result['checks'].append('multi_live_two_snapshot_main_file_growth')
                     multi_page.set_viewport_size({'width': 390, 'height': 844})
                     multi_page.wait_for_timeout(200)
                     require(not multi_page.evaluate(

@@ -7,6 +7,9 @@ let inventory = null;
 let workspace = null;
 let selectedDatabase = null;
 let selected = null;
+// Strictly in-memory: no localStorage, disk writes, background collection or network calls.
+let lastMeasurements = new Map();
+let growthComparisons = new Map();
 let nodeElements = new Map();
 let edgeByTable = new Map();
 let observer = null;
@@ -28,6 +31,49 @@ function clear(node) { node.replaceChildren(); }
 function displayError(message) { const area = $('error'); area.textContent = message; area.hidden = false; }
 function hideError() { $('error').hidden = true; }
 function badge(text, klass) { return el('span', `mini-badge ${klass || ''}`, text); }
+
+// Compare only two verified server observations of the same DB identity.
+// The main-file byte delta does not include WAL/SHM and is not a forecast.
+function recordMeasurements(data) {
+  const databases = data.contract_version === 'p0-03.workspace.v1'
+    ? data.databases : [data];
+  const next = new Map();
+  const comparisons = new Map();
+  for (const db of databases) {
+    const timestamp = Date.parse(db.observed_at);
+    if (typeof db.db_id !== 'string' || !Number.isSafeInteger(db.size_bytes) ||
+        db.size_bytes < 0 || !Number.isFinite(timestamp)) continue;
+    const prior = lastMeasurements.get(db.db_id);
+    if (prior && timestamp > prior.timestamp) {
+      comparisons.set(db.db_id, {status: 'measured',
+        delta: db.size_bytes - prior.size_bytes});
+    } else if (prior) {
+      comparisons.set(db.db_id, {status: 'unavailable'});
+    } else {
+      comparisons.set(db.db_id, {status: 'baseline'});
+    }
+    next.set(db.db_id, {size_bytes: db.size_bytes, timestamp});
+  }
+  // Enforce a bounded memory footprint (<= 8 server-selected DBs).
+  lastMeasurements = next;
+  growthComparisons = comparisons;
+}
+
+function displayGrowth() {
+  const id = workspace ? selectedDatabase : inventory?.db_id;
+  const comparison = growthComparisons.get(id);
+  const target = $('growth-status');
+  if (!comparison || comparison.status === 'baseline') {
+    target.textContent = '첫 측정 완료 · 새로고침 후 비교';
+  } else if (comparison.status !== 'measured') {
+    target.textContent = '비교 불가 · 관측 시간이 증가하지 않음';
+  } else if (comparison.delta === 0) {
+    target.textContent = '직전 측정 대비 변화 없음 (0 B)';
+  } else {
+    const sign = comparison.delta > 0 ? '증가 +' : '감소 -';
+    target.textContent = '직전 측정 대비 ' + sign + formatBytes(Math.abs(comparison.delta));
+  }
+}
 
 // Updating the selected table must not rebuild hundreds of SVG paths.
 function highlightEdges(tableName, active) {
@@ -230,6 +276,7 @@ function showWorkspaceDatabase(dbId) {
   for (const button of $('database-list').children) {
     button.setAttribute('aria-pressed', button.dataset.dbId === dbId ? 'true' : 'false');
   }
+  displayGrowth();
 }
 
 function render(data) {
@@ -327,6 +374,8 @@ async function refresh() {
     const data = await response.json();
     if (!response.ok) throw new Error(data?.error?.message || '메타데이터를 읽을 수 없습니다.');
     render(data);
+    recordMeasurements(data);
+    displayGrowth();
   } catch (error) {
     if (timedOut) displayError('메타데이터 요청 시간이 초과되었습니다. 다시 시도하세요.');
     else if (error?.name === 'TypeError' || error?.name === 'AbortError') {

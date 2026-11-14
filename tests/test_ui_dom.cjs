@@ -16,7 +16,7 @@ class Element {
   getBoundingClientRect() { return {left: 100, top: 100, width: 120, height: 100}; }
   get classList() { return {toggle: (name, yes) => { if (yes && !this.className.includes(name)) this.className += ' ' + name; }}; }
 }
-const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','workspace-summary'].map(id => [id, new Element('div')]));
+const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','workspace-summary','growth-status','growth-scope'].map(id => [id, new Element('div')]));
 ids.diagram.getBoundingClientRect = () => ({left: 0, top: 0, width: 800, height: 600});
 const doc = {getElementById: id => ids[id], createElement: tag => new Element(tag), createElementNS: (_, tag) => new Element(tag)};
 const marker = '<img src=x onerror=alert(7)>';
@@ -30,6 +30,7 @@ const data = {contract_version:'p0-01.v1',engine:'sqlite',db_id:'abc123456789012
 const listeners = [];
 let failNextFetch = false;
 let storageFetches = 0;
+let currentInventory = data;
 const sandbox = {
   document:doc, window:{addEventListener(name, fn){ listeners.push({name, fn}); }}, ResizeObserver:class {observe(){} disconnect(){}},
   requestAnimationFrame: fn => fn(),
@@ -43,7 +44,7 @@ const sandbox = {
         metric: {status:'measured', allocated_btree_bytes:8192, source:'sqlite_dbstat_aggregate'}
       })};
     }
-    return {ok:true,json: async () => data};
+    return {ok:true,json: async () => currentInventory};
   },
   setTimeout, clearTimeout, AbortController,
   console, Date, Map, Number, String, Intl
@@ -55,6 +56,7 @@ setImmediate(async () => {
   try {
     assert.equal(ids.tables.children.length, 3);
     assert.equal(ids['database-selector'].hidden, true, 'single DB must hide chooser');
+    assert.ok(ids['growth-status'].textContent.includes('첫 측정'), 'baseline no fabricated trend');
     assert.equal(ids['tables-count'].textContent, '3');
     assert.equal(ids['links-count'].textContent, '1');
     assert.equal(ids.edges.children.length, 1);
@@ -99,8 +101,14 @@ setImmediate(async () => {
     assert.equal(ids.edges.children.length, 1);
     const resizeCount = () => listeners.filter(listener => listener.name === 'resize').length;
     assert.equal(resizeCount(), 1, 'initial render must install exactly one resize listener');
+    currentInventory = {...data, size_bytes: data.size_bytes + 2048,
+      observed_at: '2026-10-26T07:05:00Z'};
     await ids.refresh.events.click();
+    assert.ok(ids['growth-status'].textContent.includes('증가 +2 KB'),
+      'show measured two-sample main-file delta');
     await ids.refresh.events.click();
+    assert.ok(ids['growth-status'].textContent.includes('비교 불가'),
+      'equal-time comparison cannot be claimed as growth');
     assert.equal(resizeCount(), 1, 'repeated refresh must not accumulate resize listeners');
     assert.equal(ids.tables.children.length, 3);
     assert.equal(ids.edges.children.length, 1);
@@ -109,6 +117,7 @@ setImmediate(async () => {
     await ids.refresh.events.click();
     assert.equal(ids.tables.children.filter(x => !x.hidden).length, 1, 'filter persists after refresh');
     const inspectorBeforeDisconnect = ids.detail.textContent;
+    const growthBeforeDisconnect = ids['growth-status'].textContent;
     failNextFetch = true;
     await ids.refresh.events.click();
     assert.equal(ids.refresh.disabled, false, 'network failure must enable refresh');
@@ -116,6 +125,8 @@ setImmediate(async () => {
     assert.ok(ids.error.textContent.includes('연결이 중단'), 'network failure is actionable');
     assert.equal(ids.detail.textContent, inspectorBeforeDisconnect,
       'network failure must keep last verified inspector');
+    assert.equal(ids['growth-status'].textContent, growthBeforeDisconnect,
+      'network failure must never record an invented measurement');
     assert.equal(ids.tables.children.filter(x => !x.hidden).length, 1,
       'network failure must preserve local filter');
     await ids.refresh.events.click();

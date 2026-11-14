@@ -34,7 +34,7 @@ async function verify() {
   const ids = Object.fromEntries([
     'refresh','error','size','tables-count','links-count','db-short','observed',
     'tables','detail','edges','diagram','table-filter','filter-status','filter-empty',
-    'database-selector','database-list','workspace-summary'
+    'database-selector','database-list','workspace-summary','growth-status','growth-scope'
   ].map(id => [id, new Element('div',meter)]));
   const tables = Array.from({length:1000},(_,i)=>({
     name:`synthetic_table_${String(i).padStart(4,'0')}`,
