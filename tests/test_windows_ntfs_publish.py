@@ -11,6 +11,7 @@ import uuid
 from unittest.mock import patch
 
 from dbvora.archive import windows_ntfs_publish as publish
+from dbvora.archive import safe_zip
 from scripts import windows_ntfs_publish_probe as probe
 
 
@@ -129,6 +130,86 @@ class WindowsSyntheticPublicationTests(unittest.TestCase):
         self.assertEqual(publish.MOVEFILE_WRITE_THROUGH, 0x8)
         self.assertEqual(publish.MOVEFILE_WRITE_THROUGH & 0x1, 0)
 
+
+    def test_native_move_denial_is_sanitized(self):
+        if os.name != 'nt':
+            with self.assertRaisesRegex(publish.WinPublishError, 'WINDOWS_REQUIRED'):
+                publish._native_move_write_through(Path('stage'), Path('target'))
+            return
+
+        class DeniedMove:
+            argtypes = None
+            restype = None
+            def __call__(self, *_args):
+                # Model a Win32 access-denied return without changing any ACL.
+                return 0
+
+        class FakeKernel32:
+            MoveFileExW = DeniedMove()
+
+        with patch.object(publish.ctypes, 'WinDLL', return_value=FakeKernel32()):
+            with self.assertRaisesRegex(publish.WinPublishError, 'MOVE_FAILED') as error:
+                publish._native_move_write_through(Path('stage'), Path('target'))
+        self.assertNotIn('stage', str(error.exception))
+        self.assertNotIn('target', str(error.exception))
+
+    def test_archive_publisher_maps_native_denial_and_preserves_stage(self):
+        root, stage, target = self.fixture()
+        original = stage.read_bytes()
+        with patch.object(publish, '_windows_volume_type', return_value='NTFS'), \\
+                patch.object(publish, '_native_move_write_through',
+                             side_effect=publish.WinPublishError('MOVE_FAILED')):
+            with self.assertRaises(safe_zip.ArchiveError) as error:
+                safe_zip._publish_new_ntfs(stage, root, target)
+        self.assertEqual(error.exception.code, 'PUBLISH_FAILED')
+        self.assertNotIn(str(root), str(error.exception))
+        self.assertEqual(stage.read_bytes(), original)
+        self.assertFalse(target.exists())
+
+    def test_archive_publisher_rejects_unsupported_volume_before_move(self):
+        root, stage, target = self.fixture()
+        original = stage.read_bytes()
+        with patch.object(publish, '_windows_volume_type', return_value='ReFS'), \\
+                patch.object(publish, '_native_move_write_through') as move:
+            with self.assertRaises(safe_zip.ArchiveError) as error:
+                safe_zip._publish_new_ntfs(stage, root, target)
+        self.assertEqual(error.exception.code, 'PUBLISH_FAILED')
+        move.assert_not_called()
+        self.assertEqual(stage.read_bytes(), original)
+        self.assertFalse(target.exists())
+
+    def test_windows_parent_alias_publishes_same_temp_target(self):
+        root, stage, target = self.fixture()
+        if os.name != 'nt':
+            self.assertEqual(publish._windows_volume_type(root), 'NOT_WINDOWS')
+            return
+
+        import ctypes
+        from ctypes import wintypes
+        get_short = ctypes.WinDLL('kernel32', use_last_error=True).GetShortPathNameW
+        get_short.argtypes = (wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD)
+        get_short.restype = wintypes.DWORD
+        alias_parent = None
+        try:
+            needed = get_short(str(root.parent), None, 0)
+            if needed:
+                buffer = ctypes.create_unicode_buffer(needed + 1)
+                if get_short(str(root.parent), buffer, len(buffer)):
+                    alias_parent = Path(buffer.value)
+        except (OSError, AttributeError, TypeError, ValueError):
+            alias_parent = None
+        # Use a valid case alias if this volume has 8.3 names disabled.
+        if alias_parent is None:
+            alias_parent = Path(str(root.parent).upper())
+
+        alias_root = alias_parent / root.name
+        alias_stage = alias_root / stage.name
+        alias_target = alias_root / target.name
+        expected = hashlib.sha256(stage.read_bytes()).hexdigest()
+        actual = publish._commit_synthetic_staged(alias_root, alias_stage, alias_target)
+        self.assertEqual(actual, expected)
+        self.assertFalse(alias_stage.exists())
+        self.assertEqual(hashlib.sha256(alias_target.read_bytes()).hexdigest(), expected)
 
     def test_competing_create_only_publications_one_winner(self):
         root, first, target = self.fixture()

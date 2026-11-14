@@ -1,7 +1,8 @@
-"""Experimental NTFS create-only publication, synthetic temporary files ONLY.
+"""Win32 create-only publication primitives with synthetic temp probes.
 
-Not integrated with DBVORA's archive release path; a successful result is not
-proof of directory-metadata durability or survival of physical power failure.
+The native MoveFileExW primitive is shared with the Windows archive publisher.
+The staging helper and probe use disposable synthetic temp files only; CI does
+not prove directory-metadata durability or physical power-loss survival.
 """
 from __future__ import annotations
 
