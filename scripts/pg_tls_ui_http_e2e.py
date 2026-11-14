@@ -62,7 +62,20 @@ def stop_server(proc: subprocess.Popen) -> None:
             proc.wait(timeout=5)
 
 
+def _capture_sanitized_screenshot(page, directory: Path, name: str) -> None:
+    path = directory / name
+    page.screenshot(path=path, full_page=True)
+    data = path.read_bytes()
+    if len(data) < 256 or not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise AssertionError("SYNTHETIC_SCREENSHOT_INVALID")
+
+
 def verify() -> dict:
+    screenshot_text = os.environ.get('DBVORA_SYNTHETIC_UI_ARTIFACT_DIR', '')
+    screenshot_root = Path(screenshot_text) if screenshot_text else None
+    if screenshot_root is None or not screenshot_root.is_absolute():
+        raise RuntimeError('SYNTHETIC_UI_ARTIFACT_DIR_REQUIRED')
+    screenshot_root.mkdir(parents=True, exist_ok=True)
     dsn = os.environ.get('DBVORA_SYNTHETIC_PG_DSN', '')
     bad_ca = os.environ.get('DBVORA_SYNTHETIC_BAD_CA', '')
     if not dsn or not bad_ca or not Path(bad_ca).is_file():
@@ -101,7 +114,8 @@ def verify() -> dict:
                     raise AssertionError('TLS_FAILURE_LEAK_OR_REQUEST_COUNT')
                 if CANARY in body:
                     raise AssertionError('SYNTHETIC_ROW_LEAK_ON_TLS_FAILURE')
-                checks.append('explicit_click_and_wrong_ca_recovery_error')
+                _capture_sanitized_screenshot(page, screenshot_root, 'postgres-tls-error-desktop.png')
+                checks.append('explicit_click_and_wrong_ca_recovery_error_screenshot_no_secret')
                 browser.close()
         finally:
             stop_server(wrong_server)
@@ -167,8 +181,10 @@ def verify() -> dict:
                 body = page.locator('body').inner_text()
                 if CANARY in body or 'synthetic-user.invalid' in body or dsn in body:
                     raise AssertionError('STATISTICS_ROW_OR_DSN_LEAK')
+                _capture_sanitized_screenshot(page, screenshot_root, 'postgres-catalog-desktop.png')
                 checks.extend(['real_tls_catalog_and_foreign_key_ui', 'no_rows_or_dsn_in_browser',
-                               'explicit_stats_may_lag_and_view_unavailable'])
+                               'explicit_stats_may_lag_and_view_unavailable',
+                               'desktop_screenshot_after_secret_row_assertions'])
                 page.set_viewport_size({'width': 390, 'height': 844})
                 page.wait_for_timeout(100)
                 for selector in ('.postgres-panel', '.postgres-browser', '#postgres-load',
@@ -177,6 +193,8 @@ def verify() -> dict:
                     if box and (box['x'] < 0 or box['x'] + box['width'] > 390):
                         raise AssertionError('POSTGRES_PANEL_MOBILE_OVERFLOW')
                 checks.append('mobile_390px_layout')
+                _capture_sanitized_screenshot(page, screenshot_root, 'postgres-catalog-mobile-390px.png')
+                checks.append('mobile_screenshot_after_layout_and_secret_checks')
                 browser.close()
         finally:
             stop_server(good_server)
