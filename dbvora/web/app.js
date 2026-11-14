@@ -276,6 +276,10 @@ function showWorkspaceDatabase(dbId) {
   for (const button of $('database-list').children) {
     button.setAttribute('aria-pressed', button.dataset.dbId === dbId ? 'true' : 'false');
   }
+  for (const button of $('database-topology').children) {
+    if (button.dataset.dbId) button.setAttribute('aria-pressed',
+      button.dataset.dbId === dbId ? 'true' : 'false');
+  }
   displayGrowth();
 }
 
@@ -289,6 +293,23 @@ function render(data) {
       `${data.database_count} DB · ${data.table_count} 테이블 · 합계 ${formatBytes(data.total_main_db_size_bytes)}`;
     const chooser = $('database-list');
     clear(chooser);
+    const topology = $('database-topology');
+    clear(topology);
+    // All explicitly selected local sources remain simultaneously visible.
+    for (const db of data.databases) {
+      const node = el('button', 'topology-database');
+      node.type = 'button';
+      node.dataset.dbId = db.db_id;
+      node.setAttribute('aria-label', db.label + ' 구조 탐색');
+      node.setAttribute('aria-pressed', 'false');
+      node.append(el('strong', '', db.label),
+        el('span', '', 'SQLite · ' + db.tables.length + ' tables'),
+        el('small', '', formatBytes(db.size_bytes) + ' · main file'));
+      node.addEventListener('click', () => showWorkspaceDatabase(db.db_id));
+      topology.append(node);
+    }
+    topology.append(el('p', 'topology-scope',
+      'DB 간 관계: 검증된 연결 없음 · 자동 추정하지 않음'));
     for (const db of data.databases) {
       const button = el('button', 'database-choice');
       button.type = 'button';
