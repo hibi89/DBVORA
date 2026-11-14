@@ -70,6 +70,9 @@ REQUIRED = (
     "dbvora/optimization_review.py", "tests/test_optimization_review.py",
     "scripts/pg_synthetic_acceptance.py", "tests/test_pg_synthetic_acceptance.py",
     "tests/test_pg_html_script.py",
+    "dbvora/archive/incremental_cas.py", "tests/test_incremental_cas.py",
+    "dbvora/incremental_cli.py", "tests/test_incremental_cli.py",
+    "scripts/incremental_cli_gate.py",
 )
 
 
@@ -323,6 +326,36 @@ def verify():
         "exit_code": code if type(code) is int else -1,
         "error_code": "NONE" if pg_ok else
             _safe_code(pg_end_to_end.get("error_code"), "PG_SYNTHETIC_GATE_FAILED"),
+    })
+
+    # Mandatory real subprocess acceptance of the incremental content-addressed
+    # implementation. Both operating systems must verify restore, replay
+    # reuse, tamper denial, and unchanged synthetic original.
+    code, out, _ = _run([sys.executable, "-m", "scripts.incremental_cli_gate"], timeout=160)
+    try:
+        incremental = json.loads(out)
+    except (ValueError, TypeError):
+        incremental = {}
+    inc_checks = incremental.get("checks", 0)
+    inc_ok = (
+        code == 0
+        and incremental.get("status") == "PASS_SYNTHETIC_INCREMENTAL_CLI_ONLY"
+        and type(inc_checks) is int and inc_checks >= 7
+        and incremental.get("source_unchanged") is True
+        and incremental.get("independent_restore_verified") is True
+        and incremental.get("second_generation_reused_chunks") is True
+        and incremental.get("tampered_chunk_rejected") is True
+        and incremental.get("customer_ready") is False
+        and incremental.get("power_loss_verified") is False
+        and incremental.get("automatic_deletion") is False
+    )
+    report["steps"].append({
+        "step": "synthetic_incremental_cli_roundtrip",
+        "status": "PASS" if inc_ok else "FAIL",
+        "checks": inc_checks if type(inc_checks) is int else 0,
+        "exit_code": code if type(code) is int else -1,
+        "error_code": "NONE" if inc_ok else
+            _safe_code(incremental.get("error_code"), "INCREMENTAL_CLI_GATE_FAILED"),
     })
 
     if all(step["status"] == "PASS" for step in report["steps"]):
