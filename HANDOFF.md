@@ -1,3 +1,15 @@
+## 2026-11-14 KST — 10항 후속 검증 인수인계 보정(앞선 10항 내용 유지)
+1. 목표·기술: DBVORA 사용자 확정 최종설계 P100/주말 단일 크몽 등록 준비, Python3.11/SQLite·PG·ZIP/ZSTD·로컬 UI.
+2. 완료·변경: source eab26716e25e8c55b120d295110be2f754b6aa5e 및 browser-only workflow a982508160a3085e12e3663f1df9979dac4e9cae; 실행 환경 Windows2025/Linux Ubuntu24.04 양측 browser Playwright Chromium 검증 경로 확보.
+3. 테스트 근거: full gate docs SHA c730c6912dc3635a8f8a56504116b9cbed5039a3 [run 43543990300](https://github.com/hibi89/DBVORA/actions/runs/43543990300) Win/Linux 2/2 SUCCESS, Win Python616 PASS/0 FAIL/1 POSIX SKIP, Ubuntu617 PASS/0 FAIL/0SKIP, 양측 10 mandatory checks PASS; 실 browser workflow a982508160a3085e12e3663f1df9979dac4e9cae [run43544065399](https://github.com/hibi89/DBVORA/actions/runs/43544065399) Win/Linux 2/2 SUCCESS, 각 8/8 real HTTP synthetic, 2+2 PNG. 고객/실 PG·Win10 실제 QA/전원장애/서명은 미검증.
+4. 상태: [작업중]/P100 UNASSESSED, 과거 내부 P95, RELEASE HOLD/크몽 실제 등록0.
+5. 장애/시도/전환: 과거 코드 오류들은 2 OS 617건 full 검증에서 해소; chromium Windows에도 추가 확장 검증 합격. 무의미 재배포·안전장치 완화 금지.
+6. 저장소·브랜치·SHA: hibi89/DBVORA@feature/p0-db-map 최신 소스 workflow a982508160a3085e12e3663f1df9979dac4e9cae; docs-only 후속 SHA 원격 확인. 중앙 hibi89/hackathon-command-center-2026@kmong-productization.
+7. 배포/실행: python -m scripts.verify_release_gate; python -m scripts.browser_http_e2e; Vercel/Production 미적용; Actions run refs 위.
+8. 원본/백업/보안: Git history, main/develop 고객DB/키 불변; repo Public이며 승인 전 권한 변경 금지, synthetic PNG only.
+9. 우선순위/승인: 소유자 Windows10 일괄 QA docs/OWNER_WINDOWS_QUICK_QA_20261114.md, 승인된 synthetic PG verify-full TLS, 상업 NOTICE/라이선스/가격·지원/환불·판매 버튼, 전체 사용자 가중치100 수용. 외출 전 필수 PC 조작 없음.
+10. KST/근거: 2026-11-14 KST; GitHub Actions 실제 job conclusion·JSON 8/8 검증, 검증 SHA 및 미검증 한계를 구별; 다음 채팅은 본 기록→기존 HANDOFF→STATUS 순서.
+
 ## 2026-11-14 KST — P100 최신 검증 인수인계 필수 10항
 1. **목표·확정 요구·기술:** DBVORA 전체 최종설계 100%와 주말 크몽 단일 상품화, 0원. 로컬 우선 SQLite/선택형 PG 메타데이터/SQLite 안전 ZIP·ZSTD/HTML, read-only·원본불변.
 2. **완료·변경·설계 결정:** 사용자 Win 단독 검증 A 대비 GitHub 무료 Ubuntu+Windows full gate 및 사용자 Win 사후 QA B 선택. Windows NTFS create-only/write-through/SHA 검증, receipt, UTF-8/경로/핸들/watchdog 수정, 실제 localhost Chromium8항+합성 UI 캡처 추가. 원본 main/develop 불변.
