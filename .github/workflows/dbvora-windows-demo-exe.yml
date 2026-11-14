@@ -1,0 +1,73 @@
+name: DBVORA unsigned Windows owner demo executable (synthetic only)
+
+on:
+  push:
+    branches:
+      - feature/p0-db-map
+    paths:
+      - "dbvora/windows_preview_entry.py"
+      - "dbvora/demo_preview.py"
+      - "dbvora/export_html.py"
+      - "dbvora/inventory.py"
+      - "dbvora/web/**"
+      - ".github/workflows/dbvora-windows-demo-exe.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dbvora-unsigned-windows-owner-demo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-run-unsigned-owner-demo:
+    runs-on: windows-2025
+    timeout-minutes: 20
+    env:
+      PYTHONIOENCODING: utf-8
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout exact source without persistent Git credential
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install free PyInstaller build dependency
+        run: python -m pip install --disable-pip-version-check "pyinstaller>=6.12,<7"
+      - name: Build core-only unsigned executable with embedded offline assets
+        shell: pwsh
+        run: |
+          python -m PyInstaller --onefile --clean --noconfirm --name DBVORA-SYNTHETIC-OWNER-PREVIEW --paths . --add-data "dbvora/web;dbvora/web" dbvora/windows_preview_entry.py
+          if ($LASTEXITCODE -ne 0) { throw 'PYINSTALLER_BUILD_FAILED' }
+      - name: Execute frozen EXE on real Windows runner using synthetic SQLite only
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'DBVORA-SYNTHETIC-EXE-QA'
+          New-Item -ItemType Directory -Force -Path $dir | Out-Null
+          $out = & .\dist\DBVORA-SYNTHETIC-OWNER-PREVIEW.exe --synthetic-only --out $dir
+          if ($LASTEXITCODE -ne 0) { throw 'FROZEN_EXE_FAILED' }
+          $report = $out | ConvertFrom-Json
+          if ($report.status -ne 'CREATED_SYNTHETIC_DEMO' -or $report.database_file_retained -ne $false -or $report.contains_table_rows -ne $false) {
+            throw 'SYNTHETIC_QA_CONTRACT_FAILED'
+          }
+          $html = Get-ChildItem -LiteralPath $dir -Filter 'dbvora-map-*.html' -File
+          if ($html.Count -ne 1 -or $html[0].Length -lt 2000) { throw 'HTML_MISSING' }
+          $source = Get-Content -LiteralPath $html[0].FullName -Raw -Encoding utf8
+          if ($source.Contains('SYNTHETIC_ROW_CONTENT_MUST_NOT_APPEAR_IN_HTML') -or
+              -not $source.Contains('Content-Security-Policy')) { throw 'HTML_SECURITY_POLICY_FAILED' }
+          $hash = (Get-FileHash -LiteralPath '.\dist\DBVORA-SYNTHETIC-OWNER-PREVIEW.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Output ('DBVORA_OWNER_EXE_SYNTHETIC_QA_PASS_SHA256=' + $hash)
+          Write-Output ('DBVORA_OWNER_EXE_SOURCE_COMMIT=${{ github.sha }}')
+          Write-Output 'CUSTOMER_READY=false;SIGNED=false;REAL_DB_TESTED=false'
+      - name: Archive temporary unsigned EXE for owner inspection
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbvora-UNSIGNED-SYNTHETIC-WINDOWS-DEMO-${{ github.sha }}
+          path: dist/DBVORA-SYNTHETIC-OWNER-PREVIEW.exe
+          if-no-files-found: error
+          retention-days: 7
