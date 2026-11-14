@@ -55,7 +55,10 @@ def _scan(root: Path, extension: str) -> tuple[list[str], int]:
                     raise CasAuditError("DIRECTORY_LIMIT")
                 if ent.is_symlink():
                     raise CasAuditError("UNTRUSTED_ENTRY")
-                info = ent.stat(follow_symlinks=False)
+                # Windows DirEntry.stat may report st_nlink=0 even for
+                # single-link regular files. os.lstat obtains full file
+                # identity/links on NTFS (without following reparse links).
+                info = os.lstat(root / ent.name)
                 if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
                     raise CasAuditError("UNTRUSTED_ENTRY")
                 if extension == "manifest" and cas.MANIFEST.fullmatch(ent.name):
