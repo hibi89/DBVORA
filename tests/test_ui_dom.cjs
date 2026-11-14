@@ -8,6 +8,9 @@ class Element {
   constructor(tag) { this.tag = tag; this.children = []; this.attrs = {}; this.events = {}; this.className = ''; this._text = ''; this.hidden = false; this.style = {}; }
   set textContent(value) { this._text = String(value); this.children = []; }
   get textContent() { return this._text + this.children.map(child => child.textContent).join(''); }
+  // Fake DOM nodes are mounted unless explicitly detached; real Chromium tests
+  // exercise the browser's native isConnected behavior on database switches.
+  get isConnected() { return true; }
   append(...nodes) { this.children.push(...nodes); }
   replaceChildren(...nodes) { this.children = [...nodes]; this._text = ''; }
   setAttribute(name, value) { this.attrs[name] = String(value); }
