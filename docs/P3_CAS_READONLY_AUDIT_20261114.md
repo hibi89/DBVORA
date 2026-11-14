@@ -1,0 +1,9 @@
+# DBVORA synthetic compressed CAS v2 read-only audit (2026-11-14 KST)
+
+Problem: aborting a new generation before manifest publication can leave unreferenced staged or immutable compressed files. An automatic collector risks erasing a still-needed generation. The previous design preserves all old files by default.
+
+Two no-cost designs: A) automatic garbage collector deleting unreferenced chunks: fast reclamation but dangerous if manifests are incomplete/under concurrent publication; requires owner risk approval, stronger durable reference accounting and power-loss tests. B) **read-only bounded audit and manual HOLD (chosen)**: slower scan but no destructive action or new permission; acceptable for synthetic-only QA and operator observability.
+
+Implementation: `python -m dbvora.archive.cas_audit --chunk-dir ABSOLUTE_EXISTING_CHUNK_DIRECTORY --manifest-dir ABSOLUTE_EXISTING_MANIFEST_DIRECTORY --synthetic-only`. Validates <=16 existing v2 manifests, <=4096 referenced content chunks, <=8192 entries/directory, independently hashes each generation's raw concatenated bytes to manifest SHA256, validates each referenced zlib chunk's SHA256 and detects missing/broken/unreferenced/stray entries. Success = `PASS_SYNTHETIC_CAS_AUDIT_ONLY`; an orphaned chunk or unrecognized staging file = `HOLD_MANUAL_REVIEW`; a lost or corrupt chunk = `HOLD_DAMAGED_OR_MISSING`. It never deletes, retries, repairs, migrates or emits original paths, passwords, DB rows or SQL. Audit is explicit invocation only, no scheduler/alert system.
+
+All tests use fresh temporary synthetic SQLite snapshots. Files intentionally corrupted/removed only inside those isolated fixtures. Old data, ZIP/ZSTD, v1 CAS and last good restore are never modified. This is no substitute for actual Win10/11 owner acceptance, real customer data safety, physical power loss, signed/encrypted archives, or commercial rights. Official P100 UNASSESSED and release HOLD.
