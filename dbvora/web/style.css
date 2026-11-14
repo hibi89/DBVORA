@@ -17,3 +17,8 @@
 
 /* Bounded session-only observation history, no persistent browser storage. */
 .growth-history { margin-top: 8px; font-size: 12px; color: var(--muted, #9ca3af); line-height: 1.5; }
+
+.growth-samples { display: grid; gap: 4px; margin-top: 8px; max-height: 220px; overflow-y: auto; }
+.growth-sample { display: flex; justify-content: space-between; gap: 12px; padding: 5px 0; border-bottom: 1px solid rgba(160,170,190,.14); font-size: 12px; }
+.growth-sample time { color: var(--muted, #9ca3af); }
+.growth-sample strong { font-variant-numeric: tabular-nums; text-align: right; }
