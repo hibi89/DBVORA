@@ -82,6 +82,13 @@ REQUIRED = (
     "scripts/incremental_cli_gate.py",
     "scripts/benchmark_synthetic_archives.py", "tests/test_benchmark_synthetic_archives.py",
     "scripts/dependency_sbom.py", "tests/test_dependency_sbom.py",
+    "contracts/p0-01.v1.schema.json", "contracts/p0-03.workspace.v1.schema.json",
+    "contracts/dbvora-error-v1.schema.json", "contracts/dbvora.pg_catalog.v1.schema.json",
+    "contracts/dbvora.pg_statistics.v1.schema.json",
+    "contracts/dbvora.local-table-storage.v1.schema.json",
+    "contracts/dbvora.local-observation.v1.schema.json",
+    "contracts/dbvora.multi_engine_offline.v1.schema.json",
+    "tests/test_ax_contract.py",
     "README.md", "tests/test_performance_claim_boundaries.py",
 )
 
@@ -130,7 +137,7 @@ def verify():
     report["steps"].append({"step": "checkout", "status": "PASS"})
 
     code, out, err = _run([sys.executable, "-W", "error::ResourceWarning", "-m", "unittest",
-                           "discover", "-s", "tests", "-v"], timeout=240)
+                           "discover", "-s", "tests", "-v"], timeout=480)
     count_match = TEST_COUNT.search(out + "\n" + err)
     count = int(count_match.group(1)) if count_match else 0
     combined_tests = out + "\n" + err

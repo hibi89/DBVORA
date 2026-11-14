@@ -1,0 +1,260 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dbvora:contract:p0-01.v1",
+  "title": "DBVORA single SQLite read-only metadata inventory",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "db_id",
+    "engine",
+    "size_bytes",
+    "size_scope",
+    "observed_at",
+    "provenance",
+    "tables",
+    "relationships"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "p0-01.v1"
+    },
+    "db_id": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{24}$"
+    },
+    "engine": {
+      "const": "sqlite"
+    },
+    "size_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "size_scope": {
+      "const": "main_database_file_only_excludes_wal_and_shm"
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "size_bytes",
+        "tables",
+        "relationships",
+        "cpu_usage",
+        "ram_usage",
+        "growth_trend"
+      ],
+      "properties": {
+        "size_bytes": {
+          "const": "measured_local_filesystem"
+        },
+        "tables": {
+          "const": "measured_sqlite_catalog"
+        },
+        "relationships": {
+          "const": "declared_sqlite_foreign_keys"
+        },
+        "cpu_usage": {
+          "const": "unavailable"
+        },
+        "ram_usage": {
+          "const": "unavailable"
+        },
+        "growth_trend": {
+          "const": "unavailable_needs_multiple_observations"
+        }
+      },
+      "additionalProperties": true
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "columns",
+          "foreign_keys",
+          "indexes"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "type",
+                "nullable_declared",
+                "pk_position",
+                "hidden"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "type": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "nullable_declared": {
+                  "type": "boolean"
+                },
+                "pk_position": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "hidden": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              },
+              "additionalProperties": true
+            },
+            "maxItems": 500
+          },
+          "foreign_keys": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "to_table",
+                "from_columns",
+                "to_columns",
+                "on_update",
+                "on_delete"
+              ],
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "to_table": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "from_columns": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1
+                },
+                "to_columns": {
+                  "type": "array",
+                  "items": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "minItems": 1
+                },
+                "on_update": {
+                  "type": "string"
+                },
+                "on_delete": {
+                  "type": "string"
+                }
+              },
+              "additionalProperties": true
+            },
+            "maxItems": 1000
+          },
+          "indexes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name",
+                "unique",
+                "origin",
+                "partial",
+                "key_columns"
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "unique": {
+                  "type": "boolean"
+                },
+                "origin": {
+                  "type": "string"
+                },
+                "partial": {
+                  "type": "boolean"
+                },
+                "key_columns": {
+                  "type": "array",
+                  "items": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              },
+              "additionalProperties": true
+            },
+            "maxItems": 1000
+          }
+        },
+        "additionalProperties": true
+      },
+      "maxItems": 1000
+    },
+    "relationships": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "from_table",
+          "from_columns",
+          "to_table",
+          "to_columns",
+          "evidence"
+        ],
+        "properties": {
+          "from_table": {
+            "type": "string"
+          },
+          "from_columns": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "to_table": {
+            "type": "string"
+          },
+          "to_columns": {
+            "type": "array",
+            "items": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "evidence": {
+            "const": "declared_foreign_key"
+          }
+        },
+        "additionalProperties": true
+      },
+      "maxItems": 1000000
+    }
+  },
+  "additionalProperties": true
+}

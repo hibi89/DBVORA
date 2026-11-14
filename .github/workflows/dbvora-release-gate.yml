@@ -8,6 +8,7 @@ on:
       - "dbvora/**"
       - "scripts/**"
       - "tests/**"
+      - "contracts/**"
       - "pyproject.toml"
       - "README_PORTABLE.txt"
       - "docs/DBVORA_P100_ACCEPTANCE_20261114.md"

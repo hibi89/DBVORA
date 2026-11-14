@@ -134,6 +134,12 @@ class MultiEngineTests(unittest.TestCase):
         with self.assertRaisesRegex(ReportError, 'INVALID_DATABASE_COUNT'):
             assemble_workspace([self.sqlite] * 9)
 
+    def test_render_rejects_unsupported_contract_version(self):
+        fake = self.mix()
+        fake['contract_version'] = 'dbvora.multi_engine_offline.v999'
+        with self.assertRaisesRegex(ReportError, 'INVALID_WORKSPACE'):
+            render_report(fake)
+
     def test_render_rejects_fake_production_readiness(self):
         fake = self.mix()
         fake['ready_for_customer_data'] = True

@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dbvora:contract:dbvora.local-table-storage.v1",
+  "title": "DBVORA bounded SQLite table storage metadata",
+  "type": "object",
+  "required": [
+    "contract",
+    "table",
+    "scope",
+    "metric"
+  ],
+  "properties": {
+    "contract": {
+      "const": "dbvora.local-table-storage.v1"
+    },
+    "table": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scope": {
+      "const": "logical_btree_pages_dbstat_including_indexes_wal_pages_possible"
+    },
+    "metric": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "measured",
+            "unavailable"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "allocated_btree_bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "btree_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "source": {
+          "const": "sqlite_dbstat_aggregate"
+        },
+        "scope": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

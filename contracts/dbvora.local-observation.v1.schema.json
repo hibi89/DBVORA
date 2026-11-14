@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dbvora:contract:dbvora.local-observation.v1",
+  "title": "DBVORA local SQLite observation ledger metadata",
+  "type": "object",
+  "required": [
+    "contract",
+    "database",
+    "scope",
+    "records"
+  ],
+  "properties": {
+    "contract": {
+      "const": "dbvora.local-observation.v1"
+    },
+    "database": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{24}$"
+    },
+    "scope": {
+      "const": "sqlite_main_file_excluding_wal_shm"
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "observed_at",
+          "size_bytes",
+          "scope",
+          "record_hash"
+        ],
+        "properties": {
+          "observed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "scope": {
+            "const": "sqlite_main_file_excluding_wal_shm"
+          },
+          "record_hash": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        },
+        "additionalProperties": true
+      },
+      "maxItems": 10000
+    }
+  },
+  "additionalProperties": true
+}
