@@ -36,7 +36,8 @@ class TrustedExtractedTests(unittest.TestCase):
     def write_manifest(self):
         (self.package / "MANIFEST.sha256.json").write_text(
             json.dumps({"format": "dbvora-portable-dev-v1",
-                        "unsigned": True, "files": self.manifest}), encoding="utf-8"
+                        "unsigned": True, "source_commit": "UNPINNED_LOCAL_SOURCE",
+                        "files": self.manifest}), encoding="utf-8"
         )
 
     def invoke(self, *, destination=None, env=None):
