@@ -258,7 +258,7 @@ class ArchiveCliTests(unittest.TestCase):
     def test_restore_selected_help_is_korean_and_explains_default_denial(self):
         parser = _parser()
         subparsers = next(action.choices for action in parser._actions
-                          if hasattr(action, "choices") and "restore-selected" in action.choices)
+                          if getattr(action, "choices", None) and "restore-selected" in action.choices)
         help_text = subparsers["restore-selected"].format_help()
         self.assertIn("미리보기", help_text)
         self.assertIn("SHA-256", help_text)

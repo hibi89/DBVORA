@@ -98,7 +98,7 @@ def _absolute_generated(path, *, suffixes):
 
 def _require_write_ack(args):
     if not args.synthetic_only:
-        raise _CLIError("SYNTHETIC_ONLY_REQUIRED", "프로토타입은 --synthetic-only 확인 없이는 실행하지 않습니다.")
+        raise _CLIError("SYNTHETIC_ONLY_REQUIRED", "합성 SQLite 프로토타입은 --synthetic-only 확인 없이는 실행하지 않습니다.")
     if args.command == "receipt":
         if not args.accept_unsigned:
             raise _CLIError("UNSIGNED_ACK_REQUIRED", "영수증 확인은 --accept-unsigned가 필요합니다.")

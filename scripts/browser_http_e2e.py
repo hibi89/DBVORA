@@ -566,7 +566,7 @@ def run(*, screenshots=None):
                         "() => !document.querySelector('#refresh').disabled"
                         " && !document.querySelector('#error').hidden",
                         timeout=15000)
-                    require("연결이 중단" in page.locator("#error").inner_text()
+                    require("연결이 끊겼습니다" in page.locator("#error").inner_text()
                             and stable_filtered_state() and at_limit == digest(db)
                             and not errors, "NETWORK_ABORT_PRESERVATION_FAILED")
                     page.unroute("**/api/inventory", sever_inventory)

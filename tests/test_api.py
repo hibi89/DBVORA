@@ -100,7 +100,7 @@ class ApiTests(unittest.TestCase):
                 self.assertEqual(res.headers.get('x-content-type-options'), 'nosniff')
                 self.assertIn("default-src 'none'", res.headers.get('content-security-policy'))
                 self.assertNotIn('access-control-allow-origin', res.headers)
-        self.assertIn('Structure map', self.client.get('/').text)
+        self.assertIn('데이터베이스 <em>구조도</em>', self.client.get('/').text)
         self.assertIn('textContent', self.client.get('/assets/app.js').text)
         self.assertNotIn('innerHTML', self.client.get('/assets/app.js').text.replace('No innerHTML', ''))
 
