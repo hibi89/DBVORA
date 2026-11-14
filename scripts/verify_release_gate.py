@@ -369,8 +369,8 @@ def verify():
             _safe_code(incremental.get("error_code"), "INCREMENTAL_CLI_GATE_FAILED"),
     })
 
-    # Same two exact synthetic SQLite generations: compare actually stored
-    # ZIP/CAS bytes and independently restore both formats (no universal claim).
+    # Same two exact synthetic SQLite generations, with three independent trials.
+    # ZIP, optional ZSTD, raw CAS and compressed CAS are compared without a universal claim.
     code, out, _ = _run([sys.executable, "-m", "scripts.benchmark_synthetic_archives"], timeout=180)
     try:
         sizes = json.loads(out)
@@ -378,6 +378,50 @@ def verify():
         sizes = {}
     metrics = sizes.get("metrics", {})
     timings = sizes.get("timings_ns", {})
+    zstd_timings = sizes.get("zstd_timings_ns", {})
+    benchmarks = sizes.get("benchmarks", {})
+    env = sizes.get("environment", {})
+    expected_formats = {"zip", "raw_cas", "compressed_cas"}
+    if zstd_available:
+        expected_formats.add("zstd")
+
+    def valid_series(method, field):
+        series = method.get(field)
+        if type(series) is not dict:
+            return False
+        samples = series.get("samples")
+        return (
+            series.get("sample_count") == 3
+            and type(series.get("median")) is int and series["median"] > 0
+            and type(series.get("min")) is int and series["min"] > 0
+            and type(series.get("max")) is int and series["max"] >= series["min"]
+            and series["min"] <= series["median"] <= series["max"]
+            and type(samples) is list and len(samples) == 3
+            and all(type(value) is int and value > 0 for value in samples)
+        )
+
+    methods_ok = isinstance(benchmarks, dict) and set(benchmarks) == expected_formats
+    if methods_ok:
+        for name in expected_formats:
+            item = benchmarks.get(name, {})
+            trials = item.get("trials")
+            methods_ok = methods_ok and (
+                item.get("trial_count") == 3
+                and item.get("generation_count") == 2
+                and item.get("restore_sha256_verified") is True
+                and isinstance(item.get("options"), str) and bool(item["options"])
+                and type(trials) is list and len(trials) == 3
+                and all(type(trial) is dict
+                        and trial.get("generation_count") == 2
+                        and trial.get("restore_sha256_verified") is True
+                        for trial in trials)
+                and valid_series(item, "artifact_bytes")
+                and valid_series(item, "create_wall_ns")
+                and valid_series(item, "restore_wall_ns")
+            )
+            if name in ("raw_cas", "compressed_cas"):
+                methods_ok = methods_ok and item.get("second_generation_reused_chunks") is True
+
     timings_ok = (
         isinstance(timings, dict)
         and set(timings) == {
@@ -386,18 +430,36 @@ def verify():
         and all(type(value) is int and 0 < value < 180_000_000_000
                 for value in timings.values())
     )
+    zstd_timings_ok = (
+        isinstance(zstd_timings, dict)
+        and (set(zstd_timings) == {"zstd_write_ns", "zstd_restore_ns"}
+             if zstd_available else not zstd_timings)
+        and all(type(value) is int and 0 < value < 180_000_000_000
+                for value in zstd_timings.values())
+    )
+    env_ok = (
+        type(env) is dict
+        and all(isinstance(env.get(key), str) and env[key]
+                for key in ("os", "os_release", "machine", "processor", "python", "sqlite"))
+        and type(env.get("logical_cpu_count")) is int and env["logical_cpu_count"] > 0
+        and env.get("zstd_cli") == ("available" if zstd_available else "unavailable")
+    )
     benchmark_ok = (
         code == 0 and sizes.get("status") == "PASS_SYNTHETIC_STORAGE_COMPARISON_ONLY"
-        and type(sizes.get("checks")) is int and sizes["checks"] >= 11
+        and type(sizes.get("checks")) is int and sizes["checks"] >= 20
         and sizes.get("same_synthetic_workload") is True
+        and sizes.get("generation_count") == 2
+        and sizes.get("benchmark_trials_per_method") == 3
         and sizes.get("both_generations_restored") is True
         and sizes.get("second_generation_reused_blocks") is True
         and sizes.get("source_unchanged_during_archiving") is True
         and sizes.get("compressed_generations_restored") is True
         and sizes.get("compressed_second_reused_blocks") is True
+        and sizes.get("zstd") == ("passed" if zstd_available else "skipped_no_local_codec")
+        and sizes.get("zstd_generations_restored") is zstd_available
         and sizes.get("no_universal_compression_claim") is True
-        and sizes.get("timing_scope") == "one_sample_two_generations_wall_clock_only"
-        and timings_ok
+        and sizes.get("timing_scope") == "3_trial_medians_two_generations_wall_clock_only"
+        and methods_ok and timings_ok and zstd_timings_ok and env_ok
         and sizes.get("ready_for_customer_data") is False
         and isinstance(metrics, dict)
         and type(metrics.get("two_zip_archives_bytes")) is int
@@ -412,6 +474,12 @@ def verify():
         and type(metrics.get("compressed_cas_minus_zip_bytes")) is int
         and metrics["compressed_cas_minus_zip_bytes"] == (
             metrics["compressed_cas_total_stored_bytes"] - metrics["two_zip_archives_bytes"])
+        and (type(metrics.get("zstd_archives_bytes")) is int
+             and metrics["zstd_archives_bytes"] > 0
+             and metrics.get("zstd_minus_zip_bytes") == (
+                 metrics["zstd_archives_bytes"] - metrics["two_zip_archives_bytes"])
+             if zstd_available else metrics.get("zstd_archives_bytes") is None
+             and metrics.get("zstd_minus_zip_bytes") is None)
     )
     report["steps"].append({
         "step": "synthetic_archive_size_comparison",
@@ -420,7 +488,10 @@ def verify():
         "exit_code": code if type(code) is int else -1,
         "metrics": metrics if benchmark_ok else None,
         "timings_ns": timings if benchmark_ok else None,
-        "timing_scope": "one_sample_two_generations_wall_clock_only" if benchmark_ok else None,
+        "zstd_timings_ns": zstd_timings if benchmark_ok else None,
+        "benchmarks": benchmarks if benchmark_ok else None,
+        "environment": env if benchmark_ok else None,
+        "timing_scope": sizes.get("timing_scope") if benchmark_ok else None,
         "error_code": "NONE" if benchmark_ok else
             _safe_code(sizes.get("error_code"), "SYNTHETIC_BENCHMARK_GATE_FAILED"),
     })

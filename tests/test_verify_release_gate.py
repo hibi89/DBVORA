@@ -24,6 +24,53 @@ class VerificationGateTests(unittest.TestCase):
         self.addCleanup(self.root_patch.stop)
 
     def responses(self, *, tests=668, checks=10, zstd='passed', customer_ready=False):
+        def series(value):
+            return {"sample_count": 3, "median": value, "min": value,
+                    "max": value, "samples": [value, value, value]}
+
+        def method(name, stored):
+            return {
+                "trial_count": 3, "generation_count": 2,
+                "options": name + " synthetic options",
+                "trials": [{"artifact_bytes": stored, "create_wall_ns": 1000000,
+                            "restore_wall_ns": 1000001,
+                            "restore_sha256_verified": True,
+                            "second_generation_reused_chunks": 1 if name in
+                                ("raw_cas", "compressed_cas") else None,
+                            "generation_count": 2} for _ in range(3)],
+                "artifact_bytes": series(stored),
+                "create_wall_ns": series(1000000),
+                "restore_wall_ns": series(1000001),
+                "restore_sha256_verified": True,
+                **({"second_generation_reused_chunks": True}
+                   if name in ("raw_cas", "compressed_cas") else {}),
+            }
+
+        benchmark_methods = {
+            "zip": method("zip", 10),
+            "raw_cas": method("raw_cas", 20),
+            "compressed_cas": method("compressed_cas", 12),
+        }
+        zstd_bytes = None
+        zstd_delta = None
+        zstd_times = {}
+        zstd_status = "skipped_no_local_codec"
+        zstd_restored = False
+        if zstd == "passed":
+            benchmark_methods["zstd"] = method("zstd", 9)
+            zstd_bytes = 9
+            zstd_delta = -1
+            zstd_times = {"zstd_write_ns": 1000002, "zstd_restore_ns": 1000003}
+            zstd_status = "passed"
+            zstd_restored = True
+        benchmark_metrics = {
+            "first_snapshot_bytes": 1000, "second_snapshot_bytes": 1001,
+            "benchmark_trials_per_method": 3, "two_zip_archives_bytes": 10,
+            "zstd_archives_bytes": zstd_bytes, "zstd_minus_zip_bytes": zstd_delta,
+            "cas_total_stored_bytes": 20, "cas_minus_zip_bytes": 10,
+            "compressed_cas_total_stored_bytes": 12,
+            "compressed_cas_minus_zip_bytes": 2,
+        }
         return [
             (0, '', f'Ran {tests} tests in 1.000s\nOK'),
             (0, json.dumps({'status': 'PASS_SYNTHETIC_ONLY',
@@ -65,27 +112,39 @@ class VerificationGateTests(unittest.TestCase):
                             'format_mismatch_rejected': True,
                             'customer_ready': False, 'power_loss_verified': False,
                             'automatic_deletion': False}), ''),
-            (0, json.dumps({'status': 'PASS_SYNTHETIC_STORAGE_COMPARISON_ONLY',
-                            'checks': 11,
-                            'timing_scope': 'one_sample_two_generations_wall_clock_only',
-                            'timings_ns': {
-                                'zip_write_ns': 1000000, 'raw_write_ns': 1000001,
-                                'zlib_write_ns': 1000002, 'zip_restore_ns': 1000003,
-                                'raw_restore_ns': 1000004, 'zlib_restore_ns': 1000005,
-                            },
-                            'same_synthetic_workload': True,
-                            'both_generations_restored': True,
-                            'compressed_generations_restored': True,
-                            'compressed_second_reused_blocks': True,
-                            'second_generation_reused_blocks': True,
-                            'source_unchanged_during_archiving': True,
-                            'no_universal_compression_claim': True,
-                            'ready_for_customer_data': False,
-                            'metrics': {'two_zip_archives_bytes': 10,
-                                        'cas_total_stored_bytes': 20,
-                                        'cas_minus_zip_bytes': 10,
-                                        'compressed_cas_total_stored_bytes': 12,
-                                        'compressed_cas_minus_zip_bytes': 2}}), ''),
+            (0, json.dumps({
+                "status": "PASS_SYNTHETIC_STORAGE_COMPARISON_ONLY",
+                "checks": 29,
+                "timing_scope": "3_trial_medians_two_generations_wall_clock_only",
+                "timings_ns": {
+                    "zip_write_ns": 1000000, "raw_write_ns": 1000001,
+                    "zlib_write_ns": 1000002, "zip_restore_ns": 1000003,
+                    "raw_restore_ns": 1000004, "zlib_restore_ns": 1000005,
+                },
+                "zstd_timings_ns": zstd_times,
+                "benchmarks": benchmark_methods,
+                "environment": {
+                    "os": "Linux", "os_release": "6.0", "machine": "x86_64",
+                    "processor": "synthetic", "logical_cpu_count": 2,
+                    "python": "3.11.0", "sqlite": "3.46.1",
+                    "zstd_cli": "available" if zstd == "passed" else "unavailable",
+                    "zstd_cli_version": "1.5.6" if zstd == "passed" else None,
+                },
+                "trial_orders": [["zip", "raw_cas", "compressed_cas"],
+                                 ["raw_cas", "compressed_cas", "zip"],
+                                 ["compressed_cas", "zip", "raw_cas"]],
+                "benchmark_trials_per_method": 3, "generation_count": 2,
+                "zstd": zstd_status, "zstd_generations_restored": zstd_restored,
+                "same_synthetic_workload": True,
+                "both_generations_restored": True,
+                "compressed_generations_restored": True,
+                "compressed_second_reused_blocks": True,
+                "second_generation_reused_blocks": True,
+                "source_unchanged_during_archiving": True,
+                "no_universal_compression_claim": True,
+                "ready_for_customer_data": False,
+                "metrics": benchmark_metrics,
+            }), ''),
         ]
 
     def test_full_mocked_gate_synthetic_pass_not_customer_release(self):
@@ -94,6 +153,19 @@ class VerificationGateTests(unittest.TestCase):
         self.assertEqual(report['status'], 'PASS_SYNTHETIC_ENVIRONMENT_ONLY')
         self.assertFalse(report['ready_for_customer_data'])
         self.assertEqual(len(report['steps']), 12)
+
+    def test_benchmark_gate_rejects_fewer_than_three_trials(self):
+        mocked = self.responses()
+        code, output, error = mocked[-1]
+        benchmark = json.loads(output)
+        benchmark["benchmark_trials_per_method"] = 2
+        mocked[-1] = (code, json.dumps(benchmark), error)
+        with patch.object(gate, "_run", side_effect=mocked), patch.object(
+                gate.shutil, "which", return_value="tool"):
+            report = gate.verify()
+        self.assertEqual(report["status"], "FAIL_CLOSED")
+        self.assertEqual(report["steps"][-1]["step"], "synthetic_archive_size_comparison")
+        self.assertEqual(report["steps"][-1]["status"], "FAIL")
 
     def test_incomplete_checkout_fails_before_execution(self):
         (self.root / 'dbvora/archive/safe_zip.py').unlink()
