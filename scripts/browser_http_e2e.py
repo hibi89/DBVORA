@@ -799,6 +799,27 @@ def run(*, screenshots=None):
                             and multi_page.locator('#database-selector').is_visible()
                             and multi_page.locator('#edges path').count() == 1,
                             'MULTI_WORKSPACE_INITIAL_UI')
+                    # R01-02: the simultaneous topology must expose both
+                    # databases, allow keyboard selection and preserve scope.
+                    nodes = multi_page.locator('#database-topology button.topology-database')
+                    require(nodes.count() == 2
+                            and nodes.nth(0).is_visible()
+                            and nodes.nth(1).is_visible()
+                            and nodes.nth(0).get_attribute('aria-pressed') == 'true'
+                            and nodes.nth(1).get_attribute('aria-pressed') == 'false',
+                            'MULTI_TOPOLOGY_INITIAL_NODES')
+                    nodes.nth(1).focus()
+                    multi_page.keyboard.press('Enter')
+                    require(multi_page.locator('#tables-count').inner_text() == '2'
+                            and nodes.nth(1).get_attribute('aria-pressed') == 'true'
+                            and multi_page.locator('#database-list button').nth(1).get_attribute(
+                                'aria-pressed') == 'true',
+                            'MULTI_TOPOLOGY_KEYBOARD_SELECTION')
+                    nodes.nth(0).click()
+                    require(multi_page.locator('#tables-count').inner_text() == '3'
+                            and nodes.nth(0).get_attribute('aria-pressed') == 'true',
+                            'MULTI_TOPOLOGY_CLICK_SELECTION')
+                    result['checks'].append('multi_topology_two_nodes_keyboard_click')
                     multi_page.locator('#database-list button').nth(1).click()
                     require(multi_page.locator('#tables-count').inner_text() == '2'
                             and multi_page.locator('#edges path').count() == 1
@@ -853,6 +874,18 @@ def run(*, screenshots=None):
                     require(not multi_page.evaluate(
                         "() => document.documentElement.scrollWidth > window.innerWidth + 1"),
                         'MULTI_MOBILE_OVERFLOW')
+                    require(multi_page.locator(
+                        '#database-topology button.topology-database:visible').count() == 2,
+                        'MULTI_TOPOLOGY_MOBILE_NODES_MISSING')
+                    multi_page.locator('#database-topology button.topology-database').first.click()
+                    require(multi_page.locator('#tables-count').inner_text() == '3'
+                            and multi_page.locator('#database-topology button.topology-database').first.get_attribute(
+                                'aria-pressed') == 'true'
+                            and not multi_page.evaluate(
+                                "() => document.documentElement.scrollWidth > window.innerWidth + 1"),
+                            'MULTI_TOPOLOGY_MOBILE_SELECTION')
+                    result['checks'].append('multi_topology_390px_selection')
+
                     require(http_code(multi_base + '/api/inventory', headers={
                         'Origin': 'https://attacker.invalid'}) == 403
                             and http_code(multi_base + '/api/inventory', method='POST') == 405
