@@ -114,6 +114,21 @@ def run(*, screenshots=None):
                             and page.locator("#edges path.active").count() == 1,
                             "TABLE_SELECTION_FAILED")
                     result["checks"].append("click_table_inspector")
+                    page.locator("#table-filter").fill("ORDERS")
+                    require(page.locator("button.table-node:visible").count() == 1
+                            and page.locator(".detail-heading h3").inner_text() == "orders"
+                            and page.locator("#edges path").count() == 0,
+                            "LOCAL_TABLE_FILTER_FAILED")
+                    page.locator("#table-filter").fill("__NO_MATCH__")
+                    require(page.locator("button.table-node:visible").count() == 0
+                            and page.locator("#filter-empty").is_visible()
+                            and "0 / 3" in page.locator("#filter-status").inner_text(),
+                            "NO_MATCH_FILTER_FAILED")
+                    page.locator("#table-filter").fill("")
+                    require(page.locator("button.table-node:visible").count() == 3
+                            and page.locator("#edges path").count() == 1,
+                            "FILTER_RESET_FAILED")
+                    result["checks"].append("local_table_filter_no_network")
 
                     def screenshot(label):
                         if folder is None:

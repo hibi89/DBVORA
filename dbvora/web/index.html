@@ -28,10 +28,12 @@
     <section class="workspace">
       <div class="panel map-panel">
         <div class="panel-title"><div><p class="eyebrow">01 / TOPOLOGY</p><h2>Structure map</h2></div><span class="legend"><i></i> DECLARED RELATIONSHIP</span></div>
+        <div class="map-controls"><label for="table-filter">TABLE SEARCH</label><input id="table-filter" type="search" autocomplete="off" spellcheck="false" maxlength="128" placeholder="테이블 이름 검색" aria-controls="tables"><span id="filter-status" role="status" aria-live="polite">—</span></div>
         <div class="diagram" id="diagram" aria-label="DB 테이블과 외래키 연결 구조도">
           <svg id="edges" class="edges" aria-hidden="true"></svg>
           <div class="database-node" id="database-node"><span class="node-hex">◈</span><div><b>SQLite Database</b><span id="db-short">Locally connected</span></div></div>
           <div id="tables" class="table-grid"><p class="placeholder">스키마를 불러오는 중…</p></div>
+          <p id="filter-empty" class="filter-empty" hidden>일치하는 테이블이 없습니다.</p>
         </div>
         <div class="map-footer"><span><b class="status-light"></b> 구조 인벤토리</span><span id="observed">OBSERVED —</span></div>
       </div>

@@ -100,7 +100,7 @@ function drawEdges() {
     if (link.evidence !== 'declared_foreign_key') continue;
     const from = nodeElements.get(link.from_table);
     const to = nodeElements.get(link.to_table);
-    if (!from || !to) continue;
+    if (!from || !to || from.hidden || to.hidden) continue;
     const a = from.getBoundingClientRect(), b = to.getBoundingClientRect();
     const x1 = a.left + a.width / 2 - board.left;
     const x2 = b.left + b.width / 2 - board.left;
@@ -112,6 +112,29 @@ function drawEdges() {
     path.setAttribute('class', selected === link.from_table || selected === link.to_table ? 'edge active' : 'edge');
     svg.append(path);
   }
+}
+
+// Filter only the already loaded schema names. Never transmit a query or fetch rows.
+function applyFilter() {
+  if (!inventory) return;
+  const query = String($('table-filter').value || '').trim().toLocaleLowerCase();
+  let count = 0;
+  let first = null;
+  for (const [name, button] of nodeElements) {
+    const show = name.toLocaleLowerCase().includes(query);
+    button.hidden = !show;
+    if (show) { count++; if (first === null) first = name; }
+  }
+  $('filter-status').textContent = `${count} / ${nodeElements.size} 테이블`;
+  $('filter-empty').hidden = count !== 0 || nodeElements.size === 0;
+  if (count === 0) {
+    selected = null;
+    clear($('detail'));
+    $('detail').append(el('p', 'empty-state', query ? '검색 결과가 없습니다.' : '검사할 테이블이 없습니다.'));
+  } else if (!selected || nodeElements.get(selected)?.hidden) {
+    inspect(first);
+  }
+  drawEdges();
 }
 
 function render(data) {
@@ -139,6 +162,7 @@ function render(data) {
   if (selected && nodeElements.has(selected)) inspect(selected);
   else if (data.tables.length) inspect(data.tables[0].name);
   else { selected = null; clear($('detail')); $('detail').append(el('p', 'empty-state', '검사할 테이블이 없습니다.')); }
+  applyFilter();
   requestAnimationFrame(drawEdges);
   if (observer) observer.disconnect();
   observer = new ResizeObserver(drawEdges);
@@ -162,4 +186,5 @@ async function refresh() {
   finally { btn.disabled = false; }
 }
 $('refresh').addEventListener('click', refresh);
+$('table-filter').addEventListener('input', applyFilter);
 refresh();
