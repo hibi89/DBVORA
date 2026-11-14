@@ -1,5 +1,6 @@
 """Opt-in request ledger exercises only temp folder and synthetic digests."""
 from concurrent.futures import ThreadPoolExecutor
+import multiprocessing
 from unittest.mock import patch
 import os
 from dbvora.archive import request_ledger
@@ -16,6 +17,15 @@ ID = "request-2026-0001"
 PLAN = hashlib.sha256(b"synthetic plan").hexdigest()
 OTHER = hashlib.sha256(b"another plan").hexdigest()
 ARTIFACT = hashlib.sha256(b"synthetic archive").hexdigest()
+
+def _reserve_process(folder: str, barrier, result_queue):
+    try:
+        barrier.wait(timeout=30)
+        status = reserve(folder, ID, PLAN)["status"]
+    except BaseException as exc:
+        status = ("ERROR", type(exc).__name__, getattr(exc, "code", ""))
+    result_queue.put(status)
+
 
 class RequestLedgerTests(unittest.TestCase):
     def setUp(self):
@@ -78,6 +88,41 @@ class RequestLedgerTests(unittest.TestCase):
             results = list(ex.map(lambda _: reserve(self.folder, ID, PLAN)["status"], range(4)))
         self.assertEqual(results.count("RESERVED_NOT_EXECUTED"), 1)
         self.assertEqual(results.count("REPLAY_REQUIRES_MANUAL_REVIEW"), 3)
+
+    def test_multiprocess_reservations_only_one_new_request(self):
+        seed_plan = hashlib.sha256(b"synthetic seed request").hexdigest()
+        reserve(self.folder, "request-2026-0000", seed_plan)
+        context = multiprocessing.get_context("spawn")
+        barrier = context.Barrier(4)
+        result_queue = context.Queue()
+        processes = [
+            context.Process(target=_reserve_process,
+                            args=(str(self.folder), barrier, result_queue))
+            for _ in range(4)
+        ]
+        try:
+            for process in processes:
+                process.start()
+            statuses = [result_queue.get(timeout=45) for _ in processes]
+            for process in processes:
+                process.join(timeout=10)
+            self.assertTrue(all(not process.is_alive() for process in processes))
+            self.assertTrue(all(process.exitcode == 0 for process in processes))
+            self.assertEqual(statuses.count("RESERVED_NOT_EXECUTED"), 1)
+            self.assertEqual(statuses.count("REPLAY_REQUIRES_MANUAL_REVIEW"), 3)
+            with closing(sqlite3.connect(self.folder / LEDGER_NAME)) as connection:
+                count = connection.execute("SELECT count(*) FROM requests").fetchone()[0]
+            self.assertEqual(count, 2)
+            self.assertEqual(list(self.folder.glob("dbvora-*.zip")), [])
+            self.assertEqual(list(self.folder.glob("dbvora-*.json")), [])
+        finally:
+            for process in processes:
+                if process.is_alive():
+                    process.terminate()
+                if process.pid is not None:
+                    process.join(timeout=5)
+            result_queue.close()
+            result_queue.join_thread()
 
     def test_invalid_ids_and_digests_are_rejected(self):
         for bad_id in ("x", "../a/b/c", "열쇠-12345678", "", None):
