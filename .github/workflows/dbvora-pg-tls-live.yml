@@ -21,6 +21,7 @@ on:
       - "contracts/**"
       - "tests/test_ax_contract.py"
       - "tests/test_ui_dom.cjs"
+      - "tests/test_audit_strict.py"
       - "scripts/verify_release_gate.py"
       - ".github/workflows/dbvora-release-gate.yml"
       - ".github/workflows/dbvora-pg-tls-live.yml"

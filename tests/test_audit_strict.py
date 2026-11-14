@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from contextlib import closing
 import subprocess
@@ -29,8 +30,9 @@ class StrictAuditCliTests(unittest.TestCase):
         return subprocess.run(
             [sys.executable, "-m", "dbvora.archive_cli", *args],
             cwd=Path(__file__).resolve().parents[1],
-            capture_output=True, text=True, timeout=40,
+            capture_output=True, text=True, encoding="utf-8", timeout=40,
             stdin=subprocess.DEVNULL, check=False,
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
         )
 
     def prepare_archive(self):
