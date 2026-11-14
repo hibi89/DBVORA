@@ -45,6 +45,18 @@ class ProcessResourcesTests(unittest.TestCase):
         before = p.observe(self.root)
         sum(x * x for x in range(40000))
         after = p.observe(self.root)
+        # Path-free Windows diagnostic if a native clock/RAM field is outside
+        # the expected provenance range. Never print customer directories.
+        diagnostic = {
+            "pid_types": [type(item["process_id"]).__name__ for item in (before, after)],
+            "instance_id_pattern": [bool(p._ID.fullmatch(item["process_instance_id"])) for item in (before, after)],
+            "clock_in_range": [0 <= item["sample_monotonic_ns"] <= p._MAX_COUNTER for item in (before, after)],
+            "cpu_in_range": [0 <= item["process_cpu_time_ns"] <= p._MAX_COUNTER for item in (before, after)],
+            "ram_source": [item["ram"]["source"] for item in (before, after)],
+            "ram_status": [item["ram"]["status"] for item in (before, after)],
+        }
+        self.assertTrue(p._valid_comparable_sample(before), diagnostic)
+        self.assertTrue(p._valid_comparable_sample(after), diagnostic)
         trend = p.compare_local_samples(before, after)
         self.assertEqual(trend["contract"], p.TREND_CONTRACT)
         self.assertEqual(trend["status"], "measured_two_samples_only_no_forecast", trend)
