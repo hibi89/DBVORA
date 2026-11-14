@@ -33,7 +33,7 @@ def _license_metadata(metadata) -> tuple[list[dict], str]:
         return [{"expression": expression}], "License-Expression"
     classifiers = metadata.get_all("Classifier") or []
     license_classifiers = [
-        _clean_metadata_text(value.partition(" :: ")[2])
+        _clean_metadata_text(" :: ".join(value.split(" :: ")[2:]))
         for value in classifiers
         if value.startswith("License :: ") and value.partition(" :: ")[2].strip()
     ]

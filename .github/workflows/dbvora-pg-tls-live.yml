@@ -75,7 +75,7 @@ jobs:
             -c ssl=on -c ssl_cert_file=/certs/server.crt \
             -c ssl_key_file=/certs/server.key >/dev/null
           for i in $(seq 1 50); do
-            if docker exec dbvora-ci-pg pg_isready -U postgres -d dbvora_test >/dev/null 2>&1; then
+            if docker exec dbvora-ci-pg psql -v ON_ERROR_STOP=1 -U postgres -d dbvora_test -Atqc "SELECT 1" >/dev/null 2>&1; then
               exit 0
             fi
             sleep 1
