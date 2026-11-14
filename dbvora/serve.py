@@ -1,10 +1,33 @@
 """Launch DBVORA from an explicitly selected local SQLite database."""
 import argparse
+import errno
 import json
 import os
+import socket
 import sys
 
 from dbvora.errors import InventoryError
+
+
+def _address_in_use(error: OSError) -> bool:
+    return error.errno == errno.EADDRINUSE or getattr(error, 'winerror', None) == 10048
+
+
+def _port_in_use(port: int) -> bool:
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+            probe.bind(('127.0.0.1', port))
+        return False
+    except OSError as error:
+        if _address_in_use(error):
+            return True
+        raise
+
+
+def _report_error(code: str, message: str, exit_code: int) -> int:
+    print(json.dumps({'error': {'code': code, 'message': message}}, sort_keys=True),
+          file=sys.stderr)
+    return exit_code
 
 
 def main(argv=None) -> int:
@@ -22,12 +45,33 @@ def main(argv=None) -> int:
                          postgres_dsn=os.environ.get('DBVORA_POSTGRES_DSN'))
     except (InventoryError, ValueError) as exc:
         message = exc.message if isinstance(exc, InventoryError) else 'Invalid server port.'
-        print(json.dumps({'error': {'code': 'STARTUP_FAILED', 'message': message}}), file=sys.stderr)
-        return 2
-    import uvicorn
+        return _report_error('STARTUP_FAILED', message, 2)
+    except (ImportError, RuntimeError):
+        return _report_error('UI_DEPENDENCY_MISSING',
+                             'Install the local UI extra before launching the viewer.', 4)
+    try:
+        if _port_in_use(args.port):
+            return _report_error('PORT_IN_USE',
+                                 'This local port is already in use. Choose another port.', 3)
+    except OSError:
+        return _report_error('SERVER_START_FAILED',
+                             'The local port could not be checked safely.', 2)
+    try:
+        import uvicorn
+    except ImportError:
+        return _report_error('UI_DEPENDENCY_MISSING',
+                             'Install the local UI extra before launching the viewer.', 4)
     print(f'DBVORA local interface: http://127.0.0.1:{args.port}', flush=True)
-    # No proxy forwarding; never run with host 0.0.0.0 or --reload for customer use.
-    uvicorn.run(app, host='127.0.0.1', port=args.port, access_log=False, proxy_headers=False)
+    # Keep the listener loopback-only. Never forward proxies or enable reload.
+    try:
+        uvicorn.run(app, host='127.0.0.1', port=args.port, access_log=False,
+                    proxy_headers=False)
+    except OSError as error:
+        if _address_in_use(error):
+            return _report_error('PORT_IN_USE',
+                                 'This local port is already in use. Choose another port.', 3)
+        return _report_error('SERVER_START_FAILED',
+                             'The local viewer could not start safely.', 2)
     return 0
 
 

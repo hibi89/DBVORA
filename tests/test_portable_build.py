@@ -54,6 +54,24 @@ class PortableTests(unittest.TestCase):
             self.assertNotIn('tests/test_receipts.py', names)
             self.assertIn('C:\\absolute', z.read('README_PORTABLE.txt').decode('utf-8'))
 
+    def test_package_launcher_documents_manual_portable_lifecycle(self):
+        archive = pack.build(self.folder)
+        with zipfile.ZipFile(archive) as zipped:
+            windows = zipped.read('run_dbvora_windows.cmd').decode('ascii')
+            unix = zipped.read('run_dbvora_unix.sh').decode('utf-8')
+            readme = zipped.read('README_PORTABLE.txt').decode('utf-8')
+        self.assertIn('where py', windows)
+        self.assertIn('Python 3.11 runtime was not found', windows)
+        self.assertIn('--port "%~2"', windows)
+        self.assertIn('PORT_IN_USE', readme)
+        self.assertIn('no installed service, auto-start or browser launch', readme)
+        self.assertIn('Stop with Ctrl+C', readme)
+        self.assertIn('delete only that newly extracted DBVORA application folder', readme)
+        self.assertIn('not removed or modified', readme)
+        self.assertIn('if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]', unix)
+        self.assertIn('Python 3.11+ is required', unix)
+        self.assertIn('--port "$2"', unix)
+
     def test_bundle_includes_synthetic_archive_selfcheck_and_launchers(self):
         archive = pack.build(self.folder)
         self.assertEqual(pack.verify_zip(archive)['status'], 'PASS_UNSIGNED_SOURCE_INTEGRITY_ONLY')
