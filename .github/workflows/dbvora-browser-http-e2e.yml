@@ -1,0 +1,55 @@
+name: DBVORA actual Chromium localhost acceptance (synthetic)
+
+on:
+  push:
+    branches:
+      - feature/p0-db-map
+    paths:
+      - "dbvora/api.py"
+      - "dbvora/web/**"
+      - "dbvora/connectors/**"
+      - "dbvora/inventory.py"
+      - "tests/fixtures/**"
+      - "scripts/browser_http_e2e.py"
+      - ".github/workflows/dbvora-browser-http-e2e.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dbvora-synthetic-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  chromium-local-http:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONIOENCODING: utf-8
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout exact source (do not persist token)
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install synthetic browser test dependencies
+        run: python -m pip install -e ".[ui,test]" playwright==1.56.0
+      - name: Install Chromium for synthetic browser
+        run: python -m playwright install --with-deps chromium
+      - name: Run real localhost HTTP and browser checks
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/synthetic-screenshots"
+          python -m scripts.browser_http_e2e --screenshots "$GITHUB_WORKSPACE/synthetic-screenshots"
+      - name: Archive generated synthetic screenshots only
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dbvora-synthetic-ui-screenshots-${{ github.sha }}
+          path: synthetic-screenshots/*.png
+          if-no-files-found: error
+          retention-days: 7
