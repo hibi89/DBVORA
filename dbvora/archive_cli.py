@@ -9,9 +9,11 @@ import json
 from pathlib import Path
 import sys
 
-from dbvora.archive.recovery_catalog import PUBLISHED, MAX_DIRECTORY_ENTRIES
+from dbvora.archive.recovery_catalog import (
+    PUBLISHED, MAX_DIRECTORY_ENTRIES, inspect_recovery_artifact, inspect_recovery_catalog,
+)
 from dbvora.archive.safe_zip import (
-    ArchiveError, create_snapshot, make_zip_archive, restore_zip_archive,
+    ArchiveError, HEX_SHA, create_snapshot, make_zip_archive, restore_zip_archive,
 )
 from dbvora.archive.zstd_archive import create_zstd_archive, restore_zstd_archive
 from dbvora.archive.receipts import create_receipt, inspect_receipt_catalog, RECEIPT
@@ -56,6 +58,15 @@ def _parser():
     restore.add_argument("--archive", required=True, help="Absolute path to generated .zip/.dbvz artifact")
     restore.add_argument("--output-dir", required=True, help="Existing absolute *separate* output directory")
 
+    preview = subs.add_parser("preview", help="Read-only verify candidate archives before selection")
+    preview.add_argument("--archive-dir", required=True, help="Existing absolute synthetic archive directory")
+
+    selected = subs.add_parser("restore-selected", help="Restore a previewed archive to a new file")
+    selected.add_argument("--archive", required=True, help="Absolute generated .zip/.dbvz path from preview")
+    selected.add_argument("--artifact-sha256", required=True, help="Exact artifact SHA-256 shown by preview")
+    selected.add_argument("--snapshot-sha256", required=True, help="Exact restored-content SHA-256 shown by preview")
+    selected.add_argument("--output-dir", required=True, help="Existing absolute separate restore directory")
+
     receipt = subs.add_parser("receipt", help="Unsigned receipt for an independently checked artifact")
     receipt.add_argument("--artifact", required=True, help="Absolute path to a DBVORA artifact")
     receipt.add_argument("--parent-receipt-name", default=None,
@@ -68,10 +79,10 @@ def _parser():
     audit.add_argument("--require-all-verified", action="store_true",
                        help="Exit nonzero unless at least one archive has a valid unsigned receipt and all entries pass")
 
-    for child in (snapshot, archive, restore, receipt):
+    for child in (snapshot, archive, restore, selected, receipt):
         child.add_argument("--synthetic-only", action="store_true",
                            help="Confirm this command is operating only on synthetic test data")
-    for child in (snapshot, archive, restore):
+    for child in (snapshot, archive, restore, preview, selected):
         child.add_argument("--accept-plaintext", action="store_true",
                            help="Acknowledge archive/snapshot/restore content is NOT encrypted")
     return parser
@@ -125,8 +136,6 @@ def main(argv=None):
                         for item in records)):
                     raise _CLIError("AUDIT_VERIFICATION_FAILED",
                                     "Audit contains missing, damaged, or unverified artifacts or receipts.")
-                # Every DBVORA receipt must have a corresponding verified artifact.
-                # Unrelated user files remain ignored, preserving default audit behavior.
                 expected_receipts = {
                     "dbvora-receipt-" + item["name"][7:39] + ".json"
                     for item in records
@@ -138,7 +147,21 @@ def main(argv=None):
                                         "Audit contains missing, damaged, or unverified artifacts or receipts.")
         else:
             _require_write_ack(args)
-            if args.command == "snapshot":
+            if args.command == "preview":
+                catalog = inspect_recovery_catalog(args.archive_dir)
+                result = {
+                    "inspection_mode": catalog["inspection_mode"],
+                    "observed_at_utc": catalog["observed_at_utc"],
+                    "complete": catalog["complete"],
+                    "ignored_entry_count": catalog["ignored_entry_count"],
+                    "records": [item for item in catalog["records"]
+                                if item.get("kind") in ("zip", "dbvz")],
+                    "guidance": (
+                        "Select only a CONTENT_VERIFIED_PUBLISH_UNPROVEN record. "
+                        "Pass its exact artifact and snapshot SHA-256 values to restore-selected."
+                    ),
+                }
+            elif args.command == "snapshot":
                 _no_source_dir_output(args.source, args.output_dir)
                 result = create_snapshot(args.source, args.output_dir)
             elif args.command == "archive":
@@ -151,11 +174,39 @@ def main(argv=None):
                 else:
                     result = create_zstd_archive(args.snapshot, args.output_dir,
                                                  level=args.level if args.level is not None else 3)
-            elif args.command == "restore":
+            elif args.command in ("restore", "restore-selected"):
                 artifact = _absolute_generated(args.archive, suffixes=("zip", "dbvz"))
                 _no_source_dir_output(artifact, args.output_dir)
                 restore_fn = restore_zip_archive if artifact.suffix == ".zip" else restore_zstd_archive
-                result = restore_fn(artifact, args.output_dir)
+                if args.command == "restore":
+                    result = restore_fn(artifact, args.output_dir)
+                else:
+                    if (not HEX_SHA.fullmatch(args.artifact_sha256)
+                            or not HEX_SHA.fullmatch(args.snapshot_sha256)):
+                        raise _CLIError(
+                            "INVALID_SELECTION",
+                            "Use both SHA-256 values shown by preview, then choose a separate output directory.",
+                        )
+                    preview = inspect_recovery_artifact(artifact)
+                    if (preview.get("status") != "CONTENT_VERIFIED_PUBLISH_UNPROVEN"
+                            or preview.get("artifact_sha256") != args.artifact_sha256
+                            or preview.get("snapshot_sha256") != args.snapshot_sha256):
+                        raise _CLIError(
+                            "SELECTION_CHANGED",
+                            "Selected archive no longer matches its verified preview. Run preview again or choose another verified archive; no restore output was created.",
+                        )
+                    try:
+                        result = restore_fn(
+                            artifact, args.output_dir,
+                            expected_snapshot_sha256=args.snapshot_sha256,
+                        )
+                    except ArchiveError as exc:
+                        raise _CLIError(
+                            exc.code,
+                            "Restore did not complete safely. Review the selected archive and separate destination; the source archive was not written.",
+                        ) from None
+                    result["selected_artifact_sha256"] = preview["artifact_sha256"]
+                    result["selection_verified"] = True
             else:
                 _absolute_generated(args.artifact, suffixes=("sqlite", "zip", "dbvz"))
                 result = create_receipt(args.artifact, parent_receipt_name=args.parent_receipt_name)
@@ -172,7 +223,6 @@ def main(argv=None):
     print(json.dumps({"ok": False, "error": {"code": code, "message": message}}, sort_keys=True),
           file=sys.stderr)
     return 2
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

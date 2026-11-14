@@ -67,6 +67,105 @@ class ArchiveCliTests(unittest.TestCase):
         self.assertEqual(self.file_hash_before, hashlib.sha256(self.source.read_bytes()).hexdigest())
         self.assertEqual(self.mtime_before, self.source.stat().st_mtime_ns)
 
+
+    def _create_zip(self):
+        code, snapshot, _ = self.run_cli(
+            "snapshot", "--source", str(self.source), "--output-dir", str(self.snapshots),
+            "--synthetic-only", "--accept-plaintext",
+        )
+        self.assertEqual(code, 0)
+        snapshot_path = self.snapshots / snapshot["result"]["snapshot_path"]
+        code, archive, _ = self.run_cli(
+            "archive", "--snapshot", str(snapshot_path), "--output-dir", str(self.artifacts),
+            "--codec", "zip", "--synthetic-only", "--accept-plaintext",
+        )
+        self.assertEqual(code, 0)
+        return snapshot["result"], self.artifacts / archive["result"]["archive_path"]
+
+    def test_preview_binds_restore_to_hashes_and_new_output(self):
+        snapshot, artifact = self._create_zip()
+        artifact_before = hashlib.sha256(artifact.read_bytes()).hexdigest()
+        code, preview, raw = self.run_cli(
+            "preview", "--archive-dir", str(self.artifacts),
+            "--synthetic-only", "--accept-plaintext",
+        )
+        self.assertEqual(code, 0)
+        self.assertNotIn(str(self.artifacts), raw)
+        records = preview["result"]["records"]
+        self.assertEqual(len(records), 1)
+        record = records[0]
+        self.assertEqual(record["status"], "CONTENT_VERIFIED_PUBLISH_UNPROVEN")
+        self.assertEqual(record["snapshot_sha256"], snapshot["snapshot_sha256"])
+        self.assertEqual(record["artifact_sha256"], artifact_before)
+
+        code, restored, raw = self.run_cli(
+            "restore-selected", "--archive", str(artifact),
+            "--artifact-sha256", record["artifact_sha256"],
+            "--snapshot-sha256", record["snapshot_sha256"],
+            "--output-dir", str(self.restores),
+            "--synthetic-only", "--accept-plaintext",
+        )
+        self.assertEqual(code, 0, raw)
+        result = restored["result"]
+        self.assertTrue(result["selection_verified"])
+        restored_path = self.restores / result["restored_path"]
+        self.assertTrue(restored_path.is_file())
+        self.assertEqual(result["restored_sha256"], snapshot["snapshot_sha256"])
+        self.assertEqual(hashlib.sha256(artifact.read_bytes()).hexdigest(), artifact_before)
+        self.assertEqual(hashlib.sha256(self.source.read_bytes()).hexdigest(), self.file_hash_before)
+        self.assertEqual(self.mtime_before, self.source.stat().st_mtime_ns)
+
+    def test_restore_selected_rejects_stale_preview_and_same_directory(self):
+        _, artifact = self._create_zip()
+        code, preview, _ = self.run_cli(
+            "preview", "--archive-dir", str(self.artifacts),
+            "--synthetic-only", "--accept-plaintext",
+        )
+        self.assertEqual(code, 0)
+        record = preview["result"]["records"][0]
+        code, error, _ = self.run_cli(
+            "restore-selected", "--archive", str(artifact),
+            "--artifact-sha256", "0" * 64,
+            "--snapshot-sha256", record["snapshot_sha256"],
+            "--output-dir", str(self.restores),
+            "--synthetic-only", "--accept-plaintext",
+        )
+        self.assertEqual(code, 2)
+        self.assertEqual(error["error"]["code"], "SELECTION_CHANGED")
+        self.assertEqual(list(self.restores.iterdir()), [])
+
+        artifact.write_bytes(artifact.read_bytes() + b"post-preview-change")
+        code, error, _ = self.run_cli(
+            "restore-selected", "--archive", str(artifact),
+            "--artifact-sha256", record["artifact_sha256"],
+            "--snapshot-sha256", record["snapshot_sha256"],
+            "--output-dir", str(self.restores),
+            "--synthetic-only", "--accept-plaintext",
+        )
+        self.assertEqual(code, 2)
+        self.assertEqual(error["error"]["code"], "SELECTION_CHANGED")
+        self.assertEqual(list(self.restores.iterdir()), [])
+
+        code, error, _ = self.run_cli(
+            "restore-selected", "--archive", str(artifact),
+            "--artifact-sha256", record["artifact_sha256"],
+            "--snapshot-sha256", record["snapshot_sha256"],
+            "--output-dir", str(self.artifacts),
+            "--synthetic-only", "--accept-plaintext",
+        )
+        self.assertEqual(code, 2)
+        self.assertEqual(error["error"]["code"], "SEPARATE_OUTPUT_REQUIRED")
+        self.assertEqual(list(self.artifacts.glob("dbvora-*.sqlite")), [])
+
+    def test_restore_zip_expected_preview_hash_stops_before_publish(self):
+        from dbvora.archive.safe_zip import ArchiveError, restore_zip_archive
+
+        _, artifact = self._create_zip()
+        with self.assertRaises(ArchiveError) as raised:
+            restore_zip_archive(artifact, self.restores, expected_snapshot_sha256="0" * 64)
+        self.assertEqual(raised.exception.code, "HASH_MISMATCH")
+        self.assertEqual(list(self.restores.iterdir()), [])
+
     def test_no_confirmation_produces_no_artifacts(self):
         code, err, _ = self.run_cli("snapshot", "--source", str(self.source),
                                     "--output-dir", str(self.snapshots), "--accept-plaintext")
@@ -136,8 +235,18 @@ class ArchiveCliTests(unittest.TestCase):
                                     "--output-dir", str(self.artifacts), "--codec", "zstd", "--level", "3",
                                     "--synthetic-only", "--accept-plaintext")
         self.assertEqual(code, 0)
-        code, restored, _ = self.run_cli("restore", "--archive", str(self.artifacts / arc["result"]["archive_path"]),
-                                         "--output-dir", str(self.restores), "--synthetic-only", "--accept-plaintext")
+        artifact = self.artifacts / arc["result"]["archive_path"]
+        code, preview, _ = self.run_cli("preview", "--archive-dir", str(self.artifacts),
+                                        "--synthetic-only", "--accept-plaintext")
+        self.assertEqual(code, 0)
+        record = preview["result"]["records"][0]
+        code, restored, _ = self.run_cli(
+            "restore-selected", "--archive", str(artifact),
+            "--artifact-sha256", record["artifact_sha256"],
+            "--snapshot-sha256", record["snapshot_sha256"],
+            "--output-dir", str(self.restores),
+            "--synthetic-only", "--accept-plaintext",
+        )
         self.assertEqual(code, 0)
         self.assertEqual(snap["result"]["snapshot_sha256"], restored["result"]["restored_sha256"])
 

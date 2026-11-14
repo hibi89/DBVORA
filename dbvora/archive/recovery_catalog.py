@@ -101,6 +101,35 @@ def _verify_one(path: Path, suffix: str, directory: Path) -> dict:
         }
 
 
+
+def inspect_recovery_artifact(archive_path: str | Path) -> dict:
+    """Read-only content preview for one generated ZIP/ZSTD archive."""
+    if not isinstance(archive_path, (str, Path)) or not str(archive_path):
+        raise ArchiveError("INVALID_ARCHIVE", "Select an absolute DBVORA archive.")
+    target = Path(archive_path)
+    if not target.is_absolute():
+        raise ArchiveError("INVALID_ARCHIVE", "Select an absolute DBVORA archive.")
+    match = PUBLISHED.fullmatch(target.name)
+    if match is None or match.group(1) not in ("zip", "dbvz"):
+        raise ArchiveError("UNSUPPORTED_FORMAT", "Select a generated ZIP or ZSTD archive.")
+    folder = _directory(target.parent)
+    path = folder / target.name
+    suffix = match.group(1)
+    record = {
+        "name": path.name,
+        "kind": suffix,
+        "authentication": "unsigned_untrusted",
+        "publication_durability": "unknown_no_persisted_commit_evidence",
+    }
+    try:
+        record.update(_verify_one(path, suffix, folder))
+    except ArchiveError as exc:
+        record.update({"status": "FAILED_REVIEW", "error_code": exc.code})
+    except (OSError, ValueError):
+        record.update({"status": "FAILED_REVIEW", "error_code": "INSPECTION_FAILED"})
+    return record
+
+
 def inspect_recovery_catalog(output_dir: str | Path, *, max_entries: int = MAX_ENTRIES) -> dict:
     """Read-only post-restart audit; never infers atomic/durable publication.
 

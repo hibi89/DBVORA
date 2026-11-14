@@ -17,7 +17,7 @@ import subprocess
 import tempfile
 
 from dbvora.archive.safe_zip import (
-    ArchiveError, MAX_ARCHIVE_BYTES, MAX_SNAPSHOT_BYTES, CHUNK_SIZE,
+    ArchiveError, HEX_SHA, MAX_ARCHIVE_BYTES, MAX_SNAPSHOT_BYTES, CHUNK_SIZE,
     _directory, _hash_file, _integrity_check, _publish_new, _staging_file, _staging_files,
 )
 from dbvora.connectors.sqlite_reader import validate_path
@@ -207,13 +207,23 @@ def create_zstd_archive(snapshot_path: str | Path, output_dir: str | Path, *, le
             path.unlink(missing_ok=True)
 
 
-def restore_zstd_archive(archive_path: str | Path, output_dir: str | Path) -> dict:
-    """Validate frame, checksum and SQLite integrity, publish only NEW restore file."""
+def restore_zstd_archive(
+    archive_path: str | Path, output_dir: str | Path, *,
+    expected_snapshot_sha256: str | None = None,
+) -> dict:
+    """Validate content and publish a NEW file, optionally bound to preview SHA."""
+    if (expected_snapshot_sha256 is not None
+            and (not isinstance(expected_snapshot_sha256, str)
+                 or not HEX_SHA.fullmatch(expected_snapshot_sha256))):
+        raise ArchiveError("INVALID_CONFIRMATION", "A valid preview snapshot SHA-256 is required.")
     output = _directory(output_dir)
     archive = _archive_path(archive_path)
     extraction, restored = _staging_files(output, 2)
     try:
         result = _verify_to_temp(archive, extraction, restored)
+        if (expected_snapshot_sha256 is not None
+                and result["restored_sha256"] != expected_snapshot_sha256):
+            raise ArchiveError("HASH_MISMATCH", "The restored content does not match the preview.")
         result["restored_path"] = str(_publish_new(restored, output, ".sqlite"))
         return result
     finally:

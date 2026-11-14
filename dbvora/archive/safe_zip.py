@@ -369,8 +369,18 @@ def make_zip_archive(snapshot_path: str | Path, output_dir: str | Path) -> dict:
         dry_run.unlink(missing_ok=True)
 
 
-def restore_zip_archive(archive_path: str | Path, output_dir: str | Path) -> dict:
-    """Verify and restore to a NEW standalone SQLite file, never overwrite."""
+def restore_zip_archive(
+    archive_path: str | Path, output_dir: str | Path, *,
+    expected_snapshot_sha256: str | None = None,
+) -> dict:
+    """Verify and restore to a NEW standalone SQLite file, never overwrite.
+
+    When supplied, expected_snapshot_sha256 binds publication to a prior preview.
+    """
+    if (expected_snapshot_sha256 is not None
+            and (not isinstance(expected_snapshot_sha256, str)
+                 or not HEX_SHA.fullmatch(expected_snapshot_sha256))):
+        raise ArchiveError("INVALID_CONFIRMATION", "A valid preview snapshot SHA-256 is required.")
     output = _directory(output_dir)
     if not isinstance(archive_path, (str, Path)) or not Path(archive_path).is_absolute():
         raise ArchiveError("INVALID_ARCHIVE", "An absolute archive path is required.")
@@ -383,6 +393,9 @@ def restore_zip_archive(archive_path: str | Path, output_dir: str | Path) -> dic
     staged = _staging_file(output)
     try:
         verified = _unpack_verified(archive, staged)
+        if (expected_snapshot_sha256 is not None
+                and verified["restored_sha256"] != expected_snapshot_sha256):
+            raise ArchiveError("HASH_MISMATCH", "The restored content does not match the preview.")
         restored = _publish_new(staged, output, ".sqlite")
         return {"restored_path": str(restored), **verified}
     finally:
