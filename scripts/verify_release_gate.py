@@ -72,6 +72,7 @@ REQUIRED = (
     "tests/test_pg_html_script.py",
     "dbvora/archive/incremental_cas.py", "tests/test_incremental_cas.py",
     "dbvora/incremental_cli.py", "tests/test_incremental_cli.py",
+    "dbvora/archive/compressed_cas.py", "tests/test_compressed_cas.py",
     "scripts/incremental_cli_gate.py",
     "scripts/benchmark_synthetic_archives.py", "tests/test_benchmark_synthetic_archives.py",
 )
@@ -369,11 +370,13 @@ def verify():
     metrics = sizes.get("metrics", {})
     benchmark_ok = (
         code == 0 and sizes.get("status") == "PASS_SYNTHETIC_STORAGE_COMPARISON_ONLY"
-        and type(sizes.get("checks")) is int and sizes["checks"] >= 9
+        and type(sizes.get("checks")) is int and sizes["checks"] >= 11
         and sizes.get("same_synthetic_workload") is True
         and sizes.get("both_generations_restored") is True
         and sizes.get("second_generation_reused_blocks") is True
         and sizes.get("source_unchanged_during_archiving") is True
+        and sizes.get("compressed_generations_restored") is True
+        and sizes.get("compressed_second_reused_blocks") is True
         and sizes.get("no_universal_compression_claim") is True
         and sizes.get("ready_for_customer_data") is False
         and isinstance(metrics, dict)
@@ -384,6 +387,11 @@ def verify():
         and type(metrics.get("cas_minus_zip_bytes")) is int
         and metrics["cas_minus_zip_bytes"] == (
             metrics["cas_total_stored_bytes"] - metrics["two_zip_archives_bytes"])
+        and type(metrics.get("compressed_cas_total_stored_bytes")) is int
+        and metrics["compressed_cas_total_stored_bytes"] > 0
+        and type(metrics.get("compressed_cas_minus_zip_bytes")) is int
+        and metrics["compressed_cas_minus_zip_bytes"] == (
+            metrics["compressed_cas_total_stored_bytes"] - metrics["two_zip_archives_bytes"])
     )
     report["steps"].append({
         "step": "synthetic_archive_size_comparison",

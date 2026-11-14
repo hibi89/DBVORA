@@ -9,10 +9,12 @@ class BenchmarkSyntheticArchivesTests(unittest.TestCase):
     def test_bytes_are_observed_and_both_archive_formats_restore(self):
         data = verify()
         self.assertEqual(data["status"], STATUS)
-        self.assertEqual(data["checks"], 9)
+        self.assertEqual(data["checks"], 11)
         self.assertTrue(data["same_synthetic_workload"])
         self.assertTrue(data["both_generations_restored"])
         self.assertTrue(data["second_generation_reused_blocks"])
+        self.assertTrue(data["compressed_generations_restored"])
+        self.assertTrue(data["compressed_second_reused_blocks"])
         self.assertTrue(data["source_unchanged_during_archiving"])
         self.assertTrue(data["no_universal_compression_claim"])
         self.assertFalse(data["ready_for_customer_data"])
@@ -20,6 +22,11 @@ class BenchmarkSyntheticArchivesTests(unittest.TestCase):
         self.assertGreater(metrics["two_zip_archives_bytes"], 0)
         self.assertGreater(metrics["cas_total_stored_bytes"], 0)
         self.assertGreater(metrics["cas_second_reused_chunks"], 0)
+        self.assertGreater(metrics["compressed_cas_total_stored_bytes"], 0)
+        self.assertGreater(metrics["compressed_cas_second_reused_chunks"], 0)
+        self.assertEqual(metrics["compressed_cas_minus_zip_bytes"],
+                         metrics["compressed_cas_total_stored_bytes"]
+                         - metrics["two_zip_archives_bytes"])
         self.assertEqual(metrics["cas_minus_zip_bytes"],
                          metrics["cas_total_stored_bytes"] - metrics["two_zip_archives_bytes"])
 

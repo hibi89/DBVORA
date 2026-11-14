@@ -13,6 +13,7 @@ import sqlite3
 import tempfile
 
 from dbvora.archive.incremental_cas import create_incremental, restore_incremental
+from dbvora.archive.compressed_cas import create_compressed, restore_compressed
 from dbvora.archive.safe_zip import (
     create_snapshot, make_zip_archive, restore_zip_archive,
 )
@@ -27,6 +28,8 @@ def verify():
         "status": "FAIL_CLOSED", "checks": 0,
         "same_synthetic_workload": False, "both_generations_restored": False,
         "second_generation_reused_blocks": False,
+        "compressed_generations_restored": False,
+        "compressed_second_reused_blocks": False,
         "source_unchanged_during_archiving": False,
         "no_universal_compression_claim": True,
         "customer_data": False, "ready_for_customer_data": False,
@@ -45,7 +48,8 @@ def verify():
                      for i in range(3, 203)),
                 )
                 conn.commit()
-            names = ("snapshots", "zip", "chunks", "manifests", "cas_restore", "zip_restore")
+            names = ("snapshots", "zip", "chunks", "manifests", "cas_restore", "zip_restore",
+                     "compressed_chunks", "compressed_manifests", "compressed_restore")
             folders = {name: base / name for name in names}
             for folder in folders.values():
                 folder.mkdir()
@@ -83,6 +87,19 @@ def verify():
             report["second_generation_reused_blocks"] = True
             report["checks"] += 1
 
+            compressed_first = create_compressed(
+                first, folders["compressed_chunks"], folders["compressed_manifests"],
+                synthetic_only=True, accept_plaintext=True)
+            compressed_second = create_compressed(
+                second, folders["compressed_chunks"], folders["compressed_manifests"],
+                synthetic_only=True, accept_plaintext=True)
+            if (compressed_first["snapshot_sha256"] != first_sha
+                    or compressed_second["snapshot_sha256"] != second_sha
+                    or compressed_second["reused_chunks"] < 1):
+                raise ValueError("COMPRESSED_REUSE_FAILED")
+            report["compressed_second_reused_blocks"] = True
+            report["checks"] += 1
+
             for pair in ((z1, first_sha), (z2, second_sha)):
                 restored = restore_zip_archive(
                     pair[0]["archive_path"], folders["zip_restore"]
@@ -104,6 +121,17 @@ def verify():
             report["both_generations_restored"] = True
             report["checks"] += 1
 
+            for pair in ((compressed_first, first_sha), (compressed_second, second_sha)):
+                restored = restore_compressed(
+                    folders["compressed_manifests"] / pair[0]["manifest_name"],
+                    folders["compressed_chunks"], folders["compressed_restore"],
+                    synthetic_only=True, accept_plaintext=True)
+                file = folders["compressed_restore"] / restored["restored_name"]
+                if hashlib.sha256(file.read_bytes()).hexdigest() != pair[1]:
+                    raise ValueError("COMPRESSED_CAS_RESTORE_FAILED")
+            report["compressed_generations_restored"] = True
+            report["checks"] += 1
+
             if (hashlib.sha256(db.read_bytes()).hexdigest() != last_source_sha
                     or db.stat().st_mtime_ns != last_source_mtime):
                 raise ValueError("SOURCE_CHANGED_DURING_ARCHIVE")
@@ -114,8 +142,14 @@ def verify():
             zip_bytes = sum(p.stat().st_size for p in folders["zip"].glob("*.zip"))
             cas_chunk_bytes = sum(p.stat().st_size for p in folders["chunks"].glob("*.chunk"))
             cas_manifest_bytes = sum(p.stat().st_size for p in folders["manifests"].glob("*.json"))
+            compressed_chunk_bytes = sum(p.stat().st_size for p in
+                                         folders["compressed_chunks"].glob("*.cz"))
+            compressed_manifest_bytes = sum(p.stat().st_size for p in
+                                            folders["compressed_manifests"].glob("*.json"))
             if (zip_bytes <= 0 or cas_chunk_bytes <= 0 or cas_manifest_bytes <= 0
-                    or c2["new_stored_bytes"] > c2["source_bytes"]):
+                    or compressed_chunk_bytes <= 0 or compressed_manifest_bytes <= 0
+                    or c2["new_stored_bytes"] > c2["source_bytes"]
+                    or compressed_second["new_compressed_bytes"] > compressed_second["source_bytes"]):
                 raise ValueError("INVALID_OBSERVED_SIZES")
             report["checks"] += 1
             report["metrics"] = {
@@ -129,6 +163,14 @@ def verify():
                 "cas_second_reused_chunks": c2["reused_chunks"],
                 "cas_second_new_chunks": c2["new_chunks"],
                 "cas_minus_zip_bytes": cas_chunk_bytes + cas_manifest_bytes - zip_bytes,
+                "compressed_cas_chunks_bytes": compressed_chunk_bytes,
+                "compressed_cas_manifests_bytes": compressed_manifest_bytes,
+                "compressed_cas_total_stored_bytes": compressed_chunk_bytes + compressed_manifest_bytes,
+                "compressed_cas_minus_zip_bytes": (
+                    compressed_chunk_bytes + compressed_manifest_bytes - zip_bytes),
+                "compressed_cas_second_reused_chunks": compressed_second["reused_chunks"],
+                "compressed_cas_second_new_chunks": compressed_second["new_chunks"],
+                "compressed_cas_second_new_bytes": compressed_second["new_compressed_bytes"],
             }
             report["same_synthetic_workload"] = True
             report["checks"] += 1

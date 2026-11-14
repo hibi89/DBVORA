@@ -62,15 +62,19 @@ class VerificationGateTests(unittest.TestCase):
                             'customer_ready': False, 'power_loss_verified': False,
                             'automatic_deletion': False}), ''),
             (0, json.dumps({'status': 'PASS_SYNTHETIC_STORAGE_COMPARISON_ONLY',
-                            'checks': 9, 'same_synthetic_workload': True,
+                            'checks': 11, 'same_synthetic_workload': True,
                             'both_generations_restored': True,
+                            'compressed_generations_restored': True,
+                            'compressed_second_reused_blocks': True,
                             'second_generation_reused_blocks': True,
                             'source_unchanged_during_archiving': True,
                             'no_universal_compression_claim': True,
                             'ready_for_customer_data': False,
                             'metrics': {'two_zip_archives_bytes': 10,
                                         'cas_total_stored_bytes': 20,
-                                        'cas_minus_zip_bytes': 10}}), ''),
+                                        'cas_minus_zip_bytes': 10,
+                                        'compressed_cas_total_stored_bytes': 12,
+                                        'compressed_cas_minus_zip_bytes': 2}}), ''),
         ]
 
     def test_full_mocked_gate_synthetic_pass_not_customer_release(self):
