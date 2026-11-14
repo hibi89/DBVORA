@@ -120,6 +120,8 @@ function inspect(tableName) {
   storageStatus.setAttribute('role', 'status');
   storageStatus.setAttribute('aria-live', 'polite');
   measure.addEventListener('click', async () => {
+    const measurementDbId = workspace ? selectedDatabase : inventory?.db_id;
+    const measurementInventory = inventory;
     measure.disabled = true;
     storageStatus.textContent = '측정 중…';
     const controller = new AbortController();
@@ -132,6 +134,10 @@ function inspect(tableName) {
       if (!response.ok) throw new Error('measurement_unavailable');
       const data = await response.json();
       const metric = data?.metric;
+      // Ignore a late response from a previously selected database/table.
+      if (inventory !== measurementInventory ||
+          (workspace ? selectedDatabase : inventory?.db_id) !== measurementDbId ||
+          !measure.isConnected) return;
       if (data?.contract !== 'dbvora.local-table-storage.v1' || data.table !== table.name
           || typeof data.scope !== 'string' || !data.scope.includes('dbstat')) {
         throw new Error('measurement_contract_mismatch');
@@ -145,10 +151,14 @@ function inspect(tableName) {
         throw new Error('measurement_invalid');
       }
     } catch (_error) {
-      storageStatus.textContent = '측정 실패 · DB 상태 확인 후 다시 시도하세요.';
+      if (inventory === measurementInventory &&
+          (workspace ? selectedDatabase : inventory?.db_id) === measurementDbId &&
+          measure.isConnected) {
+        storageStatus.textContent = '측정 실패 · DB 상태 확인 후 다시 시도하세요.';
+      }
     } finally {
       clearTimeout(deadline);
-      measure.disabled = false;
+      if (measure.isConnected) measure.disabled = false;
     }
   });
   storage.append(measure, storageStatus);
