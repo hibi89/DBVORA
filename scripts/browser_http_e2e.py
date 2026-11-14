@@ -161,6 +161,14 @@ def run(*, screenshots=None):
                             and page.locator("#persistent-growth-samples .growth-sample").count() == 3,
                             "PERSISTENT_OBSERVATION_UI_FAILED")
                     result["checks"].append("persistent_observation_ledger_get_and_ui")
+                    page.reload(wait_until="networkidle", timeout=30000)
+                    page.wait_for_function(
+                        "() => document.querySelector('#persistent-growth-status').textContent.includes('영구 관측 3건')",
+                        timeout=15000)
+                    require(page.locator("#persistent-growth-samples .growth-sample").count() == 3
+                            and "증가 +3 KB" in page.locator("#persistent-growth-trend").inner_text(),
+                            "PERSISTENT_OBSERVATION_RELOAD_FAILED")
+                    result["checks"].append("persistent_observation_survives_page_reload")
                     page.wait_for_function(
                         "() => document.querySelectorAll('#edges path').length === 1",
                         timeout=15000)

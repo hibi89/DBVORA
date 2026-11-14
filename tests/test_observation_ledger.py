@@ -1,12 +1,13 @@
 """Synthetic-only acceptance for explicit local observation persistence."""
-import sqlite3
 from contextlib import closing
+from datetime import datetime, timedelta, timezone
+import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
 
 from dbvora.observation_ledger import (
-    ObservationError, append_observation, read_observations,
+    MAX_RECORDS, ObservationError, _digest, append_observation, read_observations,
 )
 
 SCOPE = "sqlite_main_file_excluding_wal_shm"
@@ -65,6 +66,42 @@ class LedgerTest(unittest.TestCase):
         before = self.path.read_bytes()
         self.assertEqual(len(read_observations(self.path, db_id="synthetic_db")), 1)
         self.assertEqual(self.path.read_bytes(), before)
+
+    def test_enforces_ten_thousand_record_capacity(self):
+        self.assertEqual(MAX_RECORDS, 10_000)
+        origin = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        previous = "0" * 64
+        records = []
+        for seq in range(MAX_RECORDS):
+            observed_at = (origin + timedelta(seconds=seq)).isoformat(
+                timespec="microseconds")
+            body = {"db_id": "synthetic_db", "observed_at": observed_at,
+                    "size_bytes": seq, "scope": SCOPE, "prev_hash": previous}
+            record_hash = _digest(body)
+            records.append((body["db_id"], observed_at, body["size_bytes"],
+                            body["scope"], previous, record_hash))
+            previous = record_hash
+        with closing(sqlite3.connect(self.path)) as conn:
+            conn.execute("""CREATE TABLE observations (
+                seq INTEGER PRIMARY KEY AUTOINCREMENT,
+                db_id TEXT NOT NULL,
+                observed_at TEXT NOT NULL,
+                size_bytes INTEGER NOT NULL,
+                scope TEXT NOT NULL,
+                prev_hash TEXT NOT NULL,
+                record_hash TEXT NOT NULL,
+                UNIQUE(db_id, observed_at, scope)
+            )""")
+            conn.executemany(
+                "INSERT INTO observations(db_id,observed_at,size_bytes,scope,prev_hash,record_hash) "
+                "VALUES (?,?,?,?,?,?)", records)
+            conn.commit()
+        next_time = (origin + timedelta(seconds=MAX_RECORDS)).isoformat(
+            timespec="microseconds")
+        with self.assertRaisesRegex(ObservationError, "capacity"):
+            self.append(next_time, MAX_RECORDS)
+        self.assertEqual(len(read_observations(self.path, db_id="synthetic_db")),
+                         MAX_RECORDS)
 
     def test_rejects_bad_metadata(self):
         for db, at, size in [("postgres://secret", "2026-11-14T01:00:00Z", 1),
