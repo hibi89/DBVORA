@@ -1,6 +1,7 @@
 """Synthetic offline demo safety checks; no customer DB/network."""
 from pathlib import Path
-from contextlib import closing
+from contextlib import closing, redirect_stdout
+import io
 import json
 import sqlite3
 import tempfile
@@ -43,6 +44,38 @@ class DemoPreviewTests(unittest.TestCase):
             self.assertEqual(second["status"], "CREATED_SYNTHETIC_DEMO")
             self.assertNotEqual(first["filename"], second["filename"])
             self.assertEqual(before, (Path(tmp) / first["filename"]).read_bytes())
+
+    def test_synthetic_cli_accepts_relative_existing_folder_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            folder = root / "maps"
+            folder.mkdir()
+            stdout = io.StringIO()
+            with patch.object(demo_preview.Path, "cwd", return_value=root):
+                with redirect_stdout(stdout):
+                    exit_code = demo_preview.main([
+                        "--synthetic-only", "--out", "./maps"])
+            report = json.loads(stdout.getvalue())
+            self.assertEqual(exit_code, 0, report)
+            self.assertEqual(report["status"], "CREATED_SYNTHETIC_DEMO")
+            self.assertTrue((folder / report["filename"]).is_file())
+            self.assertFalse(report["ready_for_customer_data"])
+            self.assertNotIn(str(root), stdout.getvalue())
+            self.assertNotIn(demo_preview._SENTINEL, (folder / report["filename"]).read_text(encoding="utf-8"))
+
+    def test_relative_cli_cannot_create_missing_folder(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            stdout = io.StringIO()
+            with patch.object(demo_preview.Path, "cwd", return_value=Path(tmp)):
+                with redirect_stdout(stdout):
+                    exit_code = demo_preview.main([
+                        "--synthetic-only", "--out", "./private_missing_folder"])
+            report = json.loads(stdout.getvalue())
+            self.assertEqual(exit_code, 1)
+            self.assertEqual(report["status"], "FAIL_CLOSED")
+            self.assertEqual(report["error_code"], "INVALID_OUTPUT")
+            self.assertFalse((Path(tmp) / "private_missing_folder").exists())
+            self.assertNotIn("private_missing_folder", stdout.getvalue())
 
     def test_relative_output_rejected(self):
         self.assertEqual(demo_preview.create_demo("relative-output")["status"], "FAIL_CLOSED")
