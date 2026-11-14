@@ -33,12 +33,25 @@ def start_server(database: Path, dsn: str, port: int) -> subprocess.Popen:
     env['DBVORA_POSTGRES_DSN'] = dsn
     proc = subprocess.Popen(
         [sys.executable, '-m', 'dbvora.serve', '--db', str(database), '--port', str(port)],
-        cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        cwd=ROOT, env=env, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
     )
     try:
         for _ in range(100):
             if proc.poll() is not None:
-                raise RuntimeError('LOCAL_SERVER_START_FAILED')
+                _, diagnostics = proc.communicate(timeout=5)
+                startup_code = 'LOCAL_SERVER_START_FAILED'
+                for line in diagnostics.decode('utf-8', errors='replace').splitlines():
+                    try:
+                        report = json.loads(line)
+                    except (json.JSONDecodeError, TypeError):
+                        continue
+                    error = report.get('error') if isinstance(report, dict) else None
+                    candidate = error.get('code') if isinstance(error, dict) else None
+                    if candidate in {'PORT_IN_USE', 'UI_DEPENDENCY_MISSING',
+                                     'STARTUP_FAILED', 'SERVER_START_FAILED'}:
+                        startup_code = 'LOCAL_SERVER_START_FAILED:' + candidate
+                        break
+                raise RuntimeError(startup_code)
             try:
                 with urlopen('http://127.0.0.1:' + str(port) + '/health', timeout=0.25) as response:
                     if response.status == 200:
@@ -47,8 +60,15 @@ def start_server(database: Path, dsn: str, port: int) -> subprocess.Popen:
                 time.sleep(0.1)
         raise RuntimeError('LOCAL_SERVER_START_TIMEOUT')
     except Exception:
-        proc.terminate()
-        proc.wait(timeout=5)
+        if proc.poll() is None:
+            proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait(timeout=5)
+        if proc.stderr is not None:
+            proc.stderr.close()
         raise
 
 
@@ -60,6 +80,8 @@ def stop_server(proc: subprocess.Popen) -> None:
         except subprocess.TimeoutExpired:
             proc.kill()
             proc.wait(timeout=5)
+    if proc.stderr is not None:
+        proc.stderr.close()
 
 
 def _capture_sanitized_screenshot(page, directory: Path, name: str) -> None:

@@ -92,12 +92,18 @@ class PortableLauncherLifecycleTests(unittest.TestCase):
         while time.monotonic() < deadline:
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-                    probe.bind(('127.0.0.1', port))
-                return
+                    probe.settimeout(0.25)
+                    active = probe.connect_ex(('127.0.0.1', port)) == 0
+                if not active:
+                    return
             except OSError as error:
                 last_error = error
-                time.sleep(0.2)
-        self.fail(f'LOCAL_PORT_REMAINS_BOUND: {last_error}')
+                if getattr(error, 'errno', None) != 10061:
+                    time.sleep(0.2)
+                    continue
+                return
+            time.sleep(0.2)
+        self.fail(f'LOCAL_PORT_REMAINS_ACTIVE: {last_error}')
 
     def _postgres_disabled(self, port: int):
         try:

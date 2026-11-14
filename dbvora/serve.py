@@ -14,14 +14,11 @@ def _address_in_use(error: OSError) -> bool:
 
 
 def _port_in_use(port: int) -> bool:
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
-            probe.bind(('127.0.0.1', port))
-        return False
-    except OSError as error:
-        if _address_in_use(error):
-            return True
-        raise
+    # A connect probe detects a listening local service without reserving an
+    # otherwise-free port or misclassifying an unrelated TIME_WAIT socket.
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+        probe.settimeout(0.25)
+        return probe.connect_ex(('127.0.0.1', port)) == 0
 
 
 def _report_error(code: str, message: str, exit_code: int) -> int:
