@@ -76,13 +76,32 @@ def _native_move_write_through(stage: Path, target: Path) -> None:
         raise WinPublishError("MOVE_FAILED")
 
 
+def _is_windows_reparse_point(path: Path) -> bool:
+    """Refuse a reparse-point fixture root, including Windows junctions."""
+    if os.name != "nt":
+        return False
+    try:
+        get_attrs = ctypes.WinDLL("kernel32", use_last_error=True).GetFileAttributesW
+        get_attrs.argtypes = (wintypes.LPCWSTR,)
+        get_attrs.restype = wintypes.DWORD
+        attrs = get_attrs(str(path))
+        return attrs == 0xFFFFFFFF or bool(attrs & 0x400)
+    except (OSError, TypeError, ValueError, AttributeError):
+        return True
+
+
 def _validate_synthetic_paths(root: Path, staged: Path, target: Path) -> None:
     try:
         temp_root = Path(tempfile.gettempdir()).resolve(strict=True)
         if (not isinstance(root, Path) or not isinstance(staged, Path) or not isinstance(target, Path)
                 or not _SYNTHETIC_ROOT.fullmatch(root.name)
-                or root.parent != temp_root
-                or root.is_symlink() or root.resolve(strict=True) != root
+                # Windows may spell TEMP using an 8.3 alias (RUNNER~1).
+                # Compare canonical *locations*, while rejecting reparse roots
+                # and symbolic-link path components to prevent an escape.
+                or root.parent.resolve(strict=True) != temp_root
+                or root.resolve(strict=True).parent != temp_root
+                or any(part.is_symlink() for part in (root, *root.parents))
+                or _is_windows_reparse_point(root)
                 or staged.parent != root or target.parent != root
                 or not _STAGED_NAME.fullmatch(staged.name)
                 or not _TARGET_NAME.fullmatch(target.name)):

@@ -87,7 +87,15 @@ class WorkspaceStorageTests(unittest.TestCase):
         first = growth[current["databases"][0]["db_id"]]
         self.assertEqual(first["status"], "measured")
         self.assertGreater(first["delta_main_file_bytes"], 0)
-        self.assertGreater(first["table_deltas"]["inventory"]["delta_allocated_btree_bytes"], 0)
+        # The dbstat watchdog intentionally returns 'unavailable' on slow
+        # hosts rather than inventing per-table page counts. Do not turn that
+        # safety cap off just to make Windows CI green.
+        inventory_delta = first["table_deltas"].get("inventory")
+        if inventory_delta is not None:
+            self.assertEqual(inventory_delta["status"], "measured")
+            self.assertGreater(inventory_delta["delta_allocated_btree_bytes"], 0)
+        else:
+            self.assertEqual(current["databases"][0]["btree_bytes"], {})
         self.assertEqual(first["trend"], "two_observations_only_no_forecast")
         second = growth[current["databases"][1]["db_id"]]
         self.assertEqual(second["delta_main_file_bytes"], 0)

@@ -319,7 +319,7 @@ class PortableTests(unittest.TestCase):
         self.assertEqual(process.returncode, 0, process.stderr)
         response = json.loads(process.stdout)
         self.assertEqual(response['status'], 'CREATED_OFFLINE_SCHEMA_HTML')
-        self.assertIn('Content-Security-Policy', (out / response['filename']).read_text())
+        self.assertIn('Content-Security-Policy', (out / response['filename']).read_text(encoding="utf-8"))
         self.assertEqual(hashlib.sha256(src.read_bytes()).hexdigest(), before)
 
     def test_extracted_portable_offline_selfcheck_needs_no_pip_or_customer_db(self):

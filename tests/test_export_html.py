@@ -30,7 +30,7 @@ class OfflineHtmlTests(unittest.TestCase):
     def test_export_one_local_html_with_only_schema(self):
         before = self.identity()
         result = view.export(self.db, self.out)
-        html = (self.out / result['filename']).read_text()
+        html = (self.out / result['filename']).read_text(encoding="utf-8")
         self.assertEqual(result['status'], 'CREATED_OFFLINE_SCHEMA_HTML')
         self.assertFalse(result['ready_for_customer_data'])
         self.assertFalse(result['contains_table_rows'])
@@ -50,7 +50,7 @@ class OfflineHtmlTests(unittest.TestCase):
         with closing(sqlite3.connect(self.db)) as conn:
             conn.execute('CREATE TABLE "' + attack + '" ("<svg onload=alert(9)>" TEXT)')
         data = view.export(self.db, self.out)
-        html = (self.out / data['filename']).read_text()
+        html = (self.out / data['filename']).read_text(encoding="utf-8")
         self.assertNotIn(attack, html)
         self.assertNotIn('<svg onload', html)
         encoded = re.search(r'const localSchemaBase64 = "([a-zA-Z0-9+/=]+)"', html)

@@ -37,7 +37,7 @@ class MixedCliTests(unittest.TestCase):
         ts = self.source.stat().st_mtime_ns
         code, result = self.invoke(self.flags)
         self.assertEqual(code, 0)
-        page = (self.output / result['result']['filename']).read_text()
+        page = (self.output / result['result']['filename']).read_text(encoding="utf-8")
         self.assertIn('Structure map', page)
         self.assertIn('customers', page)
         self.assertTrue(result['result']['status'].startswith('OFFLINE_'))
@@ -106,7 +106,7 @@ class MixedCliTests(unittest.TestCase):
             code, result = self.invoke(args)
         self.assertEqual(code, 0)
         self.assertEqual(connect.call_count, 1)
-        self.assertIn('public.orders', (self.output / result['result']['filename']).read_text())
+        self.assertIn('public.orders', (self.output / result['result']['filename']).read_text(encoding="utf-8"))
         self.assertNotIn('password', json.dumps(result))
         self.assertNotIn('secret', json.dumps(result))
 

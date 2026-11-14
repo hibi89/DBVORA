@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import base64
+from contextlib import closing
 import json
 from pathlib import Path
 import re
@@ -38,7 +39,9 @@ class SchemaReviewUiTests(unittest.TestCase):
     def test_real_sqlite_catalog_only_and_no_row_leak(self):
         files = [self.root / "one.db", self.root / "two.db"]
         for p in files:
-            with sqlite3.connect(p) as connection:
+            # sqlite3.Connection context managers COMMIT but do NOT CLOSE;
+            # Windows will retain a handle and block TemporaryDirectory cleanup.
+            with closing(sqlite3.connect(p)) as connection:
                 connection.execute("CREATE TABLE logs(message TEXT)")
                 connection.execute("INSERT INTO logs VALUES('PRIVATE_ROW_NEVER_EXPORT')")
                 connection.commit()

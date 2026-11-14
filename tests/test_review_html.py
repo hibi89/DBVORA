@@ -190,7 +190,7 @@ class ReviewHtmlTests(unittest.TestCase):
         self.assertEqual(result, 0, stderr.getvalue())
         report = json.loads(stdout.getvalue())['result']
         self.assertFalse(report['customer_ready'])
-        self.assertIn('중단된 요청', (o / report['report_name']).read_text())
+        self.assertIn('중단된 요청', (o / report['report_name']).read_text(encoding="utf-8"))
         self.assertEqual(before, ledger.read_bytes())
         self.assertEqual(len(list(a.iterdir())), 0)
 
