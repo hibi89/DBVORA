@@ -19,7 +19,7 @@ class Element {
   getBoundingClientRect() { return {left: 100, top: 100, width: 120, height: 100}; }
   get classList() { return {toggle: (name, yes) => { if (yes && !this.className.includes(name)) this.className += ' ' + name; }}; }
 }
-const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','database-topology','workspace-summary','growth-status','growth-scope'].map(id => [id, new Element('div')]));
+const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','database-topology','workspace-summary','growth-status','growth-scope','growth-history'].map(id => [id, new Element('div')]));
 ids.diagram.getBoundingClientRect = () => ({left: 0, top: 0, width: 800, height: 600});
 const doc = {getElementById: id => ids[id], createElement: tag => new Element(tag), createElementNS: (_, tag) => new Element(tag)};
 const marker = '<img src=x onerror=alert(7)>';
@@ -60,6 +60,7 @@ setImmediate(async () => {
     assert.equal(ids.tables.children.length, 3);
     assert.equal(ids['database-selector'].hidden, true, 'single DB must hide chooser');
     assert.ok(ids['growth-status'].textContent.includes('첫 측정'), 'baseline no fabricated trend');
+    assert.ok(ids['growth-history'].textContent.includes('1건'), 'one verified baseline sample');
     assert.equal(ids['database-topology'].children.length, 0, 'single DB topology remains hidden');
     assert.equal(ids['tables-count'].textContent, '3');
     assert.equal(ids['links-count'].textContent, '1');
@@ -108,9 +109,11 @@ setImmediate(async () => {
     currentInventory = {...data, size_bytes: data.size_bytes + 2048,
       observed_at: '2026-10-26T07:05:00Z'};
     await ids.refresh.events.click();
+    assert.ok(ids['growth-history'].textContent.includes('2건'), 'second verified observation recorded');
     assert.ok(ids['growth-status'].textContent.includes('증가 +2 KB'),
       'show measured two-sample main-file delta');
     await ids.refresh.events.click();
+    assert.ok(ids['growth-history'].textContent.includes('2건'), 'equal timestamp does not add duplicate history');
     assert.ok(ids['growth-status'].textContent.includes('비교 불가'),
       'equal-time comparison cannot be claimed as growth');
     assert.equal(resizeCount(), 1, 'repeated refresh must not accumulate resize listeners');
