@@ -90,13 +90,21 @@ def _write_chunk(root: Path, data: bytes) -> tuple[str, bool]:
         _sync_staged_file(staged)
         try:
             if os.name == "nt":
+                # Never convert an unverified native publish failure to success.
                 _publish_new_ntfs(staged, root, final)
             else:
-                os.link(staged, final, follow_symlinks=False)
+                try:
+                    os.link(staged, final, follow_symlinks=False)
+                except FileExistsError:
+                    if _read_chunk(root, digest) != data:
+                        raise IncrementalError("CHUNK_COLLISION")
+                    return digest, False
                 _sync_directory(root)
-        except (ArchiveError, FileExistsError):
-            if os.path.lexists(final) and _read_chunk(root, digest) == data:
-                return digest, False
+                # A newly-linked POSIX inode has nlink=2 until the staging
+                # name goes away. Verify it only after nlink returns to 1.
+                staged.unlink(missing_ok=True)
+                _sync_directory(root)
+        except ArchiveError:
             raise IncrementalError("CHUNK_PUBLISH_UNVERIFIED") from None
         if _read_chunk(root, digest) != data:
             raise IncrementalError("CHUNK_VERIFY_FAILED")
