@@ -20,7 +20,7 @@ const ids = Object.fromEntries(['refresh','error','size','tables-count','links-c
 ids.diagram.getBoundingClientRect = () => ({left: 0, top: 0, width: 800, height: 600});
 const doc = {getElementById: id => ids[id], createElement: tag => new Element(tag), createElementNS: (_, tag) => new Element(tag)};
 const marker = '<img src=x onerror=alert(7)>';
-const data = {engine:'sqlite',db_id:'abc12345678901234567890',size_bytes:12345, observed_at:'2026-10-26T07:00:00Z',
+const data = {contract_version:'p0-01.v1',engine:'sqlite',db_id:'abc12345678901234567890',size_bytes:12345, observed_at:'2026-10-26T07:00:00Z',
   relationships:[{from_table:'orders',to_table:'customers',from_columns:['customer_id'],to_columns:['id'],evidence:'declared_foreign_key'}],
   tables:[
     {name:'customers', columns:[{name:'id',type:'INTEGER',pk_position:1,nullable_declared:true}],indexes:[],foreign_keys:[]},

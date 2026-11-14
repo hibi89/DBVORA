@@ -234,7 +234,7 @@ def run(*, screenshots=None):
                             from_table: table.name, to_table: tables[i].name,
                             evidence: 'declared_foreign_key'
                         }));
-                        const source = {engine: 'sqlite', db_id: 'a'.repeat(24),
+                        const source = {contract_version: 'p0-01.v1', engine: 'sqlite', db_id: 'a'.repeat(24),
                             size_bytes: 4096, observed_at: '2026-11-14T00:00:00Z',
                             tables, relationships};
                         const started = performance.now();
