@@ -64,7 +64,10 @@ function recordMeasurements(data) {
     } else {
       comparisons.set(db.db_id, {status: 'baseline'});
     }
-    next.set(db.db_id, {size_bytes: db.size_bytes, timestamp});
+    // A stale server timestamp cannot roll the accepted baseline backwards.
+    // Retain the last verified sample while still reporting comparison unavailable.
+    const accepted = prior && timestamp <= prior.timestamp ? prior : {size_bytes: db.size_bytes, timestamp};
+    next.set(db.db_id, accepted);
   }
   // Enforce a bounded memory footprint (<= 8 server-selected DBs).
   lastMeasurements = next;
