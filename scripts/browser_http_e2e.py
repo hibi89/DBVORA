@@ -820,6 +820,54 @@ def run(*, screenshots=None):
                             and nodes.nth(0).get_attribute('aria-pressed') == 'true',
                             'MULTI_TOPOLOGY_CLICK_SELECTION')
                     result['checks'].append('multi_topology_two_nodes_keyboard_click')
+                    # R01-07: hold a real browser fetch Promise until after
+                    # switching DBs; stale success/failure must not leak.
+                    multi_page.evaluate("""() => {
+                      window.__storageFetchOriginal = window.fetch;
+                      window.__storagePending = [];
+                      window.fetch = (url, options) => {
+                        if (String(url).startsWith('/api/table-storage?')) {
+                          return new Promise((resolve, reject) =>
+                            window.__storagePending.push({resolve, reject}));
+                        }
+                        return window.__storageFetchOriginal(url, options);
+                      };
+                    }""")
+                    multi_page.locator('.storage-measure').click()
+                    multi_page.wait_for_function(
+                        "() => window.__storagePending.length === 1")
+                    multi_page.locator('#database-topology button.topology-database').nth(1).click()
+                    require(multi_page.locator('#tables-count').inner_text() == '2'
+                            and multi_page.locator('.storage-status').inner_text().startswith('측정 전'),
+                            'MULTI_RACE_SWITCH_PRECONDITION')
+                    multi_page.evaluate("""() => window.__storagePending.shift().resolve({
+                      ok: true, json: async () => ({
+                        contract: 'dbvora.local-table-storage.v1',
+                        table: 'customers',
+                        scope: 'logical_btree_pages_dbstat_including_indexes_wal_pages_possible',
+                        metric: {status:'measured', allocated_btree_bytes:999999}
+                      })
+                    })""")
+                    multi_page.wait_for_timeout(100)
+                    require(multi_page.locator('#tables-count').inner_text() == '2'
+                            and multi_page.locator('.storage-status').inner_text().startswith('측정 전')
+                            and not multi_errors, 'MULTI_RACE_STALE_SUCCESS_LEAK')
+                    multi_page.locator('.storage-measure').click()
+                    multi_page.wait_for_function(
+                        "() => window.__storagePending.length === 1")
+                    multi_page.locator('#database-topology button.topology-database').first.click()
+                    multi_page.evaluate("""() => window.__storagePending.shift().reject(
+                      new TypeError('synthetic stale transport error'))""")
+                    multi_page.wait_for_timeout(100)
+                    require(multi_page.locator('#tables-count').inner_text() == '3'
+                            and multi_page.locator('.storage-status').inner_text().startswith('측정 전')
+                            and not multi_errors, 'MULTI_RACE_STALE_FAILURE_LEAK')
+                    multi_page.evaluate("""() => {
+                      window.fetch = window.__storageFetchOriginal;
+                      delete window.__storagePending;
+                      delete window.__storageFetchOriginal;
+                    }""")
+                    result['checks'].append('multi_delayed_storage_success_failure_isolated')
                     multi_page.locator('#database-list button').nth(1).click()
                     require(multi_page.locator('#tables-count').inner_text() == '2'
                             and multi_page.locator('#edges path').count() == 1
