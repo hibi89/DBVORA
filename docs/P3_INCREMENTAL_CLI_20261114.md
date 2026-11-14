@@ -16,3 +16,6 @@ A. ZIP/ZSTD generation per snapshot, verified full restore, simplest recovery an
 - Cross-platform Windows2025 and Ubuntu24.04 full suite at the exact source SHA.
 - Full gate must include \`synthetic_incremental_cli_roundtrip\` as an additional **mandatory** stage, not only module tests.
 - Owner Windows10/11 and real interruptions, encryption, licensed packaging, customer acceptance still pending. 0원, \`[작업중]\`, official UNASSESSED, RELEASE HOLD.
+
+## 2026-11-14 compressed v2 CLI extension
+The original CLI create/restore defaults to raw v1 and is backward compatible. Explicit --format zlib selects independent versioned compressed CAS v2 and requires separate .cz chunk and manifest directories. No implicit auto-detection or conversion of v1 data. Real subprocess gate now checks both raw and compressed create/repeat/reuse/independent restore, explicit wrong-format rejection, tamper denial and source preservation, all in temporary synthetic-only directories. No customer DB or installer/retention operation is authorized. Full Windows/Linux exact-SHA gate remains mandatory.

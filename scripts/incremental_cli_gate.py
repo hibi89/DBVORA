@@ -25,7 +25,11 @@ def run():
               "status": "FAIL_CLOSED", "checks": 0,
               "source_unchanged": False, "independent_restore_verified": False,
               "second_generation_reused_chunks": False,
-              "tampered_chunk_rejected": False, "customer_ready": False,
+              "tampered_chunk_rejected": False,
+              "compressed_independent_restore_verified": False,
+              "compressed_second_generation_reused_chunks": False,
+              "compressed_tamper_rejected": False,
+              "format_mismatch_rejected": False, "customer_ready": False,
               "power_loss_verified": False, "automatic_deletion": False}
     try:
         with tempfile.TemporaryDirectory(prefix="dbvora-cas-e2e-") as root:
@@ -33,7 +37,8 @@ def run():
             source = create_fixture(base / "source.sqlite")
             original_hash = hashlib.sha256(source.read_bytes()).hexdigest()
             original_mtime = source.stat().st_mtime_ns
-            folders = [base / name for name in ("snap", "chunks", "manifests", "restores")]
+            folders = [base / name for name in ("snap", "chunks", "manifests", "restores",
+                                                   "zlib_chunks", "zlib_manifests", "zlib_restores")]
             for folder in folders:
                 folder.mkdir()
             snap = Path(create_snapshot(source, folders[0])["snapshot_path"])
@@ -91,6 +96,55 @@ def run():
                 raise ValueError("TAMPER_NOT_REJECTED")
             report["tampered_chunk_rejected"] = True
             report["checks"] += 1
+
+            # A separate explicit format flag is required: never silently
+            # reinterpret existing raw v1 manifest/chunk files as zlib v2.
+            zargs = ("--format", "zlib", "--snapshot", snap,
+                     "--chunk-dir", folders[4], "--manifest-dir", folders[5],
+                     "--synthetic-only", "--accept-plaintext")
+            zfirst = call("create", *zargs)["result"]
+            if (zfirst["status"] != "PUBLISHED_COMPRESSED_SYNTHETIC_ONLY"
+                    or zfirst["new_chunks"] < 1 or zfirst["ready_for_customer_data"] is not False):
+                raise ValueError("COMPRESSED_FIRST_FAILED")
+            report["checks"] += 1
+            zsecond = call("create", *zargs)["result"]
+            if (zsecond["new_chunks"] != 0
+                    or zsecond["reused_chunks"] != zfirst["chunks"]
+                    or zsecond["manifest_name"] == zfirst["manifest_name"]):
+                raise ValueError("COMPRESSED_REUSE_FAILED")
+            report["compressed_second_generation_reused_chunks"] = True
+            report["checks"] += 1
+            zrestore_args = ("--format", "zlib", "--manifest",
+                             folders[5] / zsecond["manifest_name"],
+                             "--chunk-dir", folders[4], "--output-dir", folders[6],
+                             "--synthetic-only", "--accept-plaintext")
+            zrestored = call("restore", *zrestore_args)["result"]
+            zfile = folders[6] / zrestored["restored_name"]
+            if (zrestored["status"] != "RESTORED_COMPRESSED_SYNTHETIC_ONLY"
+                    or zrestored["restored_sha256"] != hashlib.sha256(zfile.read_bytes()).hexdigest()
+                    or zrestored["restored_sha256"] != zsecond["snapshot_sha256"]):
+                raise ValueError("COMPRESSED_RESTORE_FAILED")
+            report["compressed_independent_restore_verified"] = True
+            report["checks"] += 1
+            mismatch = call("restore", "--manifest", folders[5] / zfirst["manifest_name"],
+                            "--chunk-dir", folders[4], "--output-dir", folders[6],
+                            "--synthetic-only", "--accept-plaintext", success=False)
+            if mismatch.get("error", {}).get("code") != "INVALID_MANIFEST":
+                raise ValueError("CROSS_FORMAT_NOT_REFUSED")
+            report["format_mismatch_rejected"] = True
+            report["checks"] += 1
+            zmanifest = json.loads(
+                (folders[5] / zsecond["manifest_name"]).read_text(encoding="utf-8"))
+            zchunk = folders[4] / (zmanifest["chunks"][0] + ".cz")
+            zchunk.write_bytes(b"tampered-only-in-disposable-test")
+            zfailure = call("restore", *zrestore_args, success=False)
+            if (zfailure.get("error", {}).get("code") not in
+                    ("INVALID_CHUNK_FILE", "INVALID_CHUNK_MAGIC", "CHUNK_UNAVAILABLE")
+                    or len(list(folders[6].glob("dbvora-*.sqlite"))) != 1):
+                raise ValueError("COMPRESSED_TAMPER_NOT_REFUSED")
+            report["compressed_tamper_rejected"] = True
+            report["checks"] += 1
+
             if (hashlib.sha256(source.read_bytes()).hexdigest() != original_hash
                     or source.stat().st_mtime_ns != original_mtime):
                 raise ValueError("ORIGINAL_MODIFIED")

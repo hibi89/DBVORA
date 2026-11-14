@@ -342,11 +342,15 @@ def verify():
     inc_ok = (
         code == 0
         and incremental.get("status") == "PASS_SYNTHETIC_INCREMENTAL_CLI_ONLY"
-        and type(inc_checks) is int and inc_checks >= 7
+        and type(inc_checks) is int and inc_checks >= 12
         and incremental.get("source_unchanged") is True
         and incremental.get("independent_restore_verified") is True
         and incremental.get("second_generation_reused_chunks") is True
         and incremental.get("tampered_chunk_rejected") is True
+        and incremental.get("compressed_independent_restore_verified") is True
+        and incremental.get("compressed_second_generation_reused_chunks") is True
+        and incremental.get("compressed_tamper_rejected") is True
+        and incremental.get("format_mismatch_rejected") is True
         and incremental.get("customer_ready") is False
         and incremental.get("power_loss_verified") is False
         and incremental.get("automatic_deletion") is False

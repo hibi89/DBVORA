@@ -15,16 +15,21 @@ class IncrementalCliTests(unittest.TestCase):
     def test_real_synthetic_subprocess_roundtrip_and_tamper(self):
         report = run()
         self.assertEqual(report["status"], "PASS_SYNTHETIC_INCREMENTAL_CLI_ONLY")
-        self.assertEqual(report["checks"], 7)
+        self.assertEqual(report["checks"], 12)
         self.assertTrue(report["independent_restore_verified"])
         self.assertTrue(report["second_generation_reused_chunks"])
         self.assertTrue(report["tampered_chunk_rejected"])
+        self.assertTrue(report["compressed_independent_restore_verified"])
+        self.assertTrue(report["compressed_second_generation_reused_chunks"])
+        self.assertTrue(report["compressed_tamper_rejected"])
+        self.assertTrue(report["format_mismatch_rejected"])
         self.assertFalse(report["customer_ready"])
 
     def test_missing_required_and_unknown_option_never_echo_paths(self):
         for args in ([], ["create", "--snapshot", "/secret/customer.sqlite"],
                      ["create", "--unknown", "/very-secret/customer.sqlite"],
-                     ["restore", "--manifest", "/very-secret/customer.json"]):
+                     ["restore", "--manifest", "/very-secret/customer.json"],
+                     ["create", "--format", "unknown", "--snapshot", "/secret/db"]):
             with self.subTest(args=args), io.StringIO() as capture, redirect_stderr(capture):
                 self.assertEqual(module.main(args), 2)
                 result = capture.getvalue()

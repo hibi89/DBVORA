@@ -13,6 +13,9 @@ import sys
 from dbvora.archive.incremental_cas import (
     IncrementalError, create_incremental, restore_incremental,
 )
+from dbvora.archive.compressed_cas import (
+    CompressedCasError, create_compressed, restore_compressed,
+)
 
 
 class _SafeParser(argparse.ArgumentParser):
@@ -35,6 +38,8 @@ def _parser():
     for command in (create, restore):
         command.add_argument("--synthetic-only", action="store_true")
         command.add_argument("--accept-plaintext", action="store_true")
+        command.add_argument("--format", choices=("raw", "zlib"), default="raw",
+                             help="raw v1 or separately versioned zlib v2")
     return p
 
 
@@ -42,19 +47,21 @@ def main(argv=None) -> int:
     try:
         args = _parser().parse_args(argv)
         if args.command == "create":
-            result = create_incremental(args.snapshot, args.chunk_dir, args.manifest_dir,
-                                        synthetic_only=args.synthetic_only,
-                                        accept_plaintext=args.accept_plaintext)
+            method = create_compressed if args.format == "zlib" else create_incremental
+            result = method(args.snapshot, args.chunk_dir, args.manifest_dir,
+                            synthetic_only=args.synthetic_only,
+                            accept_plaintext=args.accept_plaintext)
         elif args.command == "restore":
-            result = restore_incremental(args.manifest, args.chunk_dir, args.output_dir,
-                                         synthetic_only=args.synthetic_only,
-                                         accept_plaintext=args.accept_plaintext)
+            method = restore_compressed if args.format == "zlib" else restore_incremental
+            result = method(args.manifest, args.chunk_dir, args.output_dir,
+                            synthetic_only=args.synthetic_only,
+                            accept_plaintext=args.accept_plaintext)
         else:
             raise IncrementalError("INVALID_ARGUMENT")
         print(json.dumps({"ok": True, "command": args.command, "result": result},
                          sort_keys=True))
         return 0
-    except IncrementalError as exc:
+    except (IncrementalError, CompressedCasError) as exc:
         code = str(exc)
     except Exception:
         code = "INCREMENTAL_OPERATION_FAILED"
