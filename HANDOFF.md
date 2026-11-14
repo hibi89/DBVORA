@@ -1,3 +1,15 @@
+> **[2026-11-14 KST · DBVORA P100 High 설계→Instant 실행 10항 최신]**
+> 1. 목표/확정요구/기술: REQUIREMENTS 7개 최종설계 R01~R07 backend/frontend 100 목표, Python3.11+FastAPI+vanilla JS+SQLite/PG+ZIP/ZSTD/CAS, 사용자 원본/소버린 보존. 크몽등록은 별도 Codex; DATA2WEB CodeQL 미조치.
+> 2. 기능/결정: 최근 기능 기준 8bb07273f382에는 다중 SQLite 로컬 화면 선택·두 시점 용량 비교 구현. 이번 회차 High는 코드를 변경하지 않고 48개 원자 개발 작업 [마스터](docs/P100_INSTANT_EXECUTION_PLAN_20261114.md) 및 [High 검수](docs/P100_HIGH_FINAL_REVIEW_20261114.md) 설계·Instant 위임. 일괄 대규모 구현보다 원자 태스크+증거 게이트가 품질/원본보호 우수.
+> 3. 테스트/정확 SHA: 기능 8bb07273f3829248bae8516ac467bfbf7eb4f751, full [#43595216968](https://github.com/hibi89/DBVORA/actions/runs/43595216968) Windows/Linux 2/2 SUCCESS Python723 discovered: Ubuntu723PASS/0FAIL/0SKIP, Windows722PASS/0FAIL/1 named POSIX-onlySKIP, mandatory12/12 each. 실제 Chromium [#43595217004](https://github.com/hibi89/DBVORA/actions/runs/43595217004) 각각26/26 PASS, 합성만. 이번 신규 docs는 테스트 실행이 아님.
+> 4. 완료/진행/대기: 작업 48개 설계 완료(개발 PASS/점수 아님); 즉시 B00-B02 source gap map → R01-02·R01-03·R02-03·R03-04. 공식 UNASSESSED, 과거 내부95 비공식, DBVORA [작업중] RELEASE HOLD 등록0 유지. 실 Win10/고객 DB/물리정전/사용권/공식 배점 승인 미검증.
+> 5. 실패/근거/재시도: 이번 계획 문서 자동 생성 초기 스크립트 syntax error로 무커밋 → 더 단순한 단일 48작업 마스터 문서로 수정해 0f9ab2360d38 실제 커밋 성공. 기능 변경·고객 원본 위험 없음. Instant 실패 시 진전 없는 2회 뒤 STOP/PIVOT.
+> 6. Repo/브랜치/SHA/경로: hibi89/DBVORA@feature/p0-db-map, 기능 8bb07273f382, 설계 마스터 커밋 0f9ab2360d385bdc87b0688dfd9b2b14991082af. 최신 문서 HEAD는 후속 문서 커밋 SHA 별도 확인. 주요 경로 dbvora/api.py, dbvora/web, dbvora/archive, dbvora/connectors, scripts/verify_release_gate.py, scripts/browser_http_e2e.py.
+> 7. 운영/Production: 로컬/오프라인 Python/브라우저만; Vercel/Production 미적용. 무료 GitHub Windows2025+Ubuntu24.04 Python3.11/Node22/Chromium CI, 고객/소유자 실기기와 구분.
+> 8. 원본/백업/비밀: 원본 SQLite/고객 문서·DB/키/환경변수 GitHub·ChatGPT 전송 금지, 기존 백업 자동 삭제·동일 경로 overwrite 금지. 유료/권한/보안 설정/배포/판매는 사전 사용자 승인.
+> 9. 다음 순서/완료 정의/승인: Instant ㄱ 시작 시 B00/B01/B02 실제 소스/요구/검증 매핑 후 R01-02 동시 멀티 DB 지도, 이후 PG UI/관측 히스토리/일주 실행 러너. 매 SHA Ubuntu/Win/실 브라우저/복원 증거; 끝에 G90-01..03, High G90-04 독립 재검수, 사용자 G90-05 공식 가중치/QA 수용. 48작업 완료수는 완성률 아님.
+> 10. KST/확인시점/문서SHA: 2026-11-14 KST; 최신 검증 기능 8bb07273, CI #43595216968·브라우저 #43595217004. 이번 문서 SHA는 커밋 후 확인; 고객/실기기/정전/라이선스 미확인, UNASSESSED.
+
 > **[2026-11-14 KST · R02 opt-in local table page measurement · 10-point handoff]**
 > 1. **목표·용도·최종확정요구·기술:** DBVORA sovereign local read-only SQLite/PG visibility & safe archive, user whole R01–R07 final design backend+frontend100% goal (Kmong listing Codex separate); Python3.11 FastAPI, `sqlite dbstat`, vanilla JS+CSS and Playwright Chromium.
 > 2. **완료·비교·결정:** A eager scan during refresh (latency/large DB risk), B explicit per-table opt-in click (preserves 1k catalog browse, provenance and scan caps). **B chosen**. New `GET /api/table-storage` under existing localhost guard and selected immutable SQLite DB, validates table name/catalog & file identity; uses existing `collect_table_storage` with 64MiB/0.75s caps. Inspector button labels scoped B-tree allocation, not physical bytes; handles unavailable/timeout. UI, API, tests, Chromium acceptance updated; no archive/customer data changes.

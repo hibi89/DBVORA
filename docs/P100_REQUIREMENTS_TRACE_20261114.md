@@ -1,3 +1,8 @@
+## 2026-11-14 P100 High→Instant 전체 원자작업 설계 등록
+- 마스터 플랜 [48개 작업](P100_INSTANT_EXECUTION_PLAN_20261114.md), [High 독립 감사](P100_HIGH_FINAL_REVIEW_20261114.md). 원본 REQUIREMENTS 7요구와 충돌하면 원래 승인된 최종설계가 우선이며 기존 전체 수용 조건·과거 증거 변경 없음.
+- 최신 기능 SHA 8bb07273f382, release #43595216968 Ubuntu/Windows 각12/12, Python723 discovered Ubuntu723PASS/Windows722PASS+1POSIX SKIP, 0FAIL; Chromium #43595217004 각26/26 PASS. 이는 synthetic-only 개발 증거이며 실제 Win10 최신 설치/정전/고객/법무 미검증.
+- 공식 UNASSESSED, 제안 R01-R07 가중 미승인, 역사95 비공식; [작업중]/RELEASE HOLD/등록0. 이번 변경은 설계 문서뿐으로 새 기능·QA 성공 주장 금지.
+
 ## 2026-11-14 R02 explicit per-table B-tree allocation verification
 - New optional R02 table-inspector capacity lookup **GET-only** using existing read-only SQLite `dbstat` bounded to 64MiB main file/0.75s scan; user click starts scan; rows/physical disk/CPU/RAM not inferred.
 - Exact function source `226822d`, final Node test-only fix `cda8c804fe8e`, full [Windows/Linux #43592050942](https://github.com/hibi89/DBVORA/actions/runs/43592050942) 2/2 SUCCESS (719 discovered; Ubuntu719PASS/Win718PASS+POSIX-only1SKIP; mandatory12/12 each), actual [Chromium #43591919427](https://github.com/hibi89/DBVORA/actions/runs/43591919427) 23/23 each on identical production code source `226822d`.
