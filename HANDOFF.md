@@ -1,4 +1,16 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
+> 1. **목표·범위**: R01–R07 백엔드·프론트엔드 최종설계의 GitHub 기반 구현과 검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.
+> 2. **이번 완료**: R02-05 PostgreSQL 추정 통계 조회 UI/API를 추가했다. R01-03 TLS verify-full/read-only 카탈로그 UI와 분리된 별도 버튼 동작이다.
+> 3. **기능/검증 SHA**: 7669472fd40758184dc20e13e93c4c79860b252d. 통계 API는 허용 목록의 상태·추정 row count·heap/index 바이트/provenance만 반환한다.
+> 4. **전체 회귀**: [#43611295895](https://github.com/hibi89/DBVORA/actions/runs/43611295895) Ubuntu 742 PASS, Windows 741 PASS + POSIX-only SKIP 1, 모든 필수 게이트 통과.
+> 5. **브라우저/PG**: [Chromium #43611295885](https://github.com/hibi89/DBVORA/actions/runs/43611295885) 32/32 × 양 OS PASS. [실 PG16 TLS/UI #43611295871](https://github.com/hibi89/DBVORA/actions/runs/43611295871) 추정값 및 pg_relation_size/pg_indexes_size 표시, stale 안내, view unavailable·무허위 0, TLS 오류/복구, 행/DSN 미노출, 390px PASS.
+> 6. **Blueprint/패키징**: [Blueprint #43611296278](https://github.com/hibi89/DBVORA/actions/runs/43611296278), [미서명 Windows preview #43611295880](https://github.com/hibi89/DBVORA/actions/runs/43611295880), [synthetic source ZIP #43611295909](https://github.com/hibi89/DBVORA/actions/runs/43611295909) 모두 PASS; preview는 배포/판매 아님.
+> 7. **작업 상태**: R01-02, R01-03, R02-03, R02-05, R02-06은 합성 GitHub 범위에서 PASS_SCOPED. 전체 48항목 중 나머지는 계속 진행.
+> 8. **안전 경계**: 모든 시험 데이터 synthetic. browser/CLI는 DSN을 받지 않고 API는 GET-only/no query/body. 행 데이터·고객 credential 접근/기록 없음. PostgreSQL estimates may lag; unavailable ≠ zero.
+> 9. **다음 작업**: R03-04 하루/주 실행 러너. 사용자가 설계한 기본 OFF·명시 동의·중복 방지·실패 시 이전 generation 보존을 GitHub 합성 환경에서 계속 구현/검증한 뒤 R03-07 복원 UX로 진행.
+> 10. **공식 상태**: 전체 완성률 UNASSESSED, 과거 기술평가 95%는 비공식, [작업중]/RELEASE HOLD/크몽 실제 등록 0. 사용자 실기기·정전·권리·최종 수용 OWNER_GATE 유지.
+
+> **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
 > 1. **목표·범위**: DBVORA R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.
 > 2. **이번 완료**: R01-03 PostgreSQL 읽기 전용 카탈로그 UI를 추가했다. 서버 환경변수 DBVORA_POSTGRES_DSN만 읽고, 명시적 버튼 뒤 verify-full/read-only 카탈로그를 표시한다.
 > 3. **기능/검증 SHA**: b7993452e2330fe192652285075d9aa5525fbdbe. 오류 복구 테스트 하네스의 CSP 평가 문제를 수정한 최종 검증 코드 SHA다.

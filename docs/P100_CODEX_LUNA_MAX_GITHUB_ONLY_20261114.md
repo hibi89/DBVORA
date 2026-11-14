@@ -1,3 +1,5 @@
+> **[2026-11-15 KST · latest execution evidence]** Current functional source/test SHA: 7669472fd40758184dc20e13e93c4c79860b252d. R01-03 and R02-05 are PASS_SCOPED; updated 48-row status/evidence lives in docs/P100_INSTANT_EXECUTION_PLAN_20261114.md. Exact SHA Actions: full release [#43611295895](https://github.com/hibi89/DBVORA/actions/runs/43611295895), Chromium [#43611295885](https://github.com/hibi89/DBVORA/actions/runs/43611295885), PostgreSQL16 TLS/catalog/statistics UI [#43611295871](https://github.com/hibi89/DBVORA/actions/runs/43611295871), blueprint [#43611296278](https://github.com/hibi89/DBVORA/actions/runs/43611296278) all PASS. Ubuntu 742 tests PASS; Windows 741 PASS + 1 named POSIX-only skip; Chromium 32/32 on both OS. Next R03-04 then R03-07. Official completion remains UNASSESSED, RELEASE HOLD and OWNER_GATE retained.
+
 # DBVORA 최종설계 100% 경로 — Codex GPT-6 Luna Max / GitHub-only 실행 정본
 
 > 작성 2026-11-14 KST · 실행자: Codex GPT-6 Luna Max · 독립 검수: ChatGPT GPT-6 High · 제품 소유자: 사용자  

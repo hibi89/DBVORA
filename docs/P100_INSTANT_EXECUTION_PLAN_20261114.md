@@ -3,6 +3,7 @@
 # DBVORA 최종설계 100% — GPT-6 Instant 실행·High 최종검수 마스터 플랜
 
 > 기준 2026-11-14 KST / hibi89/DBVORA / feature/p0-db-map / 기능 기준 SHA 8bb07273f3829248bae8516ac467bfbf7eb4f751
+> **[2026-11-15 KST · latest scoped evidence]** Functional SHA `7669472fd40758184dc20e13e93c4c79860b252d`: R02-05 PASS_SCOPED; full [#43611295895](https://github.com/hibi89/DBVORA/actions/runs/43611295895), Chromium [#43611295885](https://github.com/hibi89/DBVORA/actions/runs/43611295885), real PostgreSQL 16 TLS/statistics UI [#43611295871](https://github.com/hibi89/DBVORA/actions/runs/43611295871), blueprint [#43611296278](https://github.com/hibi89/DBVORA/actions/runs/43611296278) all pass. Explicit request only; estimates and heap/index provenance shown; stale, view-scope, and unavailable states remain qualified with no fabricated values. Overall UNASSESSED/RELEASE HOLD; OWNER_GATE retained.
 > **[2026-11-15 KST · latest scoped evidence]** Functional SHA `b7993452e2330fe192652285075d9aa5525fbdbe`: R01-03 `PASS_SCOPED`; full release [#43609540216](https://github.com/hibi89/DBVORA/actions/runs/43609540216), Chromium [#43609540217](https://github.com/hibi89/DBVORA/actions/runs/43609540217), real PostgreSQL 16 TLS/UI [#43609540239](https://github.com/hibi89/DBVORA/actions/runs/43609540239), blueprint [#43609540847](https://github.com/hibi89/DBVORA/actions/runs/43609540847) all pass. R01-02/R02-03/R02-06 rows below now reflect scoped existing evidence. Official completion remains UNASSESSED / RELEASE HOLD; OWNER_GATE retained.
 > 사용자 확정: 백엔드·프론트엔드 최종설계 100%를 목표로 Instant가 개발하고 High가 완료 뒤 독립 검수. 크몽 상품 등록은 다른 담당자(Codex). DATA2WEB CodeQL 경고는 이번 작업 범위에서 제외.
 
@@ -35,7 +36,7 @@
 | R02-02 | 지표 | 두 시점 DB별 용량 비교 회귀 | 기존 Chromium26/26 증거 재사용, 변화 없음/동일 시각/DB 전환/연결 실패 무허위 수치 | Instant | EVIDENCE_RECHECK |
 | R02-03 | 지표 | 실제 주기별 로컬 관측 이력 원장 | 기본 OFF·사용자 명시 실행, 시각·크기·해시·범위·중복/손상 차단; 3샘플 이상 추세 | Codex Luna Max | PASS_SCOPED |
 | R02-04 | 지표 | CPU/RAM/디스크 측정 주체 정밀 구분 | DBVORA 프로세스 CPU/RSS와 파일시스템 사용량 분리, DB 서버 메모리 추정 금지·미지원 표시 | Instant | EVIDENCE_RECHECK |
-| R02-05 | 지표 | PG 테이블/인덱스 통계 UI 및 한계 | pg_stat_user_tables 추정·heap/index 근거, 권한부족/통계지연/실측불가 UI 테스트 | Instant | OPEN |
+| R02-05 | 지표 | PG 테이블/인덱스 통계 UI 및 한계 | pg_stat_user_tables 추정·heap/index 근거, 권한부족/통계지연/실측불가 UI 테스트 | Codex Luna Max | PASS_SCOPED |
 | R02-06 | 지표 | 지표 장기 보존·데이터 정합·추세 화면 | 실제 3+ 관측만 차트, 기간·측정 범위·시각 롤백·손상·상한·개인정보 비저장 | Codex Luna Max | PASS_SCOPED |
 | R03-01 | 보관복구 | SQLite WAL 포함 일관성 스냅샷 | 원본 불변, 승인된 로컬 대상만 새로 생성, WAL 동시 쓰기·복제 오류 실패안전 | Instant | EVIDENCE_RECHECK |
 | R03-02 | 보관복구 | ZIP/ZSTD/CAS 모든 형식 독립 복원 | 동일 합성 DB의 SHA256·SQLite integrity 비교, manifest/ZIP 변조·대상 덮어쓰기 거부 | Instant | EVIDENCE_RECHECK |

@@ -1,3 +1,10 @@
+> **[2026-11-15 KST · latest exact source/test SHA 7669472fd40758184dc20e13e93c4c79860b252d]**
+> **DONE-SCOPED** R02-05 PostgreSQL statistics UI/API, separate explicit request. Full [#43611295895](https://github.com/hibi89/DBVORA/actions/runs/43611295895), Chromium [#43611295885](https://github.com/hibi89/DBVORA/actions/runs/43611295885), real PG16 TLS/UI [#43611295871](https://github.com/hibi89/DBVORA/actions/runs/43611295871), blueprint [#43611296278](https://github.com/hibi89/DBVORA/actions/runs/43611296278) all PASS on exact source SHA.
+> **NEXT-1** R03-04: implement daily/weekly local runner with default OFF, explicit consent, slot idempotency, synthetic-only GitHub verification, and preserve prior generation on failure. Reuse existing runner/archive code where it meets acceptance.
+> **NEXT-2** R03-07: finish safe restore UX after runner, preserving originals/backups and rejecting overwrite/path traversal.
+> **NEXT-3** Continue remaining 48 R01–R07/G90 items in dependency order; retain OWNER_GATE for physical, customer, legal/rights and independent High review.
+> **NEXT-4** Update STATUS/HANDOFF/NEXT_TASK and per-task exact-SHA evidence after each major pass. No user PC/customer data/paid infra, permission changes, main/develop merge or release. Overall UNASSESSED / RELEASE HOLD.
+
 > **[2026-11-15 KST · latest exact source/test SHA b7993452e2330fe192652285075d9aa5525fbdbe]**
 > **DONE-SCOPED** R01-03 PostgreSQL read-only UI. Exact-source evidence: full #43609540216 (Ubuntu 741 PASS; Windows 740 PASS + 1 POSIX-only skip), Chromium #43609540217 (32/32 each OS), real PG16 TLS/UI #43609540239, blueprint #43609540847; all success. Wrong CA error and retry verified in actual Chromium; no rows/DSN.
 > **NEXT-1** R02-05: add a separate explicit PostgreSQL statistics UI action/API using the existing provenance-aware connector. Show estimates/scopes honestly; do not substitute zero for permission-limited, stale, or unavailable statistics.
