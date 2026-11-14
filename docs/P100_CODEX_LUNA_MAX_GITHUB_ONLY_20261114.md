@@ -57,10 +57,10 @@
 | --- | --- | --- |
 | R02-01 | SQLite main/WAL/SHM·dbstat 범위 명시, 64MiB/0.75초 opt-in, 파일 identity 교체·미지원 오류 | RECHECK |
 | R02-02 | 한 DB의 2시점 용량 변화/무관측·동시간·역순·DB 전환 응답 정합 Chromium | RECHECK |
-| R02-03 | **관측 기록 end-to-end**: 기존 원장+GET API 먼저 테스트 → 사용자 명시 동의된 *로컬* 기록 진입(CLI/내부 경계) → 재시작 후 조회 → 동일 시각·역순·변조·해시·10k 상한·다중 DB 격리 테스트, GET-only 보존 | PARTIAL |
+| R02-03 | **관측 기록 end-to-end**: 기존 원장+GET API 먼저 테스트 → 사용자 명시 동의된 *로컬* 기록 진입(CLI/내부 경계) → 재시작 후 조회 → 동일 시각·역순·변조·해시·10k 상한·다중 DB 격리 테스트, GET-only 보존 | PASS_SCOPED |
 | R02-04 | DBVORA 프로세스 CPU/RSS와 filesystem disk 및 지원 가능 PG/SQLite 출처 분리, 불능 DB 전용 CPU는 unavailable | RECHECK |
 | R02-05 | `pg_stat_*` 표·인덱스 추정치/권한 없음·통계 지연·누락을 PG UI에 정직하게 표시; PG16 합성 TLS | OPEN |
-| R02-06 | **기존 session 8샘플 → 검증된 영구 원장 UI 조회 통합**, 3개 이상 시계열·동일 범위·기간/오류/버전·렌더 XSS·재시작·2OS Chromium | PARTIAL |
+| R02-06 | **기존 session 8샘플 → 검증된 영구 원장 UI 조회 통합**, 3개 이상 시계열·동일 범위·기간/오류/버전·렌더 XSS·재시작·2OS Chromium | PASS_SCOPED |
 
 ### D. 아카이브/복원/일·주 실행 (R03-01..10; 10)
 | ID | 실행 단위/검증 산출물 | 초기 판정 |
@@ -111,6 +111,15 @@
 | G90-05 | 소유자 요구·공식 가중치 100점 승인, 실물/상업권/물리정전 등 필수 수용 후 최종 100 판정; GH-only에서 불가 | OWNER_GATE |
 
 **48/48 ID 존재 여부를 주기적으로 대조할 것.** 위 `OPEN/RECHECK/PARTIAL`은 시작 초깃값이며 현재 정식 완료율/진척 증명이 아니다.
+
+
+### 2026-11-14 KST — R02-03 / R02-06 합성 수용 증거
+- 기능·테스트 SHA: \`913feb41b22c8d3b5d36b9268868ba10f4f173f4\`.
+- R02-03: 명시 \`--consent\` 로컬 CLI 기록, 기본 OFF 영구 SQLite 원장, GET-only 조회, 원본 DB 불변, SHA256 per-DB 체인, 같은 시각 재시도/역순·충돌·변조·다중 DB 격리, 실제 10,000 레코드 상한 시험.
+- R02-06: 3개 영구 시점의 main-file 범위 추세 UI, 안전 text rendering, 페이지 재로드 뒤에도 같은 3개 관측 확인.
+- [전체 fail-closed 게이트 #43606132847](https://github.com/hibi89/DBVORA/actions/runs/43606132847): Ubuntu 738/738 PASS; Windows 737 PASS + 이름이 확인된 POSIX 전용 skip 1; 필수 게이트 전부 PASS.
+- [실제 Chromium localhost #43606132934](https://github.com/hibi89/DBVORA/actions/runs/43606132934): Windows/Ubuntu 각각 32/32 PASS. 합성 전용이며 사용자 환경/고객 DB/물리 정전 수용 증거가 아니다.
+- 두 ID 상태는 \`PASS_SCOPED\`; 전체 P100은 \`UNASSESSED\`, 판매 \`RELEASE HOLD\` 유지.
 
 ## 4. 실제 코딩 순서(선행 조건·문제 분리)
 - **S0 — 보존·갭 (B00–B02)**: 기존 source/CI/owner gates 및 정합성 읽기. 최신 observation API 단위테스트 CI 미검증을 먼저 기록.

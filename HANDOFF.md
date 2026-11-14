@@ -1,14 +1,14 @@
-> **[2026-11-14 KST | Codex GPT-6 Luna Max GitHub-only 인수인계 · 10항]**
-> 1. **목표·기술/범위**: DBVORA R01–R07 최종설계 100%의 백엔드/프론트엔드, 로컬 소버린 FastAPI·SQLite/PG·archive·vanilla JS. 크몽 등록 제외. [48작업 Codex 실행 정본](docs/P100_CODEX_LUNA_MAX_GITHUB_ONLY_20261114.md) 우선.
-> 2. **완료·변경·결정**: 이번 회차는 **문서 실행계획 게시만** (기능 신규 구현0); 기존 Instant 원자 ID 유지, A 대형 일괄변경 대신 B 최소 commit/정확 SHA 검증 선택. 계획 커밋 `e4e77ff79db5939d1cee76722153534a736a1801`.
-> 3. **테스트 실적**: 계획문서만 변경하므로 새 기능 CI **NOT_RUN**, PASS 신규0/FAIL 신규0. 이전 Windows/Ubuntu/Chromium 합성 검증은 **이전 기능 SHA 증거**로만 유효; 최근 관측 원장 GET API 변경 exact CI는 미검증.
-> 4. **완료·진행·대기**: 기존 48작업표 유지. R01-02 이전 합성 수용; R02-03/R02-06 영구 이력-UI 통합 PARTIAL; R01-03 PG UI/R03-04 자동 runner/R03-07 복원 UX OPEN. 물리 정전/Win10/법무 등 OWNER_GATE, G90-04 High 독립감사 NOT_STARTED.
-> 5. **오류/재시도**: 현재 새 기능 실패 주장 없음. CI는 필요 기능 변경 때만, canceled는 PASS 아님. 2회 무진전 실패 뒤 STOP/PIVOT. 기능 합격 근거 없는 100% 금지.
-> 6. **GitHub/브랜치/SHA/경로**: `hibi89/DBVORA@feature/p0-db-map`, 계획 전 코드 HEAD `2519290e69ca915fcd7997ee1ca12d42b6898676`; 현재 최신 HEAD는 매회 직접 재조회. 주요 소스 `dbvora/api.py`, `dbvora/observation_ledger.py`, `dbvora/web`, `dbvora/connectors`, `dbvora/archive`, `tests`, `scripts`.
-> 7. **실행·배포**: 사용자 로컬 PC 실행 금지. 기존 GitHub Actions Ubuntu24.04/Windows2025 Python3.11, Node22, Chromium, 합성 PG16, 실행/아티팩트로 검증. Vercel/Production 미적용.
-> 8. **원본·보안·백업**: 고객 DB/비밀/경로/실원본 외부반출0. 합성 fixture만. 원본/기존 정상 backup 삭제·덮어쓰기0, 기본OFF·GET-only 유지. main/develop·권한·시크릿·유료·출시 변경 승인없음.
-> 9. **다음 단위/완료기준**: Codex는 B00..02 확인→**R02-03 영구원장+GET 단위 테스트, R02-06 UI 연결/재시작**, 이후 R01-03 PG UI, R03-04 runner, R03-07 restore UX, 남은 48개를 코드/정확 SHA CI로 클로즈. `STATUS/HANDOFF/NEXT_TASK` 최신화; G90-01..03 후 사용자 요청에 따라 High 독립검수. Owner gate는 GH로 대체 불가.
-> 10. **시점/점수**: 2026-11-14 KST 계획 게시, 기능/실기기 테스트 새 검증 없음. **공식 UNASSESSED**, 과거 내부 기술95 비공식, [작업중]/RELEASE HOLD/실등록0. 이 문서 커밋 결과 SHA를 새 담당자가 재조회해 확인.
+> **[2026-11-14 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
+> 1. **목표·범위**: DBVORA R01–R07 최종 설계의 GitHub 기반 구현·검증. 크몽 등록·상용 출시·main/develop 병합은 범위 밖.
+> 2. **이번 완료**: R02-03 명시 동의 로컬 기록 CLI + 기본 OFF/GET-only 영구 원장 API, R02-06 영구 관측 UI/3+ 추세 표시 및 페이지 재로드 확인.
+> 3. **정확 SHA·CI**: `913feb41b22c8d3b5d36b9268868ba10f4f173f4`. [전체 게이트 #43606132847](https://github.com/hibi89/DBVORA/actions/runs/43606132847): Ubuntu 738 PASS, Windows 737 PASS + POSIX 전용 SKIP 1, 필수 게이트 양 OS 통과. [실제 Chromium #43606132934](https://github.com/hibi89/DBVORA/actions/runs/43606132934): 32/32 × Ubuntu+Windows PASS, 영구 이력 재로드 포함.
+> 4. **작업 상태**: R02-03/R02-06은 합성 범위 `PASS_SCOPED`. 10,000개 hash-linked 원장 한도, 무동의 미기록, 중복·역순·변조 거부, DB별 격리 확인. 이후 R01-03 PostgreSQL UI와 R02-05 통계 표시.
+> 5. **실패·수정 이력**: 초기 SHA에서 잘못된 API 예외 기대, 브라우저 mock 수명, Windows 경로 ID 정규화 및 SQLite 연결 종료 문제가 발견됨. 테스트/harness를 수정했고 최종 `913feb4` 양 OS 게이트 통과. 고객 데이터 사용 없음.
+> 6. **GitHub 기준**: `hibi89/DBVORA@feature/p0-db-map`; 현재 HEAD 재조회 기준 위 SHA. 전체 변경은 해당 원격 브랜치의 비강제 fast-forward commit만 사용.
+> 7. **검증 방식**: GitHub Actions의 Ubuntu 24.04/Windows 2025 Python 3.11, Node 22, Chromium. 로컬 실행·사용자 PC 요청 없음. PostgreSQL live TLS는 이번 SHA에서 미실행.
+> 8. **안전 경계**: 합성 fixture만. 원본/백업 불변, 자격증명·행 데이터·파일 경로를 UI/API/로그로 보내지 않음. 사용자 명시 동의 없는 기록·자동 스케줄 없음.
+> 9. **다음 작업**: R01-03: 서버 환경에서만 제공되는 합성 PG DSN, 명시적 UI 연결 동작, TLS verify-full/read-only 카탈로그 조회와 오류 복구. 이어 R02-05 통계 UI. `STATUS.md`·본 문서·`docs/NEXT_TASK.md`를 각 주요 기능 후 갱신.
+> 10. **공식 상태**: 전체 완성률 `UNASSESSED`, 과거 기술평가 95%는 비공식, `[작업중]`/`RELEASE HOLD`/크몽 실제 등록 0. Win10 실기기·물리 정전·상업권/최종 승인 등은 `OWNER_GATE`.
 
 > **2026-11-14 KST R02-03 GET-only API increment:** optional `create_app(..., observation_ledger_path=...)` with `GET /api/observations?database=<preconfigured-id>`, disabled by default, strict selected DB ID, localhost/origin guard, no POST, no arbitrary path/SQL/credentials, verified hash chain. API source SHA `351c0cda525df4634a39a12ace1f092b25ff6120`, synthetic API tests `edcb74d6338fdaf757d6f8107f9e61cb86cc8c51`. Ledger read fixed to `mode=ro` SHA `1111fc8a439f30227877517f707d4e126373c77f` (no implicit schema write), regression `56aa530d019d81f54a7bfb8a25777a87be49a423`. **CI and local tests not executed/verified**, owner defers nonessential CI; API remains opt-in backend configuration only, UI/scheduler/manual save wiring pending. Official UNASSESSED/historical technical95 nonofficial, RELEASE HOLD.
 > **2026-11-14 KST R02-03 durable local backend increment:** new `dbvora/observation_ledger.py` SHA `afb26d44af4f3917cd3918ad22f6fbedabba56d6` implements opt-in-only SQLite metadata observation ledger (db_id, timezone timestamp, SQLite main-file size, measurement scope, SHA256 per-DB hash chain, idempotency, monotonic time, tamper rejection, 10k cap, no row data or credentials). Synthetic test `tests/test_observation_ledger.py` SHA `168220d59c5be0d9c52f4420053a3c38a25940e5` covers consent, restart, duplicates, rollback, corruption, metadata validation; **test execution not verified** per owner CI deferral. No API/UI wiring, scheduler, backup/restore or end-to-end acceptance yet; R02-03 PARTIAL. Official UNASSESSED/historical technical95 nonofficial, RELEASE HOLD.
