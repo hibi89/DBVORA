@@ -374,8 +374,8 @@ class VerificationGateTests(unittest.TestCase):
         ):
             result = gate.verify()
         self.assertEqual(result['status'], 'FAIL_CLOSED')
-        self.assertEqual(result['steps'][-2]['step'], 'synthetic_pg_to_offline_html')
-        self.assertEqual(result['steps'][-2]['status'], 'FAIL')
+        self.assertEqual(result['steps'][-3]['step'], 'synthetic_pg_to_offline_html')
+        self.assertEqual(result['steps'][-3]['status'], 'FAIL')
 
     def test_pg_gate_rejects_false_real_postgres_connection(self):
         responses = self.responses()
@@ -387,7 +387,7 @@ class VerificationGateTests(unittest.TestCase):
         ):
             result = gate.verify()
         self.assertEqual(result['status'], 'FAIL_CLOSED')
-        self.assertEqual(result['steps'][-2]['status'], 'FAIL')
+        self.assertEqual(result['steps'][-3]['status'], 'FAIL')
 
     def test_pg_gate_rejects_automatic_actions_or_customer_claim(self):
         for change in ('automatic_actions', 'ready_for_customer_data'):
