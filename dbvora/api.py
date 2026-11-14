@@ -6,7 +6,9 @@ import hashlib
 from dbvora.connectors.sqlite_reader import validate_path
 from dbvora.errors import InventoryError
 from dbvora.inventory import inspect_sqlite
-from dbvora.observation_ledger import ObservationError, read_observations
+from dbvora.observation_ledger import (
+    ObservationError, read_observations, validate_ledger_path,
+)
 from dbvora.storage_metrics import collect_table_storage
 from dbvora.workspace import MAX_DATABASES, inspect_workspace
 
@@ -36,6 +38,15 @@ def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], 
     else:
         selected, _, _ = validate_path(db_path)
         selected_paths = (selected,)
+    ledger_path = None
+    if observation_ledger_path is not None:
+        try:
+            ledger_path = validate_ledger_path(observation_ledger_path)
+            for source_path in selected_paths:
+                validate_ledger_path(ledger_path, source_path=source_path)
+        except ObservationError:
+            raise InventoryError('INVALID_OBSERVATION_LEDGER',
+                                 'Select a separate local observation ledger file.')
     by_db_id = {hashlib.sha256(str(p).encode('utf-8')).hexdigest()[:24]: p
                 for p in selected_paths}
     app = FastAPI(title='DBVORA local viewer', docs_url=None, redoc_url=None, openapi_url=None)
@@ -131,7 +142,7 @@ def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], 
     @app.get('/api/observations')
     async def observations(request: Request):
         """Optional read-only local observation ledger; never accepts file paths."""
-        if observation_ledger_path is None:
+        if ledger_path is None:
             return JSONResponse(status_code=404, content={
                 'error': {'code': 'OBSERVATIONS_DISABLED', 'message': 'Local observation ledger is not configured.'}})
         database_ids = request.query_params.getlist('database')
@@ -140,7 +151,7 @@ def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], 
             return JSONResponse(status_code=422, content={
                 'error': {'code': 'INVALID_DATABASE', 'message': 'Select a configured database.'}})
         try:
-            rows = read_observations(observation_ledger_path, db_id=database_ids[0])
+            rows = read_observations(ledger_path, db_id=database_ids[0])
         except (ObservationError, OSError, ValueError):
             return JSONResponse(status_code=422, content={
                 'error': {'code': 'OBSERVATION_INTEGRITY', 'message': 'Local observation ledger is unavailable or invalid.'}})

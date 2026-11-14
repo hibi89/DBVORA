@@ -17,6 +17,8 @@ import time
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from dbvora.inventory import inspect_sqlite
+from dbvora.observation_ledger import append_observation
 from tests.fixtures.make_sqlite import create_fixture
 from tests.fixtures.large_sqlite import extend_synthetic_catalog
 
@@ -58,15 +60,27 @@ def run(*, screenshots=None):
         from playwright.sync_api import sync_playwright
         with tempfile.TemporaryDirectory(prefix="dbvora-http-browser-synthetic-") as temp:
             db = create_fixture(Path(temp) / "fixture.sqlite")
+            ledger = Path(temp) / "observations.sqlite"
+            source_metadata = inspect_sqlite(db)
+            for observed_at, size_bytes in (
+                    ("2026-11-14T06:00:00Z", 1024),
+                    ("2026-11-14T06:30:00Z", 2048),
+                    ("2026-11-14T07:00:00Z", 4096)):
+                append_observation(
+                    ledger, db_id=source_metadata["db_id"], observed_at=observed_at,
+                    size_bytes=size_bytes,
+                    scope="sqlite_main_file_excluding_wal_shm", consent=True)
             unchanged = digest(db)
             with socket.socket() as sock:
                 sock.bind(("127.0.0.1", 0))
                 port = sock.getsockname()[1]
             base = f"http://127.0.0.1:{port}"
             startup = ("import sys,uvicorn;from dbvora.api import create_app;"
-                       "p=int(sys.argv[2]);uvicorn.run(create_app(sys.argv[1],port=p),"
+                       "p=int(sys.argv[2]);uvicorn.run(create_app(sys.argv[1],port=p,"
+                       "observation_ledger_path=sys.argv[3]),"
                        "host='127.0.0.1',port=p,log_level='error',access_log=False)")
-            proc = subprocess.Popen([sys.executable, "-B", "-c", startup, str(db), str(port)],
+            proc = subprocess.Popen([sys.executable, "-B", "-c", startup,
+                                     str(db), str(port), str(ledger)],
                                     stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                     stderr=subprocess.DEVNULL, env={
                                         **os.environ, "PYTHONIOENCODING": "utf-8"})
@@ -140,6 +154,13 @@ def run(*, screenshots=None):
                     page.wait_for_function(
                         "() => document.querySelector('#tables-count').textContent === '3'",
                         timeout=15000)
+                    page.wait_for_function(
+                        "() => document.querySelector('#persistent-growth-status').textContent.includes('영구 관측 3건')",
+                        timeout=15000)
+                    require("증가 +3 KB" in page.locator("#persistent-growth-trend").inner_text()
+                            and page.locator("#persistent-growth-samples .growth-sample").count() == 3,
+                            "PERSISTENT_OBSERVATION_UI_FAILED")
+                    result["checks"].append("persistent_observation_ledger_get_and_ui")
                     page.wait_for_function(
                         "() => document.querySelectorAll('#edges path').length === 1",
                         timeout=15000)
@@ -768,11 +789,12 @@ def run(*, screenshots=None):
                     multi_startup = (
                         "import sys,uvicorn;from dbvora.api import create_app;"
                         "p=int(sys.argv[3]);"
-                        "uvicorn.run(create_app([sys.argv[1],sys.argv[2]],port=p),"
+                        "uvicorn.run(create_app([sys.argv[1],sys.argv[2]],port=p,"
+                        "observation_ledger_path=sys.argv[4]),"
                         "host='127.0.0.1',port=p,log_level='error',access_log=False)")
                     multi_proc = subprocess.Popen(
                         [sys.executable, '-B', '-c', multi_startup,
-                         str(first), str(second), str(multi_port)],
+                         str(first), str(second), str(multi_port), str(ledger)],
                         stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                         stderr=subprocess.DEVNULL,
                         env={**os.environ, 'PYTHONIOENCODING': 'utf-8'})

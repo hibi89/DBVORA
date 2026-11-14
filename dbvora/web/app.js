@@ -7,10 +7,13 @@ let inventory = null;
 let workspace = null;
 let selectedDatabase = null;
 let selected = null;
-// Strictly in-memory: no localStorage, disk writes, background collection or network calls.
+// Session samples stay in memory; persistent samples use a local GET-only API.
 let lastMeasurements = new Map();
 let growthComparisons = new Map();
 let observationHistory = new Map();
+let persistentObservations = new Map();
+let activeObservationRequest = null;
+let observationRequestVersion = 0;
 const MAX_OBSERVATIONS = 8;
 let nodeElements = new Map();
 let edgeByTable = new Map();
@@ -116,6 +119,119 @@ function displayGrowth() {
   } else {
     const sign = comparison.delta > 0 ? '증가 +' : '감소 -';
     target.textContent = '직전 측정 대비 ' + sign + formatBytes(Math.abs(comparison.delta));
+  }
+  $('growth-history').textContent = '세션 관측 이력: ' + samples.length +
+    '건 / 최대 ' + MAX_OBSERVATIONS + '건 · 브라우저 메모리만 사용 · 디스크 저장 없음';
+  displayPersistentGrowth();
+}
+
+function activeObservationDatabaseId() {
+  return workspace ? selectedDatabase : inventory?.db_id;
+}
+
+function displayPersistentGrowth() {
+  const dbId = activeObservationDatabaseId();
+  const state = dbId ? persistentObservations.get(dbId) : null;
+  const status = $('persistent-growth-status');
+  const trend = $('persistent-growth-trend');
+  const list = $('persistent-growth-samples');
+  clear(list);
+  if (!state) {
+    status.textContent = '영구 원장 조회 대기 · 새로고침 시 확인';
+    trend.textContent = '영구 관측 추세를 표시하려면 로컬 원장을 구성하세요.';
+    return;
+  }
+  if (state.status === 'loading') {
+    status.textContent = '영구 원장 조회 중…';
+  } else if (state.status === 'disabled') {
+    status.textContent = '영구 원장 미설정 · 서버 실행 시 --observation-ledger로 선택';
+  } else if (state.status === 'invalid') {
+    status.textContent = '영구 원장 검증 실패 · 파일과 기록 무결성을 확인하세요.';
+  } else if (state.status === 'unavailable') {
+    status.textContent = '영구 원장 조회 실패 · 연결 상태를 확인하고 새로고침하세요.';
+  } else {
+    status.textContent = '영구 관측 ' + state.records.length +
+      '건 · 로컬 SQLite 원장 · 읽기 전용';
+  }
+  const records = state.records || [];
+  for (const sample of records.slice(-MAX_OBSERVATIONS)) {
+    const item = el('div', 'growth-sample');
+    item.setAttribute('role', 'listitem');
+    item.append(el('time', '', new Date(sample.observed_at).toLocaleString('ko-KR')),
+                el('strong', '', formatBytes(sample.size_bytes)));
+    list.append(item);
+  }
+  if (state.status === 'ready' && records.length >= 3) {
+    const delta = records[records.length - 1].size_bytes - records[0].size_bytes;
+    const direction = delta > 0 ? '증가 +' : delta < 0 ? '감소 -' : '변화 없음 ';
+    trend.textContent = '영구 관측 ' + records.length +
+      '건의 최초~최근 순변화: ' + direction + formatBytes(Math.abs(delta)) +
+      ' · SQLite 메인 파일 · WAL/SHM 제외 · 미래 예측 아님';
+  } else if (state.status === 'ready') {
+    trend.textContent = '영구 추세 판단 대기 · 서로 다른 시각의 관측 3건 필요';
+  } else {
+    trend.textContent = '영구 관측 추세를 확인할 수 없습니다.';
+  }
+}
+
+function validatePersistentObservations(data, dbId) {
+  if (!data || data.contract !== 'dbvora.local-observation.v1' ||
+      data.database !== dbId || data.scope !== 'sqlite_main_file_excluding_wal_shm' ||
+      !Array.isArray(data.records) || data.records.length > 10000) {
+    throw new Error('invalid_observation_contract');
+  }
+  let last = -Infinity;
+  for (const record of data.records) {
+    const timestamp = Date.parse(record?.observed_at);
+    if (!Number.isFinite(timestamp) || timestamp <= last ||
+        !Number.isSafeInteger(record?.size_bytes) || record.size_bytes < 0 ||
+        record.scope !== data.scope ||
+        typeof record.record_hash !== 'string' ||
+        !/^[0-9a-f]{64}$/.test(record.record_hash)) {
+      throw new Error('invalid_observation_record');
+    }
+    last = timestamp;
+  }
+  return data.records;
+}
+
+async function loadPersistentObservations(dbId) {
+  if (typeof dbId !== 'string' || !dbId) return;
+  if (activeObservationRequest) activeObservationRequest.abort();
+  const controller = new AbortController();
+  activeObservationRequest = controller;
+  const version = ++observationRequestVersion;
+  const prior = persistentObservations.get(dbId);
+  persistentObservations.set(dbId, {status: 'loading', records: prior?.records || []});
+  if (activeObservationDatabaseId() === dbId) displayPersistentGrowth();
+  try {
+    const response = await fetch('/api/observations?database=' + encodeURIComponent(dbId), {
+      cache: 'no-store', credentials: 'same-origin', signal: controller.signal
+    });
+    if (version !== observationRequestVersion || controller.signal.aborted) return;
+    if (response.status === 404) {
+      persistentObservations.set(dbId, {status: 'disabled', records: []});
+      return;
+    }
+    if (!response.ok) {
+      persistentObservations.set(dbId, {status: 'unavailable', records: prior?.records || []});
+      return;
+    }
+    const data = await response.json();
+    const records = validatePersistentObservations(data, dbId);
+    if (version !== observationRequestVersion || controller.signal.aborted) return;
+    persistentObservations.set(dbId, {status: 'ready', records});
+  } catch (error) {
+    if (controller.signal.aborted || version !== observationRequestVersion) return;
+    persistentObservations.set(dbId, {
+      status: error?.message?.startsWith('invalid_observation')
+        ? 'invalid' : 'unavailable',
+      records: prior?.records || []
+    });
+  } finally {
+    if (activeObservationRequest === controller) activeObservationRequest = null;
+    if (version === observationRequestVersion &&
+        activeObservationDatabaseId() === dbId) displayPersistentGrowth();
   }
 }
 
@@ -340,6 +456,7 @@ function showWorkspaceDatabase(dbId) {
       button.dataset.dbId === dbId ? 'true' : 'false');
   }
   displayGrowth();
+  loadPersistentObservations(dbId);
 }
 
 function render(data) {
@@ -455,6 +572,7 @@ async function refresh() {
     if (!response.ok) throw new Error(data?.error?.message || '메타데이터를 읽을 수 없습니다.');
     render(data);
     recordMeasurements(data);
+    if (!workspace) loadPersistentObservations(inventory?.db_id);
     displayGrowth();
   } catch (error) {
     if (timedOut) displayError('메타데이터 요청 시간이 초과되었습니다. 다시 시도하세요.');

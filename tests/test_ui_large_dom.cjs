@@ -30,11 +30,13 @@ class Element {
   }
 }
 async function verify() {
-  const meter = {rects:0,fetches:0};
+  const meter = {rects:0,fetches:0,observationFetches:0};
   const ids = Object.fromEntries([
     'refresh','error','size','tables-count','links-count','db-short','observed',
     'tables','detail','edges','diagram','table-filter','filter-status','filter-empty',
-    'database-selector','database-list','workspace-summary','growth-status','growth-scope'
+    'database-selector','database-list','workspace-summary','growth-status','growth-scope',
+    'growth-history','growth-trend','growth-samples','persistent-growth-status',
+    'persistent-growth-trend','persistent-growth-samples'
   ].map(id => [id, new Element('div',meter)]));
   const tables = Array.from({length:1000},(_,i)=>({
     name:`synthetic_table_${String(i).padStart(4,'0')}`,
@@ -55,7 +57,14 @@ async function verify() {
   const sandbox={document:doc,window:{addEventListener:(name,fn)=>listeners.push({name,fn})},
     ResizeObserver:class{observe(){} disconnect(){}},
     requestAnimationFrame:fn=>fn(),
-    fetch:async()=>{meter.fetches++;return {ok:true,json:async()=>payload};},
+    fetch:async(url)=>{
+      if (url.startsWith('/api/observations?')) {
+        meter.observationFetches++;
+        return {ok:false,status:404,json:async()=>({})};
+      }
+      meter.fetches++;
+      return {ok:true,status:200,json:async()=>payload};
+    },
     Date,Map,Set,String,Number,Intl,console,setTimeout,clearTimeout,AbortController
   };
   const source=fs.readFileSync(path.resolve(__dirname,'../dbvora/web/app.js'),'utf8');
@@ -96,7 +105,8 @@ async function verify() {
   await ids.refresh.events.click();
   assert.equal(ids.tables.children.length,1000);
   assert.equal(ids.edges.children.length,999);
-  assert.equal(meter.fetches,2, 'filtering/selection must never fetch additional rows');
+  assert.equal(meter.fetches,2, 'inventory refresh count stays independent from local observation GETs');
+  assert.equal(meter.observationFetches,2, 'initial load and refresh read the local observation route');
   assert.equal(listeners.filter(x=>x.name==='resize').length,1);
   console.log('UI LARGE DOM SIMULATION PASS: 1000 tables, 999 FKs, cached positions, selected edges, filtering, refresh');
 }

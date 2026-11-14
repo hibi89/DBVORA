@@ -73,6 +73,15 @@ class LedgerTest(unittest.TestCase):
                 self.append(at, size, db=db)
         self.assertFalse(self.path.exists())
 
+    def test_refuses_existing_non_ledger_database_without_modifying_it(self):
+        with sqlite3.connect(self.path) as conn:
+            conn.execute("CREATE TABLE customer_data(value TEXT)")
+            conn.execute("INSERT INTO customer_data VALUES ('synthetic-only')")
+        before = self.path.read_bytes()
+        with self.assertRaisesRegex(ObservationError, "not a DBVORA observation ledger"):
+            self.append("2026-11-14T01:00:00Z", 1024)
+        self.assertEqual(self.path.read_bytes(), before)
+
 
 if __name__ == "__main__":
     unittest.main()

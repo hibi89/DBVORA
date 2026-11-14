@@ -19,7 +19,7 @@ class Element {
   getBoundingClientRect() { return {left: 100, top: 100, width: 120, height: 100}; }
   get classList() { return {toggle: (name, yes) => { if (yes && !this.className.includes(name)) this.className += ' ' + name; }}; }
 }
-const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','database-topology','workspace-summary','growth-status','growth-scope','growth-history','growth-trend','growth-samples'].map(id => [id, new Element('div')]));
+const ids = Object.fromEntries(['refresh','error','size','tables-count','links-count','db-short','observed','tables','detail','edges','diagram','table-filter','filter-status','filter-empty','database-selector','database-list','database-topology','workspace-summary','growth-status','growth-scope','growth-history','growth-trend','growth-samples','persistent-growth-status','persistent-growth-trend','persistent-growth-samples'].map(id => [id, new Element('div')]));
 ids.diagram.getBoundingClientRect = () => ({left: 0, top: 0, width: 800, height: 600});
 const doc = {getElementById: id => ids[id], createElement: tag => new Element(tag), createElementNS: (_, tag) => new Element(tag)};
 const marker = '<img src=x onerror=alert(7)>';
@@ -33,15 +33,29 @@ const data = {contract_version:'p0-01.v1',engine:'sqlite',db_id:'abc123456789012
 const listeners = [];
 let failNextFetch = false;
 let storageFetches = 0;
+let observationFetches = 0;
 let currentInventory = data;
+let currentObservations = {
+  contract:'dbvora.local-observation.v1', database:data.db_id,
+  scope:'sqlite_main_file_excluding_wal_shm',
+  records:[
+    {observed_at:'2026-10-26T06:00:00.000000+00:00',size_bytes:1024,scope:'sqlite_main_file_excluding_wal_shm',record_hash:'a'.repeat(64)},
+    {observed_at:'2026-10-26T06:30:00.000000+00:00',size_bytes:2048,scope:'sqlite_main_file_excluding_wal_shm',record_hash:'b'.repeat(64)},
+    {observed_at:'2026-10-26T07:00:00.000000+00:00',size_bytes:4096,scope:'sqlite_main_file_excluding_wal_shm',record_hash:'c'.repeat(64)}
+  ]
+};
 const sandbox = {
   document:doc, window:{addEventListener(name, fn){ listeners.push({name, fn}); }}, ResizeObserver:class {observe(){} disconnect(){}},
   requestAnimationFrame: fn => fn(),
   fetch: async (url) => {
     if (failNextFetch) { failNextFetch = false; throw new TypeError('Failed to fetch'); }
+    if (url.startsWith('/api/observations?')) {
+      observationFetches++;
+      return {ok:true,status:200,json: async () => currentObservations};
+    }
     if (url.startsWith('/api/table-storage?')) {
       storageFetches++;
-      return {ok:true,json: async () => ({
+      return {ok:true,status:200,json: async () => ({
         contract: 'dbvora.local-table-storage.v1', table: new URL(url, 'http://127.0.0.1').searchParams.get('table'),
         scope: 'logical_btree_pages_dbstat_including_indexes_wal_pages_possible',
         metric: {status:'measured', allocated_btree_bytes:8192, source:'sqlite_dbstat_aggregate'}
@@ -57,8 +71,16 @@ assert.ok(!/\.innerHTML\s*=/.test(script));
 vm.runInNewContext(script, sandbox);
 setImmediate(async () => {
   try {
+    await new Promise(resolve => setImmediate(resolve));
     assert.equal(ids.tables.children.length, 3);
     assert.equal(ids['database-selector'].hidden, true, 'single DB must hide chooser');
+    assert.ok(ids['persistent-growth-status'].textContent.includes('영구 관측 3건'),
+      'selected database loads verified permanent observations');
+    assert.ok(ids['persistent-growth-trend'].textContent.includes('증가 +3 KB'),
+      'persistent trend uses first and latest stored samples');
+    assert.equal(ids['persistent-growth-samples'].children.length, 3,
+      'persistent chronological samples render in the UI');
+    assert.ok(observationFetches >= 1, 'persistent ledger is fetched through local GET');
     assert.ok(ids['growth-status'].textContent.includes('첫 측정'), 'baseline no fabricated trend');
     assert.ok(ids['growth-history'].textContent.includes('1건'), 'one verified baseline sample');
     assert.equal(ids['growth-samples'].children.length, 1, 'baseline has one timestamped ledger row');

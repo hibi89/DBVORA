@@ -30,7 +30,10 @@
       <small id="growth-scope">브라우저 세션 내 두 시점의 실제 메인 파일 크기만 비교 · WAL/SHM 제외 · 예측 아님</small>
       <div id="growth-history" class="growth-history" role="status" aria-live="polite">관측 이력: 0건 · 브라우저 메모리 한정</div>
       <div id="growth-trend" class="growth-history" role="status" aria-live="polite">추세 판단 대기 · 서로 다른 시각의 관측 3건 필요</div>
-      <div id="growth-samples" class="growth-samples" role="list" aria-label="선택한 데이터베이스의 관측 시각 및 메인 파일 크기"></div>
+      <div id="growth-samples" class="growth-samples" role="list" aria-label="선택한 데이터베이스의 현재 세션 관측 시각 및 메인 파일 크기"></div>
+      <div class="growth-history" id="persistent-growth-status" role="status" aria-live="polite">영구 원장 조회 대기…</div>
+      <div class="growth-history" id="persistent-growth-trend" role="status" aria-live="polite">영구 관측 추세 —</div>
+      <div id="persistent-growth-samples" class="growth-samples" role="list" aria-label="선택한 데이터베이스의 영구 관측 시각 및 메인 파일 크기"></div>
     </section>
     <section class="workspace">
       <div class="panel map-panel">

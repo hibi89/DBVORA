@@ -7,7 +7,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import sqlite3
+import stat
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -43,25 +45,142 @@ def _validate(db_id: str, observed_at: str, size_bytes: int, scope: str) -> tupl
     return db_id, timestamp.astimezone(timezone.utc).isoformat(timespec="microseconds"), size_bytes, scope
 
 
-def _connect(path: str | Path) -> sqlite3.Connection:
-    file = Path(path)
-    if file.is_symlink():
-        raise ObservationError("symlink ledger is not allowed")
+def _ledger_file(path: str | Path) -> Path:
+    if not isinstance(path, (str, Path)) or not str(path):
+        raise ObservationError("absolute observation ledger path required")
+    file = Path(path).expanduser()
+    if not file.is_absolute():
+        raise ObservationError("absolute observation ledger path required")
+    if any(candidate.is_symlink() for candidate in (file, *file.parents)):
+        raise ObservationError("symlink ledger path is not allowed")
     if not file.parent.is_dir():
         raise ObservationError("ledger parent directory must already exist")
-    connection = sqlite3.connect(str(file), timeout=5, isolation_level=None)
-    connection.execute("PRAGMA busy_timeout=5000")
-    connection.execute("""CREATE TABLE IF NOT EXISTS observations (
-        seq INTEGER PRIMARY KEY AUTOINCREMENT,
-        db_id TEXT NOT NULL,
-        observed_at TEXT NOT NULL,
-        size_bytes INTEGER NOT NULL,
-        scope TEXT NOT NULL,
-        prev_hash TEXT NOT NULL,
-        record_hash TEXT NOT NULL,
-        UNIQUE(db_id, observed_at, scope)
-    )""")
-    return connection
+    if file.exists():
+        try:
+            info = file.lstat()
+        except OSError:
+            raise ObservationError("ledger file is unavailable") from None
+        if not stat.S_ISREG(info.st_mode):
+            raise ObservationError("ledger must be a regular file")
+    return file
+
+
+def validate_ledger_path(path: str | Path, *, source_path: str | Path | None = None) -> Path:
+    """Validate a local ledger destination and optionally reject the source DB."""
+    file = _ledger_file(path)
+    if source_path is not None:
+        source = Path(source_path).expanduser().resolve(strict=True)
+        target = file.resolve(strict=False)
+        try:
+            same_file = file.exists() and os.path.samefile(file, source)
+        except OSError:
+            raise ObservationError("ledger file is unavailable") from None
+        if target == source or same_file:
+            raise ObservationError("ledger must be separate from the source database")
+    return file
+
+
+def _validate_ledger_connection(connection: sqlite3.Connection) -> None:
+    objects = connection.execute(
+        "SELECT type,name FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name"
+    ).fetchall()
+    if objects != [("table", "observations")]:
+        raise ObservationError("existing file is not a DBVORA observation ledger")
+    columns = connection.execute("PRAGMA table_info('observations')").fetchall()
+    expected = [
+        ("seq", "INTEGER", 0, 1),
+        ("db_id", "TEXT", 1, 0),
+        ("observed_at", "TEXT", 1, 0),
+        ("size_bytes", "INTEGER", 1, 0),
+        ("scope", "TEXT", 1, 0),
+        ("prev_hash", "TEXT", 1, 0),
+        ("record_hash", "TEXT", 1, 0),
+    ]
+    actual = [(row[1], str(row[2]).upper(), row[3], row[5]) for row in columns]
+    if actual != expected:
+        raise ObservationError("existing file is not a DBVORA observation ledger")
+    indexes = connection.execute("PRAGMA index_list('observations')").fetchall()
+    if (len(indexes) != 1 or indexes[0][2] != 1 or indexes[0][3] != "u"
+            or indexes[0][4] != 0):
+        raise ObservationError("existing file is not a DBVORA observation ledger")
+    index_name = indexes[0][1]
+    quoted = '"' + str(index_name).replace('"', '""') + '"'
+    index_columns = connection.execute(f"PRAGMA index_info({quoted})").fetchall()
+    if [row[2] for row in index_columns] != ["db_id", "observed_at", "scope"]:
+        raise ObservationError("existing file is not a DBVORA observation ledger")
+
+
+def _open_ledger_readonly(file: Path) -> sqlite3.Connection:
+    connection = None
+    try:
+        before = file.lstat()
+        if not stat.S_ISREG(before.st_mode):
+            raise ObservationError("ledger must be a regular file")
+        connection = sqlite3.connect(
+            file.resolve(strict=True).as_uri() + "?mode=ro", uri=True, timeout=5
+        )
+        after = file.lstat()
+        if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
+            raise ObservationError("ledger changed during validation")
+        _validate_ledger_connection(connection)
+        return connection
+    except ObservationError:
+        if connection is not None:
+            connection.close()
+        raise
+    except (OSError, sqlite3.Error):
+        if connection is not None:
+            connection.close()
+        raise ObservationError("ledger is unavailable or invalid") from None
+
+
+def _connect(path: str | Path) -> sqlite3.Connection:
+    file = _ledger_file(path)
+    created = False
+    connection = None
+    try:
+        if file.exists():
+            probe = _open_ledger_readonly(file)
+            probe.close()
+            before = file.lstat()
+        else:
+            try:
+                fd = os.open(file, os.O_CREAT | os.O_EXCL | os.O_RDWR, 0o600)
+            except FileExistsError:
+                raise ObservationError("ledger path appeared during creation") from None
+            os.close(fd)
+            created = True
+            before = file.lstat()
+        connection = sqlite3.connect(
+            file.resolve(strict=True).as_uri() + "?mode=rw", uri=True,
+            timeout=5, isolation_level=None
+        )
+        connection.execute("PRAGMA busy_timeout=5000")
+        after = file.lstat()
+        if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
+            raise ObservationError("ledger changed during validation")
+        if created:
+            connection.execute("""CREATE TABLE observations (
+                seq INTEGER PRIMARY KEY AUTOINCREMENT,
+                db_id TEXT NOT NULL,
+                observed_at TEXT NOT NULL,
+                size_bytes INTEGER NOT NULL,
+                scope TEXT NOT NULL,
+                prev_hash TEXT NOT NULL,
+                record_hash TEXT NOT NULL,
+                UNIQUE(db_id, observed_at, scope)
+            )""")
+        else:
+            _validate_ledger_connection(connection)
+        return connection
+    except ObservationError:
+        if connection is not None:
+            connection.close()
+        raise
+    except (OSError, sqlite3.Error):
+        if connection is not None:
+            connection.close()
+        raise ObservationError("ledger is unavailable or invalid") from None
 
 
 def _rows(conn: sqlite3.Connection, db_id: str) -> list[dict]:
@@ -125,20 +244,18 @@ def append_observation(path: str | Path, *, db_id: str, observed_at: str,
 
 def read_observations(path: str | Path, *, db_id: str) -> list[dict]:
     _validate(db_id, "2026-01-01T00:00:00Z", 0, "sqlite_main_file_excluding_wal_shm")
-    file = Path(path)
-    if file.is_symlink():
-        raise ObservationError("symlink ledger is not allowed")
+    file = _ledger_file(path)
     if not file.exists():
         return []
-    if not file.is_file():
-        raise ObservationError("ledger must be a regular file")
-    # Reads must never initialize schemas or mutate the ledger file.
-    # SQLite URI mode=ro rejects absent/corrupt stores instead of creating one.
-    conn = sqlite3.connect(file.resolve().as_uri() + "?mode=ro", uri=True, timeout=5)
+    # Reads never create or modify a ledger and reject unrelated SQLite files.
+    conn = _open_ledger_readonly(file)
     try:
-        rows = _rows(conn, db_id)
-        _verify(rows)
-        return [{"observed_at": r["observed_at"], "size_bytes": r["size_bytes"],
-                 "scope": r["scope"], "record_hash": r["record_hash"]} for r in rows]
+        try:
+            rows = _rows(conn, db_id)
+            _verify(rows)
+            return [{"observed_at": r["observed_at"], "size_bytes": r["size_bytes"],
+                     "scope": r["scope"], "record_hash": r["record_hash"]} for r in rows]
+        except sqlite3.Error:
+            raise ObservationError("ledger is unavailable or invalid") from None
     finally:
         conn.close()

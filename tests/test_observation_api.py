@@ -49,6 +49,17 @@ class ObservationApiTests(unittest.TestCase):
             self.assertEqual(client.post("/api/observations", json={}).status_code, 405)
         self.assertEqual(hashlib.sha256(self.source.read_bytes()).hexdigest(), before)
 
+    def test_configured_empty_ledger_is_read_only_and_not_created(self):
+        with self.client() as client:
+            response = client.get("/api/observations", params={"database": self.db_id})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json()["records"], [])
+        self.assertFalse(self.ledger.exists())
+
+    def test_rejects_source_database_as_ledger_configuration(self):
+        with self.assertRaisesRegex(ValueError, "separate local observation ledger"):
+            create_app(self.source, port=8765, observation_ledger_path=self.source)
+
     def test_rejects_unconfigured_database_and_extra_query(self):
         with self.client() as client:
             for query in ("", "?database=not-configured",
