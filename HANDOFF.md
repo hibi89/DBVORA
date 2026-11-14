@@ -1,14 +1,14 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
-> 1. **목표·범위**: `feature/p0-db-map`에서 R01–R07/G90 최종설계의 GitHub-only 구현·검증을 이어간다. main/develop 병합, 사용자 PC 작업, 크몽 등록·상용 출시는 제외한다.
-> 2. **이번 완료**: R07-01 PASS_SCOPED. source ZIP에 9개 `contracts/` 파일을 포함하고 unsigned manifest에 `source_commit`을 기록했다. Windows synthetic EXE artifact에는 source SHA 및 executable SHA-256 sidecar를 넣었다.
-> 3. **기능/검증 SHA**: `4914c59a7009e223e02924fd4f1f92c4a1431bf0`.
-> 4. **전체 회귀**: [#43639974974](https://github.com/hibi89/DBVORA/actions/runs/43639974974) PASS. Ubuntu 777/777, 0 skip; Windows 776 PASS + 1 명시 POSIX-only skip. 12개 gate step 모두 PASS.
-> 5. **source ZIP**: [#43639974931](https://github.com/hibi89/DBVORA/actions/runs/43639974931) PASS, ZIP SHA-256 `9f20ba18824214ccb2fb20a1d9a9bb6ace5619f1aed93cd913677d98d4624815`; 75 files, offline self-check 9/9.
-> 6. **Windows EXE**: [#43639974945](https://github.com/hibi89/DBVORA/actions/runs/43639974945) PASS, EXE SHA-256 `b27397e61241ec059688bffe324b2eeaaa705dc8dfde48940df2224e92fbe30b`; sidecar read-back matched source SHA and executable hash. Blueprint [#43639975373](https://github.com/hibi89/DBVORA/actions/runs/43639975373) PASS.
-> 7. **증거·제한**: [R07 evidence](docs/R07_PACKAGE_PROVENANCE_20261115.md) records artifact IDs and outer digests. All outputs unsigned, synthetic-only; hashes are not publisher authentication or deterministic-build proof.
-> 8. **실패 기록**: `7429a52` first full gate found five trusted-extraction fixture failures from the old fixture manifest shape; `e12dc55` updated it. Final full gate passed at `4914c59a7009e223e02924fd4f1f92c4a1431bf0`.
-> 9. **다음 작업**: R07-02 — GitHub-hosted Windows launch/exit/restart/remove UX, preserving existing folders/data, testing port conflicts and default-off behavior.
-> 10. **공식 상태**: 전체 완성률 UNASSESSED / RELEASE HOLD. R07-04 owner-device QA, R05-04 legal/licensing, physical and commercial OWNER_GATE remain.
+> 1. **목표·범위**: `hibi89/DBVORA`의 `feature/p0-db-map`에서 R01–R07/G90을 계속 구현·검증한다. 사용자 PC, main/develop 병합, 크몽 등록·상용 출시는 제외한다.
+> 2. **이번 완료**: R07-02 PASS_SCOPED. source ZIP의 수동 실행·종료·재시작·포트 충돌·제거를 합성 SQLite와 분리된 owner-data 보존 조건으로 검증했다.
+> 3. **기능/검증 SHA**: `3f138530321a35dc96c1682f1ebb2fac3fac85ce`.
+> 4. **전체 회귀**: [#43642757174](https://github.com/hibi89/DBVORA/actions/runs/43642757174) PASS. Ubuntu 779/779, 0 skip; Windows 778 PASS + 지정 POSIX-only 1 skip; 각 OS 필수 12단계 PASS.
+> 5. **수명주기·브라우저**: 휴대형 ZIP 실제 런처의 synthetic lifecycle test는 두 OS full gate에 포함됐다. [Chromium #43642757197](https://github.com/hibi89/DBVORA/actions/runs/43642757197) 33/33 × Ubuntu/Windows PASS.
+> 6. **PostgreSQL**: [TLS/UI #43642757164](https://github.com/hibi89/DBVORA/actions/runs/43642757164) PASS; TLS/read-only 5 checks, UI 8 checks. DSN 없는 서버는 PostgreSQL을 기본 비활성화한다.
+> 7. **source ZIP**: [#43642757175](https://github.com/hibi89/DBVORA/actions/runs/43642757175) PASS, 75 files, self-check 9/9, ZIP SHA-256 `3cc92b6d625206cb2a5604e4a4171488f45ee4403a6ab4d2b8406083fd2c97c6`. Artifact 14133270147; outer digest `bde6a512760cce3c4d35327715454cc564279a360dd0d56801d6b556d6b5365e`.
+> 8. **Windows EXE/blueprint**: [EXE #43642757229](https://github.com/hibi89/DBVORA/actions/runs/43642757229) PASS, source SHA sidecar 일치, EXE SHA-256 `5f3d0e9cf936ae83ffe13570e1c8d1425d704c846a8c1531bbf401e2a0632771`; [blueprint #43642757612](https://github.com/hibi89/DBVORA/actions/runs/43642757612) PASS. Artifacts are unsigned, synthetic-only and seven-day retained.
+> 9. **실패 기록**: 첫 SHA `0e78a2c`에서 Ubuntu lifecycle/PG UI startup 실패; 기존 PG helper가 stderr를 숨겨 정확 원인은 로그로 확인되지 않았다. final SHA는 listener connection probe와 sanitized diagnostics로 수정했고 전체 회귀 및 PG/Chromium exact-SHA가 PASS했다. 자세한 이력은 [R07-02 증거](docs/R07_02_PORTABLE_LIFECYCLE_20261115.md).
+> 10. **다음/공식 상태**: R07-03 Korean errors/consent/recovery UX 및 real Chromium desktop/390px·keyboard·ARIA·screenshots. 전체 완성률 UNASSESSED / RELEASE HOLD; R07-04/05/06 등 owner·legal·physical gates 유지.
 
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
 > 1. **목표·범위**: R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.
