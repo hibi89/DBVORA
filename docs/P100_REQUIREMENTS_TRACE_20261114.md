@@ -1,3 +1,8 @@
+## 2026-11-14 R04 효율/성능 근거 추가
+- [정확 SHA `ff20658b2d9db099eea6386d354e90f5c0dc5264` Windows/Linux CI #43552745227](https://github.com/hibi89/DBVORA/actions/runs/43552745227): Linux671PASS/0FAIL; Windows670PASS/1 posix skip/0FAIL, 게이트 각각12/12PASS.
+- 동일 두 합성 SQLite 세대 ZIP, raw CAS v1, zlib CAS v2 **동일 SHA 복원** 상태에서 실제 단일 wall-clock 저장·복원 시간 추가. Linux (ZIP create/restore 15.261/7.168ms; zlib 19.920/8.137ms), Windows (ZIP86.893/47.808ms; zlib245.156/66.871ms). zlib 압축 CAS가 이 CI 시도에서 느린 편임을 확인했지만 로컬 CI 부하와 filesystem cache를 통제하지 않았으므로 속도 차이의 일반화/인수수용 금지.
+- 합성 2세대 실제 출력 용량 Linux ZIP31,216B vs zlib24,637B(21.1% 적음), Windows ZIP31,550B vs zlib25,046B, **이 데이터만**. 외부/고객 PostgreSQL, 장기 관측, 서버 CPU/RAM, 저장장치 마모/IOPS, 물리 정전 시험은 NOT RUN. R04 제안10점은 사용자 미승인, 공식 P100 UNASSESSED, [작업중]·SALE HOLD.
+
 ## [2026-11-14 최신 합성 안전성 근거 보강]
 - SHA `c9823a3d48c4c8507c8c4c61ca3328d92674b3d4` [CI Windows/Linux #43551764326](https://github.com/hibi89/DBVORA/actions/runs/43551764326) 실제 source/Actions 확인: Python669 discovered, Ubuntu669PASS/0SKIP, Windows668PASS+1 POSIX SKIP, 0 FAIL, 필수12/12 각OS PASS. 668 baseline below threshold and required source safety file absence fail-close. PG16 실제 localhost TLS/읽기전용 등 별도 5/5, Chromium localhost8/8×2 기존 근거 유효.
 - **R03 / P3:** 기존 ZIP/ZSTD, raw CAS v1, zlib CAS v2의 버전별 독립복원 외에 ENOSPC·manifest/restore publish failure 등 8개 합성 테스트, 실제 별도 프로세스 강제종료-before-publication 2개, 원장 기반 UTC daily/weekly 슬롯 7개. 원본/마지막 정상세대 보존 PASS(임시 테스트). **물리 정전/비휘발성 저장장치·온전한 자동 스케줄러, 고객 실제 DB는 NOT VERIFIED**. '주기'는 명시적 실행 API만 구현, OS Task Scheduler 설치 안함.
