@@ -6,6 +6,7 @@ These tests neither access customer files nor install background jobs.
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
+import multiprocessing
 from contextlib import closing
 import hashlib
 import os
@@ -20,6 +21,19 @@ from unittest.mock import patch
 from dbvora.archive import cas_audit, compressed_cas as cas
 from dbvora.archive.safe_zip import create_snapshot
 from tests.fixtures.make_sqlite import create_fixture
+
+
+def _restore_compressed_process(manifest, chunks, output, barrier, result_queue):
+    try:
+        barrier.wait(timeout=30)
+        result = cas.restore_compressed(
+            manifest, chunks, output, synthetic_only=True, accept_plaintext=True,
+        )
+        result_queue.put(("RESTORED", result["restored_name"], result["restored_sha256"]))
+    except cas.CompressedCasError as exc:
+        result_queue.put(("ERROR", str(exc)))
+    except BaseException as exc:
+        result_queue.put(("ERROR", type(exc).__name__))
 
 
 class CompressedCasConcurrencyTests(unittest.TestCase):
@@ -132,6 +146,56 @@ class CompressedCasConcurrencyTests(unittest.TestCase):
         self.assertEqual((self.manifests / stored["manifest_name"]).read_bytes(),
                          before)
         self.assertEqual(list(self.output.glob(".dbvora-incomplete-*.part")), [])
+
+    def test_multiprocess_restore_race_keeps_manifest_and_distinct_outputs(self):
+        stored = self.publish()
+        manifest = self.manifests / stored["manifest_name"]
+        manifest_before = manifest.read_bytes()
+        database_before = hashlib.sha256(self.database.read_bytes()).hexdigest()
+        context = multiprocessing.get_context("spawn")
+        barrier = context.Barrier(3)
+        result_queue = context.Queue()
+        processes = [
+            context.Process(
+                target=_restore_compressed_process,
+                args=(str(manifest), str(self.chunks), str(self.output),
+                      barrier, result_queue),
+            )
+            for _ in range(3)
+        ]
+        try:
+            for process in processes:
+                process.start()
+            outcomes = [result_queue.get(timeout=45) for _ in processes]
+            for process in processes:
+                process.join(timeout=10)
+            self.assertTrue(all(not process.is_alive() for process in processes))
+            self.assertTrue(all(process.exitcode == 0 for process in processes))
+            restored = [item for item in outcomes if item[0] == "RESTORED"]
+            errors = [item for item in outcomes if item[0] == "ERROR"]
+            self.assertEqual(errors, [])
+            self.assertEqual(len(restored), 3)
+            names = [item[1] for item in restored]
+            self.assertEqual(len(set(names)), 3)
+            self.assertTrue(all(item[2] == stored["snapshot_sha256"] for item in restored))
+            self.assertEqual(sorted(path.name for path in self.output.glob("dbvora-*.sqlite")),
+                             sorted(names))
+            for name in names:
+                self.assertEqual(hashlib.sha256((self.output / name).read_bytes()).hexdigest(),
+                                 stored["snapshot_sha256"])
+            self.assertEqual(manifest.read_bytes(), manifest_before)
+            self.assertEqual(hashlib.sha256(self.database.read_bytes()).hexdigest(),
+                             database_before)
+            for directory in (self.chunks, self.manifests, self.output):
+                self.assertEqual(list(directory.glob(".dbvora-incomplete-*.part")), [])
+        finally:
+            for process in processes:
+                if process.is_alive():
+                    process.terminate()
+                if process.pid is not None:
+                    process.join(timeout=5)
+            result_queue.close()
+            result_queue.join_thread()
 
     def test_existing_mismatched_chunk_never_overwritten_or_referenced(self):
         old = self.publish()
