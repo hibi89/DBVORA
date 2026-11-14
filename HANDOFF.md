@@ -1,13 +1,13 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
 > 1. **목표·범위**: R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.
-> 2. **이번 완료**: R03-08 읽기 전용 CAS 세대 보존·고립 파일·저장량 preview를 합성 범위에서 구현·검증했다.
-> 3. **기능/검증 SHA**: 1d7d5af74055e19717b73291328fca666c05ce63; preview 코드와 합성 테스트가 포함된 정확 기능 SHA다.
-> 4. **전체 회귀**: [#43617576399](https://github.com/hibi89/DBVORA/actions/runs/43617576399) 정확 SHA PASS. Ubuntu 756/756 PASS·0 SKIP; Windows 756 PASS + 지정 POSIX 전용 SKIP 1.
-> 5. **추가 게이트**: unsigned source ZIP [#43617576253](https://github.com/hibi89/DBVORA/actions/runs/43617576253) 및 blueprint [#43617576518](https://github.com/hibi89/DBVORA/actions/runs/43617576518) 정확 SHA PASS.
-> 6. **preview 경계**: untrusted filesystem mtime은 정렬 참고만, 동률·손상·고립·스캔 중 변경은 HOLD. 목록·저장량 추정만 제공하며 자동 삭제 0.
-> 7. **이전 작업**: R03-05/R03-06는 653722bee4ac595220cc9c8d44459ce9b1e1ee33에서 PASS_SCOPED, 근거는 P3_05_06 문서와 #43616426097.
-> 8. **검증 한계**: 합성 파일/프로세스 오류 테스트 범위다. 실제 디스크 가득 참·전원중단·실사용 복원은 증명하지 않는다.
-> 9. **다음 작업**: R03-09 Windows/NTFS 경로·ACL·실패 경계를 GitHub의 합성 runner에서 검토; R03-10 물리 전원중단은 OWNER_GATE.
+> 2. **이번 완료**: R03-09 Windows/NTFS native publication 경계와 R03-08 읽기 전용 보존 preview를 합성 환경에서 검증했다.
+> 3. **기능/검증 SHA**: 4f3e0c8833735129c1e3c0dbf23c487220e3cf73; R03-09 변경은 문서 명확화와 합성 경계 테스트이며, R03-08 구현은 선행 SHA 1d7d5af74055e19717b73291328fca666c05ce63에서 완료했다.
+> 4. **전체 회귀**: [#43618972951](https://github.com/hibi89/DBVORA/actions/runs/43618972951) 정확 SHA PASS. Ubuntu 760/760 PASS·0 SKIP; Windows 760 PASS + 지정 POSIX 전용 SKIP 1.
+> 5. **Blueprint**: [#43618973180](https://github.com/hibi89/DBVORA/actions/runs/43618973180) 정확 SHA PASS.
+> 6. **R03-09**: native temporary-path alias publication/hash, injected Win32 access denial sanitization, production wrapper fail-closed stage preservation, unsupported-volume rejection pass. No ACL mutation.
+> 7. **수정 이력**: 최초 83dcafba 테스트 파일 문법 오류로 [#43618687075](https://github.com/hibi89/DBVORA/actions/runs/43618687075) 실패. syntax-only fix가 포함된 최종 SHA에서 전체 게이트 PASS.
+> 8. **R03-08·R03-05/06**: storage preview는 untrusted mtime·무삭제, R03-05/06는 다중 프로세스·주입 장애 증거로 PASS_SCOPED 유지.
+> 9. **다음 작업**: R04-01 ZIP/ZSTD/CAS 반복 벤치 범위 감사 및 R04-02 리소스·분산 측정. 실디스크 오류·물리 전원중단은 OWNER_GATE.
 > 10. **공식 상태**: 전체 완성률 UNASSESSED, 과거 기술평가 95% 비공식, [작업중]/RELEASE HOLD, 사용자·물리·권리 수용 OWNER_GATE 유지.
 
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**

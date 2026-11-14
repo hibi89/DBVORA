@@ -1,7 +1,13 @@
+> **[2026-11-15 KST · latest source/test SHA 4f3e0c8833735129c1e3c0dbf23c487220e3cf73]**
+> **DONE-SCOPED** R03-09 Windows/NTFS synthetic publication boundaries. Full [#43618972951](https://github.com/hibi89/DBVORA/actions/runs/43618972951) Ubuntu 760 PASS/0 SKIP; Windows 760 PASS + 1 named POSIX-only skip; blueprint [#43618973180](https://github.com/hibi89/DBVORA/actions/runs/43618973180) PASS.
+> Native temp-parent alias publication, access-denied injection/sanitization, production wrapper stage preservation, and unsupported-volume rejection passed. ACL settings were not modified; real disk-full/power-loss remain unverified. Failure SHA 83dcafba only had a Python test-file syntax error, fixed at this passing SHA. Detailed evidence: [P3_09_WINDOWS_NTFS_BOUNDARIES_20261115.md](P3_09_WINDOWS_NTFS_BOUNDARIES_20261115.md).
+> **NEXT-1** R04-01: extend same-workload ZIP/ZSTD/CAS benchmark evidence to repeatable trials and recorded environment/sample details.
+> **NEXT-2** R04-02: measure actual per-process CPU time, sampled resident RAM, storage bytes, and clearly label unavailable/noisy host-volume measurements.
+> Overall completion remains UNASSESSED / RELEASE HOLD; R03-10 and owner/legal gates remain open.
 > **[2026-11-15 KST · latest source/test SHA 1d7d5af74055e19717b73291328fca666c05ce63]**
 > **DONE-SCOPED** R03-08 read-only synthetic CAS retention preview. Full [#43617576399](https://github.com/hibi89/DBVORA/actions/runs/43617576399) Ubuntu 756 PASS/0 SKIP; Windows 756 PASS + 1 named POSIX-only skip. Unsigned ZIP [#43617576253](https://github.com/hibi89/DBVORA/actions/runs/43617576253) and blueprint [#43617576518](https://github.com/hibi89/DBVORA/actions/runs/43617576518) PASS.
 > Orphans are listed by safe basename; storage estimate uses recognized compressed file lengths. Untrusted mtime is only a preview ordering hint; ambiguity, damage, orphan/unknown entries, or a changing store hold with no suggestions. Deletion stays disabled. Detailed evidence: [P3_08_RETENTION_PREVIEW_20261115.md](P3_08_RETENTION_PREVIEW_20261115.md).
-> **NEXT-1** R03-09: inspect/complete Windows NTFS create-only/path/ACL error boundaries using GitHub-hosted synthetic checks; do not equate these with physical durability.
+> **DONE-SCOPED** R03-09 is complete at source/test SHA 4f3e0c8833735129c1e3c0dbf23c487220e3cf73; evidence is in P3_09_WINDOWS_NTFS_BOUNDARIES_20261115.md. Next R04-01/R04-02.
 > **NEXT-2** R04-01/R04-02: audit repeatable ZIP/ZSTD/CAS benchmark coverage and evidence; distinguish GitHub runner timing from owner hardware.
 > Overall completion remains UNASSESSED / RELEASE HOLD; R03-10, owner-device and legal gates remain open.
 > **[2026-11-15 KST · latest source/test SHA 653722bee4ac595220cc9c8d44459ce9b1e1ee33]**
