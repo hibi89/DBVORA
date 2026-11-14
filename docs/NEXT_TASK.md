@@ -1,3 +1,10 @@
+> **[2026-11-15 KST · latest exact source/test SHA f844ce751ffd2d050f3fe1e8a62b699aa5959dc3]**
+> **DONE-SCOPED** R03-04 daily/weekly synthetic slot process-restart acceptance. Full [#43612179872](https://github.com/hibi89/DBVORA/actions/runs/43612179872) Ubuntu 744 PASS/0 SKIP; Windows 743 PASS + 1 named POSIX-only skip; blueprint [#43612180225](https://github.com/hibi89/DBVORA/actions/runs/43612180225) PASS.
+> Same daily slot stays HOLD after injected child-process termination following reservation; next date runs. Weekly same-ISO-week replay stays held; following week can run. Synthetic source hash/size/mtime unchanged. This is not physical reboot/power-loss or installed OS scheduler proof.
+> **NEXT-1** R03-07: implement preview, explicit artifact selection, and verified restore to a new destination only; surface failure guidance and preserve source/backup artifacts.
+> **NEXT-2** Continue remaining R01–R07/G90 work in dependency order, then request independent High review at the same final functional SHA. Physical/user/legal gates remain OWNER_GATE.
+> **NEXT-3** After each major pass, update STATUS/HANDOFF/NEXT_TASK and task-specific exact-SHA evidence. Overall UNASSESSED / RELEASE HOLD; no PC, customer data, paid infra, privilege/security setting changes, main/develop merge or release.
+
 > **[2026-11-15 KST · latest exact source/test SHA 7669472fd40758184dc20e13e93c4c79860b252d]**
 > **DONE-SCOPED** R02-05 PostgreSQL statistics UI/API, separate explicit request. Full [#43611295895](https://github.com/hibi89/DBVORA/actions/runs/43611295895), Chromium [#43611295885](https://github.com/hibi89/DBVORA/actions/runs/43611295885), real PG16 TLS/UI [#43611295871](https://github.com/hibi89/DBVORA/actions/runs/43611295871), blueprint [#43611296278](https://github.com/hibi89/DBVORA/actions/runs/43611296278) all PASS on exact source SHA.
 > **NEXT-1** R03-04: implement daily/weekly local runner with default OFF, explicit consent, slot idempotency, synthetic-only GitHub verification, and preserve prior generation on failure. Reuse existing runner/archive code where it meets acceptance.

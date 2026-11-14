@@ -1,4 +1,16 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
+> 1. **목표·범위**: R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.
+> 2. **이번 완료**: R03-04 일/주 합성 러너의 슬롯 예약 후 프로세스 종료·재시작 수용을 검증했다. 기존 runner 구현은 유지하고 테스트만 추가했다.
+> 3. **기능/검증 SHA**: f844ce751ffd2d050f3fe1e8a62b699aa5959dc3 (tests/test_daily_restart.py 포함).
+> 4. **전체 회귀**: [#43612179872](https://github.com/hibi89/DBVORA/actions/runs/43612179872) 정확 SHA PASS. Ubuntu 744/744 PASS; Windows 743 PASS + 지정 POSIX 전용 SKIP 1; 필수 게이트 통과.
+> 5. **Blueprint**: [#43612180225](https://github.com/hibi89/DBVORA/actions/runs/43612180225) 정확 SHA PASS.
+> 6. **수용 범위**: 일간 예약 직후 자식 프로세스 종료 시 같은 날짜는 HOLD·산출물 없음, 다음 날짜는 실행 가능. 주간은 같은 ISO 주 HOLD, 다음 주 새 슬롯. 합성 SQLite 원본 hash/size/mtime 불변.
+> 7. **남은 R03-04 게이트**: 물리 재부팅/정전과 사용자 PC OS 스케줄러 미검증·미설치이며 OWNER_GATE. 자동 재시도·정리 없음.
+> 8. **다른 scoped 완료**: R01-03, R02-03, R02-05, R02-06은 과거 정확 SHA의 PASS_SCOPED 기록을 유지한다.
+> 9. **다음 작업**: R03-07 안전 복원 UX를 기존 독립 검증·새 경로 전용 복원 코드를 재사용해 구현한다.
+> 10. **공식 상태**: 전체 완성률 UNASSESSED, 과거 기술평가 95% 비공식, [작업중]/RELEASE HOLD, 사용자·물리·권리 수용 OWNER_GATE 유지.
+
+> **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
 > 1. **목표·범위**: R01–R07 백엔드·프론트엔드 최종설계의 GitHub 기반 구현과 검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.
 > 2. **이번 완료**: R02-05 PostgreSQL 추정 통계 조회 UI/API를 추가했다. R01-03 TLS verify-full/read-only 카탈로그 UI와 분리된 별도 버튼 동작이다.
 > 3. **기능/검증 SHA**: 7669472fd40758184dc20e13e93c4c79860b252d. 통계 API는 허용 목록의 상태·추정 row count·heap/index 바이트/provenance만 반환한다.

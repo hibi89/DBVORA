@@ -32,3 +32,7 @@ Returned status `RECORDED_UNVERIFIED_REQUIRES_OWNER_REVIEW` is **not customer-re
 - Both Windows2025 and Ubuntu24.04 full release gate exact SHA before changing status.
 - Requires owner Windows10 QA, power-loss and storage exhaustion/locking stress, actual archive retention policy authorization and optional approved PG TLS before customer sales.
 - Original source files, backups, ledger and any user data are never removed or overwritten by this primitive.
+
+
+### 2026-11-15 synthetic process-restart acceptance
+R03-04 is PASS_SCOPED for the exact source/test SHA f844ce751ffd2d050f3fe1e8a62b699aa5959dc3. See [P3_04_SYNTHETIC_RESTART_ACCEPTANCE_20261115.md](P3_04_SYNTHETIC_RESTART_ACCEPTANCE_20261115.md): [full release #43612179872](https://github.com/hibi89/DBVORA/actions/runs/43612179872) PASS on Ubuntu and Windows, and [blueprint #43612180225](https://github.com/hibi89/DBVORA/actions/runs/43612180225) PASS. After forced child-process exit immediately following daily slot reservation, same-day replay remains HOLD without creating files; the next day can run. The synthetic SQLite source hash, size and mtime are unchanged. This is process-restart evidence only; physical reboot, power loss and OS scheduler behavior remain unverified OWNER_GATE.

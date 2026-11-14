@@ -1,5 +1,7 @@
 > **2026-11-14 KST 실행자 변경 고지:** 사용자 최신 지시에 따라 아래 48개 원자 ID/수용 조건은 보존하되 실행은 **Codex GPT-6 Luna Max의 GitHub-only**로 위임. 최신 실행 정본: [P100_CODEX_LUNA_MAX_GITHUB_ONLY_20261114.md](P100_CODEX_LUNA_MAX_GITHUB_ONLY_20261114.md). 과거 Instant 실행 설명 및 SHA는 이력으로만 남기며, 현재 기능/CI/공식점수를 의미하지 않는다. High 최종검수/OWNER_GATE/RELEASE HOLD 그대로.
 
+> **[2026-11-15 KST · latest scoped execution evidence]** Functional source/test SHA f844ce751ffd2d050f3fe1e8a62b699aa5959dc3: R03-04 PASS_SCOPED for synthetic process-restart behavior. Full release [#43612179872](https://github.com/hibi89/DBVORA/actions/runs/43612179872) passed: Ubuntu 744/744, Windows 743 PASS + one named POSIX-only skip; blueprint [#43612180225](https://github.com/hibi89/DBVORA/actions/runs/43612180225) passed. Daily interrupted slot remains HOLD on same-day restart; next-day slot runs. Weekly same-ISO-week replay holds; next week runs. Synthetic source hash/size/mtime unchanged. Physical reboot/power-loss and real OS scheduler remain OWNER_GATE. Detailed evidence: [P3_04_SYNTHETIC_RESTART_ACCEPTANCE_20261115.md](P3_04_SYNTHETIC_RESTART_ACCEPTANCE_20261115.md). Overall completion UNASSESSED / RELEASE HOLD.
+
 # DBVORA 최종설계 100% — GPT-6 Instant 실행·High 최종검수 마스터 플랜
 
 > 기준 2026-11-14 KST / hibi89/DBVORA / feature/p0-db-map / 기능 기준 SHA 8bb07273f3829248bae8516ac467bfbf7eb4f751
@@ -41,7 +43,7 @@
 | R03-01 | 보관복구 | SQLite WAL 포함 일관성 스냅샷 | 원본 불변, 승인된 로컬 대상만 새로 생성, WAL 동시 쓰기·복제 오류 실패안전 | Instant | EVIDENCE_RECHECK |
 | R03-02 | 보관복구 | ZIP/ZSTD/CAS 모든 형식 독립 복원 | 동일 합성 DB의 SHA256·SQLite integrity 비교, manifest/ZIP 변조·대상 덮어쓰기 거부 | Instant | EVIDENCE_RECHECK |
 | R03-03 | 보관복구 | 실제 CAS 증분 중복제거 세대 체인 | 원본/중복/변경 4세대·missing/corrupt parent·청크 실물 검증·이전 세대 독립 복원 | Instant | EVIDENCE_RECHECK |
-| R03-04 | 보관복구 | 하루/주 실제 실행 러너 | 합성 임시 DB 대상으로 지정 슬롯 실행·중복 방지·재부팅 재개 검증; OS 자동등록·서비스 기본 OFF | Instant | OPEN |
+| R03-04 | 보관복구 | 하루/주 실제 실행 러너 | 합성 임시 DB 대상 슬롯 실행·중복 방지·프로세스 재시작 HOLD 검증; OS 자동등록·서비스 기본 OFF | Instant | PASS_SCOPED |
 | R03-05 | 보관복구 | 동일 요청 중복 실행·다중 프로세스 경쟁 | 동시 writer/read/restore, 성공 세대 불변, 요청당 최대 한 번 게시, 실패 명확한 HOLD | Instant | EVIDENCE_RECHECK |
 | R03-06 | 보관복구 | ENOSPC/short-write/process kill 중단 복구 | 별도 프로세스 중단 및 재시도·고립 청크 HOLD, 원본/기존 정상 세대 SHA 보존 | Instant | EVIDENCE_RECHECK |
 | R03-07 | 보관복구 | 복구 대상 선택·미리보기·실제 별도 복원 UX | 새 출력경로만 사용, 해시·내용 검증, 원본 overwrite 0, 복원 실패 안내와 사용자 선택 | Instant | OPEN |

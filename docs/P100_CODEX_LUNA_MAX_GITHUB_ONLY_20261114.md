@@ -1,3 +1,5 @@
+> **[2026-11-15 KST · latest execution evidence]** Functional source/test SHA: f844ce751ffd2d050f3fe1e8a62b699aa5959dc3. R03-04 PASS_SCOPED for synthetic process restart only. Full [#43612179872](https://github.com/hibi89/DBVORA/actions/runs/43612179872): Ubuntu 744 PASS/0 SKIP; Windows 743 PASS + 1 named POSIX-only skip. Blueprint [#43612180225](https://github.com/hibi89/DBVORA/actions/runs/43612180225) PASS. Physical reboot/power-loss and real OS scheduler remain OWNER_GATE; scheduler not installed. Detailed evidence: [P3_04_SYNTHETIC_RESTART_ACCEPTANCE_20261115.md](P3_04_SYNTHETIC_RESTART_ACCEPTANCE_20261115.md). Next R03-07 safe restore UX. Overall UNASSESSED / RELEASE HOLD.
+
 > **[2026-11-15 KST · latest execution evidence]** Current functional source/test SHA: 7669472fd40758184dc20e13e93c4c79860b252d. R01-03 and R02-05 are PASS_SCOPED; updated 48-row status/evidence lives in docs/P100_INSTANT_EXECUTION_PLAN_20261114.md. Exact SHA Actions: full release [#43611295895](https://github.com/hibi89/DBVORA/actions/runs/43611295895), Chromium [#43611295885](https://github.com/hibi89/DBVORA/actions/runs/43611295885), PostgreSQL16 TLS/catalog/statistics UI [#43611295871](https://github.com/hibi89/DBVORA/actions/runs/43611295871), blueprint [#43611296278](https://github.com/hibi89/DBVORA/actions/runs/43611296278) all PASS. Ubuntu 742 tests PASS; Windows 741 PASS + 1 named POSIX-only skip; Chromium 32/32 on both OS. Next R03-04 then R03-07. Official completion remains UNASSESSED, RELEASE HOLD and OWNER_GATE retained.
 
 # DBVORA 최종설계 100% 경로 — Codex GPT-6 Luna Max / GitHub-only 실행 정본
@@ -70,7 +72,7 @@
 | R03-01 | SQLite backup API·WAL 동시쓰기·snapshot 일관성, 원본 SHA/mtime 유지 | RECHECK |
 | R03-02 | ZIP/ZSTD/raw CAS/compressed CAS 각 독립 복원, 내용 SHA+integrity, 임의 경로/덮어쓰기/오염 거부 | RECHECK |
 | R03-03 | 4세대 증분·중복·체인 개별 복원/부모 누락·손상·고립 청크 처리, 이전 세대 불변 | RECHECK |
-| R03-04 | **일/주 opt-in 실행 runner**: CLI/서비스 호출만(기본OFF), 합성 날짜/UTC주 슬롯, 중복·재시작·실패 복구·시간대, 실제 GitHub Windows/Linux 실행 | OPEN |
+| R03-04 | **일/주 opt-in 실행 runner**: CLI/서비스 호출만(기본OFF), 합성 날짜/UTC주 슬롯, 중복·프로세스 재시작 HOLD·실패 복구·시간대, 실제 GitHub Windows/Linux 실행 | PASS_SCOPED |
 | R03-05 | 멀티프로세스 동시 쓰기·예약 중복·복원 경쟁: 한 세대 한 번 publish/기존 보관본 불변 | RECHECK |
 | R03-06 | ENOSPC·short-write·프로세스 abrupt-exit·재개·temp/orphan 관리; 기존 정상본 보존 | RECHECK |
 | R03-07 | **별도 새 목적지로만 복원하는 미리보기/선택 UI 또는 안전한 워크플로 CLI**, 해시 검증·대상 존재 시 중단·오류 행동 안내, 브라우저/CLI 합성 | OPEN |

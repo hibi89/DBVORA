@@ -10,3 +10,7 @@ Use python -m dbvora.archive.daily_synthetic --period weekly --source (ABSOLUTE 
 The standard --period daily is unchanged. The CLI now fails closed with a fixed code for malformed arguments rather than echoing invalid flag values (which may be local paths). No real OS scheduler is installed; no automatic retention, deletion, customer data or power-loss guarantee is claimed. P100 UNASSESSED/RELEASE HOLD pending owner acceptance.
 
 Test: python -m unittest -v tests.test_weekly_synthetic and full synthetic release gate on both Windows2025/Linux Ubuntu24.04.
+
+
+### 2026-11-15 restart evidence
+Separate synthetic CLI invocations verify that a reserved ISO-week slot remains held during that week and a new slot can run the following week, at source/test SHA f844ce751ffd2d050f3fe1e8a62b699aa5959dc3. Full release [#43612179872](https://github.com/hibi89/DBVORA/actions/runs/43612179872) and blueprint [#43612180225](https://github.com/hibi89/DBVORA/actions/runs/43612180225) passed. This does not verify physical reboot/power-loss behavior or install an OS scheduler. Full details: [P3_04_SYNTHETIC_RESTART_ACCEPTANCE_20261115.md](P3_04_SYNTHETIC_RESTART_ACCEPTANCE_20261115.md).
