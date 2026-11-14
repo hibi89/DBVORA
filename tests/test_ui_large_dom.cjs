@@ -33,7 +33,8 @@ async function verify() {
   const meter = {rects:0,fetches:0};
   const ids = Object.fromEntries([
     'refresh','error','size','tables-count','links-count','db-short','observed',
-    'tables','detail','edges','diagram','table-filter','filter-status','filter-empty'
+    'tables','detail','edges','diagram','table-filter','filter-status','filter-empty',
+    'database-selector','database-list','workspace-summary'
   ].map(id => [id, new Element('div',meter)]));
   const tables = Array.from({length:1000},(_,i)=>({
     name:`synthetic_table_${String(i).padStart(4,'0')}`,
@@ -45,7 +46,7 @@ async function verify() {
   const relationships = tables.slice(1).map((table,i)=>({
     from_table:table.name,to_table:tables[i].name,evidence:'declared_foreign_key'
   }));
-  const payload={engine:'sqlite',db_id:'0123456789abcdefghijklmn',size_bytes:4096,
+  const payload={contract_version:'p0-01.v1',engine:'sqlite',db_id:'0123456789abcdefghijklmn',size_bytes:4096,
     observed_at:'2026-11-14T00:00:00Z',tables,relationships};
   const listeners=[];
   const doc={getElementById:id=>ids[id],
