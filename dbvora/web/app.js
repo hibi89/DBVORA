@@ -82,6 +82,19 @@ function displayGrowth() {
   const samples = observationHistory.get(id) || [];
   $('growth-history').textContent = '관측 이력: ' + samples.length +
     '건 / 최대 ' + MAX_OBSERVATIONS + '건 · 세션 메모리만 사용 · 디스크 저장 없음';
+  // Only report a measured net change after three chronological observations.
+  // This is descriptive, not a growth forecast or server disk utilization.
+  const trend = $('growth-trend');
+  if (samples.length < 3) {
+    trend.textContent = '추세 판단 대기 · 서로 다른 시각의 관측 3건 필요';
+  } else {
+    const first = samples[0], latest = samples[samples.length - 1];
+    const delta = latest.size_bytes - first.size_bytes;
+    const direction = delta > 0 ? '증가 +' : delta < 0 ? '감소 -' : '변화 없음 ';
+    trend.textContent = '세션 관측 ' + samples.length + '건의 최초~최근 순변화: ' +
+      direction + formatBytes(Math.abs(delta)) +
+      ' · SQLite 메인 파일 · WAL/SHM 제외 · 미래 예측 아님';
+  }
   if (!comparison || comparison.status === 'baseline') {
     target.textContent = '첫 측정 완료 · 새로고침 후 비교';
   } else if (comparison.status !== 'measured') {
