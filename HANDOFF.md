@@ -1,3 +1,15 @@
+> **[2026-11-14 KST · DBVORA synthetic CAS v2 multigeneration source `7e3ba31590d93626e7c93afab342167606f29e97` · handoff 10항]**
+> 1. **목표/원설계/기술:** 사용자 최종설계 7요구·P0–P4 전체 백엔드·프론트 100% 목표, Python3.11/SQLite(read-only)/optional PG, HTML/JS, ZIP/ZSTD/zlib CAS. 크몽 등록은 별도.
+> 2. **구현/결정:** `dbvora.archive.cas_audit._manifest`가 복원과 동일한 bounded FD identity/ctime guard `compressed_cas._read_manifest_unchanged` 재사용(중복 가드 A보다 공통 안전코드 B가 오검출·유지보수상 유리). 합성 4세대 저장(중복1+변경2)→순서 변경 독립복원, 최신 전용 청크 손상 시 이전 정상 세대 생존, manifest 게시실패 시 orphan 탐지·수동HOLD(삭제0), 같은 size/mtime으로 감사 중 명세 교체 거부 4 신규 회귀.
+> 3. **실행검증:** 정확 기능 SHA [`7e3ba31590d9`](https://github.com/hibi89/DBVORA/commit/7e3ba31590d93626e7c93afab342167606f29e97) [Windows2025+Ubuntu24.04 full gate #43565286637](https://github.com/hibi89/DBVORA/actions/runs/43565286637) **2/2 SUCCESS**, 각 Python703 발견: Ubuntu703PASS/0FAIL/0SKIP, Windows702PASS/0FAIL/1 named POSIX-only SKIP, 각 mandatory12/12 PASS, Node frontend DOM stage PASS. `python -m scripts.verify_release_gate`. 실 구매자 PC/실서비스 DB/물리 전원 손실 NOT RUN.
+> 4. **진행/남은 상태:** 신규 P3 합성 다세대 복원·경합 사양 검증 완료. 공식 전체 100점은 사용자 최종설계 승인 가중치·실증 미완 **UNASSESSED**(과거 내부95는 역사); `[작업중]`/RELEASE HOLD/크몽 실제 등록0.
+> 5. **실패·진단·재시도 정책:** 새 CI FAIL0. 결함 모의에서는 `INVALID_MANIFEST`, `HOLD_DAMAGED_OR_MISSING`, `HOLD_MANUAL_REVIEW`가 의도된 안전 거부; 실제 고객 장애 아님. 기존 Windows clock/NTFS 과거 실패 SHA 재실행 금지, 추가 오류 시 원인→최소 수정→단일 개선 재시험.
+> 6. **저장소·브랜치·SHA·경로:** `hibi89/DBVORA@feature/p0-db-map` 코드 SHA `7e3ba31590d93626e7c93afab342167606f29e97`, `dbvora/archive/cas_audit.py`, `tests/test_cas_audit.py`, `tests/test_cas_generation_lifecycle.py`, `docs/P3_MULTI_GENERATION_CAS_ACCEPTANCE_20261114.md`. 이 문서 HEAD는 코드 SHA와 구별.
+> 7. **Production·Vercel·환경:** 설치형 로컬 제품, Production/Vercel 미적용; GitHub 표준 무료 Windows2025/Ubuntu24.04, Python3.11, Node22, synthetic-only release gate. CI PASS는 상용검수 아님.
+> 8. **원본·백업·권한·보안:** customer files/실DB/키/기존 ZIP·CAS 이력·main/develop/권한 불변. synthetic disposable temp fixture에서만 청크 손상/복원. 코드 변경 전 복구 커밋 `6477f7b12548739356536159affe2711866f045c`, force push/자동 삭제0.
+> 9. **다음 우선순위·승인:** 실제 승인 데이터 없이 추가 다세대 경합/안전·UI 대형 스키마 회귀 검토, 제품 핵심 기능/라이선스/구매자 승인 최종설계 항목 대조. 외출 중 사용자 PC 요구0; 폰 `ㄱ`로 재개. 물리정전·실고객·상업 권리/실게시/유료권한 변경은 별도 승인.
+> 10. **일시·확인 범위:** 2026-11-14 KST, 정확 기능 SHA에서 양OS job 결론·출력 JSON Python703+12단계 실제 확인. 실현장 OS/정전/보관 장기 운영/고객 출시는 미검증, 인수인계 문서 별도 커밋.
+>
 > **[2026-11-14 KST · P3 manifest descriptor identity guard · source `0caf6080eceb8fd725926621ed478b2a2e8f348a`]**
 > 1. **목표/요구/기술:** 기존 DBVORA REQ 7항/P0–P4, SQLite/PG read-only→로컬 구조도·ZIP/ZSTD/CAS 무손실 보관, Python3.11+Windows/Linux. 사용자 백엔드·프론트엔드 100% 목표, 크몽 등록 별도.
 > 2. **기능/설계:** zlib CAS v2 복원 manifest 읽기를 `_read_manifest_unchanged` 한정 FD로 전환: open 전/후 파일ID/mtime/ctime·크기·단일링크 확인, `O_NOFOLLOW` 사용 가능 OS에서 활성화, 512KB 초과 거부. A 기존 `read_bytes`는 파일 교체 race와 size/mtime 동일 공격에 취약; B FD identity 확인은 표준 라이브러리·추가요금/권한0, 재사용 가능한 안전 계약 → B.
