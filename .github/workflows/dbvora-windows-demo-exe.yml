@@ -10,6 +10,7 @@ on:
       - "dbvora/export_html.py"
       - "dbvora/inventory.py"
       - "dbvora/web/**"
+      - "tests/**"
       - ".github/workflows/dbvora-windows-demo-exe.yml"
   workflow_dispatch:
 

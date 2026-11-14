@@ -9,6 +9,7 @@ on:
       - "contracts/**"
       - "scripts/build_portable.py"
       - "pyproject.toml"
+      - "tests/**"
       - ".github/workflows/dbvora-owner-preview.yml"
   workflow_dispatch:
 
