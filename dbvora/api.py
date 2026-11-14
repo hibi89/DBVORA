@@ -6,6 +6,7 @@ import hashlib
 from dbvora.connectors.sqlite_reader import validate_path
 from dbvora.errors import InventoryError
 from dbvora.inventory import inspect_sqlite
+from dbvora.observation_ledger import ObservationError, read_observations
 from dbvora.storage_metrics import collect_table_storage
 from dbvora.workspace import MAX_DATABASES, inspect_workspace
 
@@ -18,7 +19,7 @@ except ImportError as exc:
 WEB = Path(__file__).resolve().parent / 'web'
 
 
-def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], port: int = 8765) -> FastAPI:
+def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], port: int = 8765, *, observation_ledger_path: str | Path | None = None) -> FastAPI:
     if not (1 <= port <= 65535):
         raise ValueError('Port must be between 1 and 65535.')
     # The CLI selects every source at startup. No HTTP path/SQL input is
@@ -126,6 +127,27 @@ def create_app(db_path: str | Path | list[str | Path] | tuple[str | Path, ...], 
                                                 'reason': measured.get('reason', 'btree_not_measurable')})
         return JSONResponse({'contract': 'dbvora.local-table-storage.v1',
                              'table': name, 'scope': measured['scope'], 'metric': metric})
+
+    @app.get('/api/observations')
+    async def observations(request: Request):
+        """Optional read-only local observation ledger; never accepts file paths."""
+        if observation_ledger_path is None:
+            return JSONResponse(status_code=404, content={
+                'error': {'code': 'OBSERVATIONS_DISABLED', 'message': 'Local observation ledger is not configured.'}})
+        database_ids = request.query_params.getlist('database')
+        if (set(request.query_params.keys()) != {'database'}
+                or len(database_ids) != 1 or database_ids[0] not in by_db_id):
+            return JSONResponse(status_code=422, content={
+                'error': {'code': 'INVALID_DATABASE', 'message': 'Select a configured database.'}})
+        try:
+            rows = read_observations(observation_ledger_path, db_id=database_ids[0])
+        except (ObservationError, OSError, ValueError):
+            return JSONResponse(status_code=422, content={
+                'error': {'code': 'OBSERVATION_INTEGRITY', 'message': 'Local observation ledger is unavailable or invalid.'}})
+        return JSONResponse({'contract': 'dbvora.local-observation.v1',
+                             'database': database_ids[0],
+                             'scope': 'sqlite_main_file_excluding_wal_shm',
+                             'records': rows})
 
     @app.get('/health')
     async def health():
