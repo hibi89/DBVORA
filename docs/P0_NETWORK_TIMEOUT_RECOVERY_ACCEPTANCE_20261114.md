@@ -29,7 +29,7 @@
 ## 원격 검증 증거 (정확 기능 SHA)
 
 - [실제 Chromium Windows2025+Ubuntu24.04 #43584055932](https://github.com/hibi89/DBVORA/actions/runs/43584055932): **양 OS 20/20 PASS**, `PASS_SYNTHETIC_HTTP_BROWSER_ONLY`; +3 시나리오 포함.
-- [전체 릴리스 #43584055935](https://github.com/hibi89/DBVORA/actions/runs/43584055935): Ubuntu24.04 **714/714 PASS / 0FAIL / 0SKIP**, 필수12/12 PASS. Windows2025: **최종 결과 확인 대기**.
+- [전체 릴리스 #43584055935](https://github.com/hibi89/DBVORA/actions/runs/43584055935): **2/2 SUCCESS**. Ubuntu24.04 **714/714 PASS / 0FAIL / 0SKIP**, Windows2025 **713PASS / 0FAIL / 1 POSIX-only SKIP** (`test_review_html.ReviewHtmlTests.test_created_report_is_mode_0600_on_posix`), 양쪽 필수 **12/12 PASS**. 정확한 source SHA `38798bf0819c`의 두 job stdout contract 확인.
 - [최종설계 증거정책 #43584056105](https://github.com/hibi89/DBVORA/actions/runs/43584056105): SUCCESS (공식 사용자 최종설계 점수 산정/구매자 수용 승인 아님).
 - Git commit 작성자/커미터: 연결된 `hibi89`; 확인 메일은 비밀이 아니지만 재공개하지 않음.
 - 브라우저 20회 체크는 네트워크 장애 시의 짧은 기능 회귀이며 **장기 heap·실 고객 환경/물리적인 라우터 단절·실 사용자 Windows10 성능을 보증하지 않음**.
