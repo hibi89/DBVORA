@@ -13,6 +13,7 @@ let growthComparisons = new Map();
 let nodeElements = new Map();
 let edgeByTable = new Map();
 let observer = null;
+let activeStorageRequest = null;
 
 function el(tag, klass, content) {
   const node = document.createElement(tag);
@@ -87,6 +88,9 @@ function inspect(tableName) {
   if (!inventory) return;
   const table = inventory.tables.find((item) => item.name === tableName);
   if (!table) return;
+  // Stop the previous opt-in scan when its table/DB is no longer selected.
+  if (activeStorageRequest) activeStorageRequest.abort();
+  activeStorageRequest = null;
   const previous = nodeElements.get(selected);
   if (previous) {
     previous.classList.toggle('active', false);
@@ -125,6 +129,7 @@ function inspect(tableName) {
     measure.disabled = true;
     storageStatus.textContent = '측정 중…';
     const controller = new AbortController();
+    activeStorageRequest = controller;
     const deadline = setTimeout(() => controller.abort(), 8000);
     try {
       const dbQuery = workspace ? '&database=' + encodeURIComponent(selectedDatabase) : '';
@@ -158,6 +163,7 @@ function inspect(tableName) {
       }
     } finally {
       clearTimeout(deadline);
+      if (activeStorageRequest === controller) activeStorageRequest = null;
       if (measure.isConnected) measure.disabled = false;
     }
   });
