@@ -14,3 +14,6 @@
 
 /* R01-02: simultaneous, explicit local database topology. */
 .database-topology{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:12px 0 14px;padding:14px;background:#0d191f;border:1px solid #344c50;border-radius:10px}.topology-database{text-align:left;display:flex;flex-direction:column;gap:5px;min-width:0;padding:13px 15px;color:#d8e8e5;background:#17262d;border:1px solid #45616a;border-radius:8px}.topology-database strong{font-size:13px}.topology-database span,.topology-database small{font-size:11px;color:#a3b8ba;overflow-wrap:anywhere}.topology-database:hover{border-color:#87d5d2}.topology-database[aria-pressed="true"]{border-color:var(--lime);background:#274037}.topology-scope{grid-column:1/-1;color:#8ca4aa;font-size:11px;margin:2px 0 0;line-height:1.5}@media(max-width:740px){.database-topology{padding:9px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}}
+
+/* Bounded session-only observation history, no persistent browser storage. */
+.growth-history { margin-top: 8px; font-size: 12px; color: var(--muted, #9ca3af); line-height: 1.5; }
