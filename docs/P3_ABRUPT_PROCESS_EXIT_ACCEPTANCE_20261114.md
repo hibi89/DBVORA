@@ -26,7 +26,7 @@
 
 [GitHub Actions 전체 릴리스 #43580486901](https://github.com/hibi89/DBVORA/actions/runs/43580486901) — 동일 source SHA 기준:
 - Ubuntu24.04: Python **714/714 PASS**, FAIL0, SKIP0, 필수 12/12, job SUCCESS.
-- Windows2025: **결과 확정 전 · 미검증** (완료된 경우 정확 SHA 로그로 갱신).
+- Windows2025: Python **713 PASS / 0 FAIL / 1 named POSIX-only SKIP** (총714 발견), 필수 12/12, job SUCCESS. SKIP: `test_review_html.ReviewHtmlTests.test_created_report_is_mode_0600_on_posix`.
 - [Final blueprint evidence gate #43580487122](https://github.com/hibi89/DBVORA/actions/runs/43580487122): SUCCESS. 수용/100% 달성 의미는 아님.
 - 실 Chromium은 이전 정확 UI SHA `d5780ceece92`에서 양 OS 17/17 PASS; 이번 소스는 브라우저 자산 변경 없음.
 
