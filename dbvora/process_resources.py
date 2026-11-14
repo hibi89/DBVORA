@@ -198,9 +198,23 @@ class _SafeParser(argparse.ArgumentParser):
 def main(argv=None):
     parser = _SafeParser(description="Explicit local process/volume sample only")
     parser.add_argument("--local-dir", required=True)
+    parser.add_argument("--sample-interval-ms", type=int,
+                        help="Optional two measurements in one process (100-5000 ms)")
     try:
         args = parser.parse_args(argv)
-        print(json.dumps({"ok": True, "report": observe(args.local_dir)}, sort_keys=True))
+        interval = args.sample_interval_ms
+        if interval is not None and not 100 <= interval <= 5000:
+            raise ResourceError("INVALID_SAMPLE_INTERVAL")
+        if interval is None:
+            report = observe(args.local_dir)
+        else:
+            first = observe(args.local_dir)
+            time.sleep(interval / 1000)
+            latest = observe(args.local_dir)
+            report = {"contract": "dbvora.local-process-trend-cli.v1",
+                      "latest_sample": latest,
+                      "comparison": compare_local_samples(first, latest)}
+        print(json.dumps({"ok": True, "report": report}, sort_keys=True))
         return 0
     except ResourceError as exc:
         error = str(exc)
