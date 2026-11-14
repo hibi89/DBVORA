@@ -1,7 +1,13 @@
+> **[2026-11-15 KST · latest source/test SHA 1d7d5af74055e19717b73291328fca666c05ce63]**
+> **DONE-SCOPED** R03-08 read-only synthetic CAS retention preview. Full [#43617576399](https://github.com/hibi89/DBVORA/actions/runs/43617576399) Ubuntu 756 PASS/0 SKIP; Windows 756 PASS + 1 named POSIX-only skip. Unsigned ZIP [#43617576253](https://github.com/hibi89/DBVORA/actions/runs/43617576253) and blueprint [#43617576518](https://github.com/hibi89/DBVORA/actions/runs/43617576518) PASS.
+> Orphans are listed by safe basename; storage estimate uses recognized compressed file lengths. Untrusted mtime is only a preview ordering hint; ambiguity, damage, orphan/unknown entries, or a changing store hold with no suggestions. Deletion stays disabled. Detailed evidence: [P3_08_RETENTION_PREVIEW_20261115.md](P3_08_RETENTION_PREVIEW_20261115.md).
+> **NEXT-1** R03-09: inspect/complete Windows NTFS create-only/path/ACL error boundaries using GitHub-hosted synthetic checks; do not equate these with physical durability.
+> **NEXT-2** R04-01/R04-02: audit repeatable ZIP/ZSTD/CAS benchmark coverage and evidence; distinguish GitHub runner timing from owner hardware.
+> Overall completion remains UNASSESSED / RELEASE HOLD; R03-10, owner-device and legal gates remain open.
 > **[2026-11-15 KST · latest source/test SHA 653722bee4ac595220cc9c8d44459ce9b1e1ee33]**
 > **DONE-SCOPED** R03-05/R03-06. Full [#43616426097](https://github.com/hibi89/DBVORA/actions/runs/43616426097) Ubuntu 750 PASS/0 SKIP; Windows 750 PASS + 1 named POSIX-only skip; blueprint [#43616426451](https://github.com/hibi89/DBVORA/actions/runs/43616426451) PASS.
 > Same synthetic request raced from three processes publishes one ZIP; two replays HOLD. Three spawned processes restore one CAS generation into distinct new outputs with unchanged manifest and source. ENOSPC-injection/short-write/abrupt-exit cases preserve last-good data.
-> **NEXT-1** R03-08: implement a read-only retention/generation preview with safe orphan listing and storage estimates; damaged or ambiguous state must produce HOLD, and no deletion is enabled.
+> **DONE-SCOPED** R03-08 is implemented at source/test SHA 1d7d5af74055e19717b73291328fca666c05ce63; see P3_08_RETENTION_PREVIEW_20261115.md. Next is R03-09.
 > **NEXT-2** R03-09: inspect the existing Windows/NTFS path, alias, create-only and I/O failure evidence; add only missing synthetic cases. Keep R03-10 physical power-loss OWNER_GATE.
 > **NEXT-3** Continue remaining R01–R07/G90 tasks in dependency order. Overall UNASSESSED / RELEASE HOLD; synthetic GitHub evidence only.
 

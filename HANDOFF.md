@@ -1,13 +1,13 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
 > 1. **목표·범위**: R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.
-> 2. **이번 완료**: R03-05 요청 중복·경합 및 R03-06 중단 복구를 합성 환경에서 보강·재검증했다.
-> 3. **기능/검증 SHA**: 653722bee4ac595220cc9c8d44459ce9b1e1ee33; spawned process tests cover same-request archive publish and concurrent CAS restore.
-> 4. **전체 회귀**: [#43616426097](https://github.com/hibi89/DBVORA/actions/runs/43616426097) 정확 SHA PASS. Ubuntu 750/750 PASS·0 SKIP; Windows 750 PASS + 지정 POSIX 전용 SKIP 1; 필수 게이트 통과.
-> 5. **Blueprint**: [#43616426451](https://github.com/hibi89/DBVORA/actions/runs/43616426451) 정확 SHA PASS.
-> 6. **R03-05**: 동일 archive_once 요청 3개 프로세스 중 ZIP 1개만 게시되고 2개는 REQUEST_REPLAY_HELD; CAS 같은 세대 복원 3개 프로세스는 서로 다른 신규 파일을 만들고 manifest·원본을 보존한다.
-> 7. **R03-06**: ENOSPC 오류 주입, short-write, 실제 자식 프로세스 중단 시 이전 정상 세대/원본 보존·임시파일 정리 테스트가 통과. 실제 디스크 가득 참/전원정전 검증은 아님.
-> 8. **실패 이력**: 5b15b9a의 신규 테스트는 원장 파일명을 잘못 하드코딩해 실패([#43615599456](https://github.com/hibi89/DBVORA/actions/runs/43615599456)); 상수 LEDGER_NAME 사용으로 고친 뒤 60092/653722 정확 SHA 회귀 PASS.
-> 9. **다음 작업**: R03-08 읽기 전용 세대 보존·고립 파일·저장량 preview; 이어 R03-09 Windows 경계 증거. R03-10 물리 전원중단은 OWNER_GATE.
+> 2. **이번 완료**: R03-08 읽기 전용 CAS 세대 보존·고립 파일·저장량 preview를 합성 범위에서 구현·검증했다.
+> 3. **기능/검증 SHA**: 1d7d5af74055e19717b73291328fca666c05ce63; preview 코드와 합성 테스트가 포함된 정확 기능 SHA다.
+> 4. **전체 회귀**: [#43617576399](https://github.com/hibi89/DBVORA/actions/runs/43617576399) 정확 SHA PASS. Ubuntu 756/756 PASS·0 SKIP; Windows 756 PASS + 지정 POSIX 전용 SKIP 1.
+> 5. **추가 게이트**: unsigned source ZIP [#43617576253](https://github.com/hibi89/DBVORA/actions/runs/43617576253) 및 blueprint [#43617576518](https://github.com/hibi89/DBVORA/actions/runs/43617576518) 정확 SHA PASS.
+> 6. **preview 경계**: untrusted filesystem mtime은 정렬 참고만, 동률·손상·고립·스캔 중 변경은 HOLD. 목록·저장량 추정만 제공하며 자동 삭제 0.
+> 7. **이전 작업**: R03-05/R03-06는 653722bee4ac595220cc9c8d44459ce9b1e1ee33에서 PASS_SCOPED, 근거는 P3_05_06 문서와 #43616426097.
+> 8. **검증 한계**: 합성 파일/프로세스 오류 테스트 범위다. 실제 디스크 가득 참·전원중단·실사용 복원은 증명하지 않는다.
+> 9. **다음 작업**: R03-09 Windows/NTFS 경로·ACL·실패 경계를 GitHub의 합성 runner에서 검토; R03-10 물리 전원중단은 OWNER_GATE.
 > 10. **공식 상태**: 전체 완성률 UNASSESSED, 과거 기술평가 95% 비공식, [작업중]/RELEASE HOLD, 사용자·물리·권리 수용 OWNER_GATE 유지.
 
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
