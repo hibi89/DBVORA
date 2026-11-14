@@ -879,19 +879,15 @@ def run(*, screenshots=None):
                     require(multi_page.locator('#tables-count').inner_text() == '3'
                             and nodes.nth(0).get_attribute('aria-pressed') == 'true',
                             'MULTI_TOPOLOGY_CLICK_SELECTION')
-                    expected_sizes = multi_page.evaluate("""async () => {
+                    expected_database_ui = multi_page.evaluate("""async () => {
                       const data = await (await fetch('/api/inventory')).json();
-                      const formatBytes = value => {
-                        if (typeof value !== 'number' || !Number.isFinite(value)) return '—';
-                        const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-                        let n = value, index = 0;
-                        while (n >= 1024 && index < units.length - 1) { n /= 1024; index++; }
-                        return n.toLocaleString('ko-KR', {maximumFractionDigits: index ? 2 : 0}) +
-                          ' ' + units[index];
-                      };
-                      return Object.fromEntries(data.databases.map(db =>
-                        [db.db_id, formatBytes(db.size_bytes)]));
+                      return Object.fromEntries(data.databases.map(db => [db.db_id, {
+                        size: window.formatBytes(db.size_bytes),
+                        tables: db.tables.map(table => table.name)
+                      }]));
                     }""")
+                    expected_sizes = {db_id: value['size']
+                                      for db_id, value in expected_database_ui.items()}
                     db_a, db_b = (nodes.nth(0).get_attribute('data-db-id'),
                                   nodes.nth(1).get_attribute('data-db-id'))
                     require(multi_page.locator('#size').inner_text() == expected_sizes[db_a],
@@ -917,13 +913,14 @@ def run(*, screenshots=None):
                     require(multi_page.evaluate('() => window.__storagePending[0].signal.aborted'),
                             'MULTI_RACE_PREVIOUS_SCAN_NOT_ABORTED')
                     switched_inspector = multi_page.locator('.detail-heading h3').inner_text()
-                    switched_tables = [button.inner_text() for button in
-                                       multi_page.locator('#tables button.table-node').all()]
-                    require(multi_page.locator('#tables-count').inner_text() == '2'
-                            and multi_page.locator('.storage-status').inner_text().startswith('측정 전')
-                            and multi_page.locator('#size').inner_text() == expected_sizes[db_b]
-                            and switched_inspector in switched_tables,
-                            'MULTI_RACE_SWITCH_PRECONDITION')
+                    require(multi_page.locator('#tables-count').inner_text() == '2',
+                            'MULTI_RACE_DATABASE_TABLE_COUNT')
+                    require(multi_page.locator('.storage-status').inner_text().startswith('측정 전'),
+                            'MULTI_RACE_INSPECTOR_RESET')
+                    require(multi_page.locator('#size').inner_text() == expected_sizes[db_b],
+                            'MULTI_RACE_SIZE_SCOPE')
+                    require(switched_inspector in expected_database_ui[db_b]['tables'],
+                            'MULTI_RACE_INSPECTOR_SCOPE')
                     multi_page.evaluate("""() => window.__storagePending.shift().resolve({
                       ok: true, json: async () => ({
                         contract: 'dbvora.local-table-storage.v1',
@@ -943,8 +940,6 @@ def run(*, screenshots=None):
                         "() => window.__storagePending.length === 1")
                     multi_page.locator('#database-topology button.topology-database').first.click()
                     failed_switch_inspector = multi_page.locator('.detail-heading h3').inner_text()
-                    failed_switch_tables = [button.inner_text() for button in
-                                            multi_page.locator('#tables button.table-node').all()]
                     require(multi_page.evaluate('() => window.__storagePending[0].signal.aborted'),
                             'MULTI_RACE_PREVIOUS_FAILURE_SCAN_NOT_ABORTED')
                     multi_page.evaluate("""() => window.__storagePending.shift().reject(
@@ -953,7 +948,7 @@ def run(*, screenshots=None):
                     require(multi_page.locator('#tables-count').inner_text() == '3'
                             and multi_page.locator('.storage-status').inner_text().startswith('측정 전')
                             and multi_page.locator('#size').inner_text() == expected_sizes[db_a]
-                            and failed_switch_inspector in failed_switch_tables
+                            and failed_switch_inspector in expected_database_ui[db_a]['tables']
                             and not multi_errors, 'MULTI_RACE_STALE_FAILURE_LEAK')
                     # A table switch within the same DB also aborts the old
                     # opt-in scan; selection identity must remain correct.
