@@ -116,6 +116,19 @@ setImmediate(async () => {
     assert.ok(ids['growth-history'].textContent.includes('2건'), 'equal timestamp does not add duplicate history');
     assert.ok(ids['growth-status'].textContent.includes('비교 불가'),
       'equal-time comparison cannot be claimed as growth');
+    // Out-of-order responses must not replace the newer baseline.
+    currentInventory = {...data, size_bytes: 1000,
+      observed_at: '2026-10-26T07:03:00Z'};
+    await ids.refresh.events.click();
+    assert.ok(ids['growth-history'].textContent.includes('2건'),
+      'older server timestamp does not append a history sample');
+    currentInventory = {...data, size_bytes: data.size_bytes + 3072,
+      observed_at: '2026-10-26T07:06:00Z'};
+    await ids.refresh.events.click();
+    assert.ok(ids['growth-status'].textContent.includes('증가 +1 KB'),
+      'new comparison must use the last accepted 07:05 baseline, not stale 07:03');
+    assert.ok(ids['growth-history'].textContent.includes('3건'),
+      'newer observation is appended after stale sample rejected');
     assert.equal(resizeCount(), 1, 'repeated refresh must not accumulate resize listeners');
     assert.equal(ids.tables.children.length, 3);
     assert.equal(ids.edges.children.length, 1);
