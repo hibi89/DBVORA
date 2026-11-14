@@ -97,6 +97,42 @@ def run(*, screenshots=None):
                     page.on("response", lambda resp: bad_http.append(resp.status)
                             if resp.url.startswith(base) and resp.status >= 400
                             and not resp.url.endswith("/favicon.ico") else None)
+                    # Instrument native observer/listener ownership before app startup.
+                    # A constant DOM count alone cannot expose retained observers.
+                    page.add_init_script(script="""(() => {
+                        const Native = window.ResizeObserver;
+                        const probe = {created: 0, disconnected: 0,
+                            live: 0, maxLive: 0, resizeListeners: 0};
+                        window.__dbvoraRefreshProbe = probe;
+                        window.ResizeObserver = class extends Native {
+                            constructor(callback) {
+                                super(callback);
+                                this._active = false;
+                                probe.created += 1;
+                            }
+                            observe(target, options) {
+                                if (!this._active) {
+                                    this._active = true;
+                                    probe.live += 1;
+                                    probe.maxLive = Math.max(probe.maxLive, probe.live);
+                                }
+                                return super.observe(target, options);
+                            }
+                            disconnect() {
+                                if (this._active) {
+                                    this._active = false;
+                                    probe.live -= 1;
+                                }
+                                probe.disconnected += 1;
+                                return super.disconnect();
+                            }
+                        };
+                        const add = window.addEventListener;
+                        window.addEventListener = function(type, fn, options) {
+                            if (type === 'resize') probe.resizeListeners += 1;
+                            return add.call(this, type, fn, options);
+                        };
+                    })()""")
                     response = page.goto(base + "/", wait_until="networkidle", timeout=30000)
                     require(response is not None and response.status == 200,
                             "HTML_HTTP_FAILED")
@@ -324,6 +360,108 @@ def run(*, screenshots=None):
                         "browser_ready_ms": ready_ms}
                     result["checks"].append("sqlite_1000_chromium_keyboard")
 
+                    # Repeated refresh against the *real* 1,000-table SQLite
+                    # inventory. Preserve selection and graph without adding
+                    # listeners, observers, detached SVGs or DOM nodes.
+                    page.locator("button.table-node").filter(has_text=last_name).click()
+                    for cycle in range(6):
+                        with page.expect_response(
+                                lambda r: r.url == base + "/api/inventory"
+                                and r.status == 200, timeout=90000):
+                            page.locator("#refresh").click()
+                        page.wait_for_function(
+                            "() => !document.querySelector('#refresh').disabled",
+                            timeout=90000)
+                        snapshot = page.evaluate("""() => {
+                            const probe = window.__dbvoraRefreshProbe;
+                            return {
+                                nodes: document.querySelectorAll('#tables button.table-node').length,
+                                edges: document.querySelectorAll('#edges path').length,
+                                pressed: document.querySelectorAll(
+                                    '#tables button[aria-pressed="true"]').length,
+                                selected: document.querySelector(
+                                    '#detail .detail-heading h3')?.textContent,
+                                filter: document.querySelector('#table-filter').value,
+                                errorHidden: document.querySelector('#error').hidden,
+                                probe: {...probe}
+                            };
+                        }""")
+                        require(snapshot["nodes"] == 1000 and snapshot["edges"] == 997
+                                and snapshot["pressed"] == 1
+                                and snapshot["selected"] == last_name
+                                and snapshot["filter"] == ""
+                                and snapshot["errorHidden"]
+                                and snapshot["probe"]["live"] == 1
+                                and snapshot["probe"]["maxLive"] == 1
+                                and snapshot["probe"]["resizeListeners"] == 1
+                                and snapshot["probe"]["created"]
+                                == snapshot["probe"]["disconnected"] + 1,
+                                "REPEATED_REFRESH_RESOURCE_OR_STATE_REGRESSION")
+                        require(at_limit == digest(db), "REPEATED_REFRESH_CHANGED_SOURCE")
+                    result["checks"].append("sqlite_1000_six_refresh_no_observer_leak")
+
+                    # Synthetic HTTP 503 must retain the last good schema,
+                    # current selection and filter, then recover with no
+                    # customer data change. No server or source is modified.
+                    page.locator("#table-filter").fill(last_name.upper())
+                    def fail_inventory(route):
+                        route.fulfill(status=503, content_type="application/json",
+                                      body=json.dumps({"error": {
+                                          "message": "Synthetic temporary outage"}}))
+                    page.route("**/api/inventory", fail_inventory)
+                    with page.expect_response(
+                            lambda r: r.url == base + "/api/inventory"
+                            and r.status == 503, timeout=90000):
+                        page.locator("#refresh").click()
+                    page.wait_for_function(
+                        "() => !document.querySelector('#refresh').disabled"
+                        " && !document.querySelector('#error').hidden",
+                        timeout=90000)
+                    require(page.locator("#error").inner_text()
+                            == "Synthetic temporary outage"
+                            and page.locator("#tables button.table-node").count() == 1000
+                            and page.locator("button.table-node:visible").count() == 1
+                            and page.locator(".detail-heading h3").inner_text() == last_name
+                            and page.locator("button.table-node:visible").get_attribute(
+                                "aria-pressed") == "true"
+                            and page.locator("#table-filter").input_value()
+                            == last_name.upper()
+                            and page.locator("#edges path").count() == 0
+                            and at_limit == digest(db),
+                            "HTTP_OUTAGE_DESTROYED_LAST_GOOD_STATE")
+                    page.unroute("**/api/inventory", fail_inventory)
+                    with page.expect_response(
+                            lambda r: r.url == base + "/api/inventory"
+                            and r.status == 200, timeout=90000):
+                        page.locator("#refresh").click()
+                    page.wait_for_function(
+                        "() => !document.querySelector('#refresh').disabled"
+                        " && document.querySelector('#error').hidden",
+                        timeout=90000)
+                    require(page.locator("button.table-node:visible").count() == 1
+                            and page.locator(".detail-heading h3").inner_text() == last_name
+                            and page.locator("#edges path").count() == 0
+                            and at_limit == digest(db),
+                            "HTTP_OUTAGE_RECOVERY_FAILED")
+                    page.locator("#table-filter").fill("")
+                    require(page.locator("#edges path").count() == 997,
+                            "HTTP_RECOVERY_GRAPH_FAILED")
+                    result["checks"].append("sqlite_1000_http_outage_state_and_recovery")
+
+                    # A narrow viewport must not acquire horizontal overflow
+                    # after repeated real-server refresh (not client injection).
+                    page.set_viewport_size({"width": 390, "height": 844})
+                    page.wait_for_timeout(250)
+                    require(not page.evaluate(
+                        "() => document.documentElement.scrollWidth > window.innerWidth + 1"),
+                        "LARGE_MOBILE_HORIZONTAL_OVERFLOW")
+                    require(page.locator("#tables button.table-node").count() == 1000
+                            and page.locator("#edges path").count() == 997
+                            and page.locator("#refresh").is_enabled(),
+                            "LARGE_MOBILE_STATE_REGRESSION")
+                    page.set_viewport_size({"width": 1440, "height": 900})
+                    result["checks"].append("sqlite_1000_repeated_mobile_viewport")
+
                     # Just one extra generated table must fail closed at the
                     # API boundary without exposing paths, rows, or SQL.
                     excessive = extend_synthetic_catalog(db, target_tables=1001)
@@ -364,7 +502,7 @@ def run(*, screenshots=None):
                     require(page.locator("#edges path").count() == 997
                             and restored_fingerprint == digest(db)
                             and not errors and not dialogs
-                            and bad_http == [422],
+                            and bad_http == [503, 422],
                             "CATALOG_LIMIT_RECOVERY_FAILED")
                     result["checks"].append("sqlite_catalog_recovery_no_source_mutation")
                 finally:
