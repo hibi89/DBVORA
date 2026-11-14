@@ -3,6 +3,7 @@
 # DBVORA 최종설계 100% — GPT-6 Instant 실행·High 최종검수 마스터 플랜
 
 > 기준 2026-11-14 KST / hibi89/DBVORA / feature/p0-db-map / 기능 기준 SHA 8bb07273f3829248bae8516ac467bfbf7eb4f751
+> **[2026-11-15 KST · latest scoped evidence]** Functional SHA `b7993452e2330fe192652285075d9aa5525fbdbe`: R01-03 `PASS_SCOPED`; full release [#43609540216](https://github.com/hibi89/DBVORA/actions/runs/43609540216), Chromium [#43609540217](https://github.com/hibi89/DBVORA/actions/runs/43609540217), real PostgreSQL 16 TLS/UI [#43609540239](https://github.com/hibi89/DBVORA/actions/runs/43609540239), blueprint [#43609540847](https://github.com/hibi89/DBVORA/actions/runs/43609540847) all pass. R01-02/R02-03/R02-06 rows below now reflect scoped existing evidence. Official completion remains UNASSESSED / RELEASE HOLD; OWNER_GATE retained.
 > 사용자 확정: 백엔드·프론트엔드 최종설계 100%를 목표로 Instant가 개발하고 High가 완료 뒤 독립 검수. 크몽 상품 등록은 다른 담당자(Codex). DATA2WEB CodeQL 경고는 이번 작업 범위에서 제외.
 
 ## 1. 변경할 수 없는 정본과 현재 점수
@@ -24,18 +25,18 @@
 | B01 | 공통 | 현존 소스-테스트-설계 갭 전수 추적 | 소스·CI·CLI·UI 경로별 각 요구 수용조건과 미검증 매핑, 새 코드를 만들기 전 기존 구현 재사용 | Instant | OPEN |
 | B02 | 공통 | 최신 기능 SHA 기준선·원본 보존 검증 | SHA 8bb07273의 기존 Windows/Linux/Chromium 증거 재확인 및 복구 기준선 기록 | Instant | EVIDENCE_RECHECK |
 | R01-01 | 구조 | SQLite/PG·다중 SQLite 실제 구현 감사 | 단일·2~8 다중 DB 경계, PG TLS 메타데이터 읽기, DB별 ID·정직한 FK 스코프 확인 | Instant | EVIDENCE_RECHECK |
-| R01-02 | 구조 | 여러 DB/서비스를 한눈에 보는 토폴로지 | DB 선택 탭만이 아닌 동일 화면의 전체 DB 노드·요약·클릭 탐색·관계 증거; 실 Chromium 2OS | Instant | OPEN |
-| R01-03 | 구조 | PG 읽기 전용 진입 UI/통합 | 실 PG16 localhost TLS verify-full·read-only 및 악성 인증서/권한 실패, 브라우저·로그 DSN 미노출 | Instant | OPEN |
+| R01-02 | 구조 | 여러 DB/서비스를 한눈에 보는 토폴로지 | DB 선택 탭만이 아닌 동일 화면의 전체 DB 노드·요약·클릭 탐색·관계 증거; 실 Chromium 2OS | Codex Luna Max | PASS_SCOPED |
+| R01-03 | 구조 | PG 읽기 전용 진입 UI/통합 | 실 PG16 localhost TLS verify-full·read-only 및 악성 인증서/권한 실패, 브라우저·로그 DSN 미노출 | Codex Luna Max | PASS_SCOPED |
 | R01-04 | 구조 | SQLite+PG 혼합 및 승인된 교차 관계 | 여러 서비스/DB의 출처 있는 링크만 보여주고 무증거 FK 추정 금지; 동일 테이블명 충돌 시험 | Instant | OPEN |
 | R01-05 | 구조 | 대용량/비정상 카탈로그 한계·오염 테스트 | 1,000테이블·workspace2,000 제한, 악성 식별자·잘못된 관계·XSS/SQL/path 안전실패 | Instant | EVIDENCE_RECHECK |
 | R01-06 | 구조 | 화면 클릭·키보드·모바일·오류 복구 | Tab/Enter/aria, 390px/desktop, 실 API/Chromium, 15초 timeout·재시도·하얀 화면 회귀 | Instant | EVIDENCE_RECHECK |
 | R01-07 | 구조 | 비동기 DB 전환 경합·출처 혼동 방지 | A DB 조회 늦은 응답이 B DB 인스펙터/측정에 섞이지 않음, 새로고침 및 필터 보존 | Instant | OPEN |
 | R02-01 | 지표 | SQLite main/WAL·dbstat 실제 측정 감사 | dbstat 64MiB/0.75초, opt-in, 동일 경로 파일교체 검사, 미지원/측정결과 출처 | Instant | EVIDENCE_RECHECK |
 | R02-02 | 지표 | 두 시점 DB별 용량 비교 회귀 | 기존 Chromium26/26 증거 재사용, 변화 없음/동일 시각/DB 전환/연결 실패 무허위 수치 | Instant | EVIDENCE_RECHECK |
-| R02-03 | 지표 | 실제 주기별 로컬 관측 이력 원장 | 기본 OFF·사용자 명시 실행, 시각·크기·해시·범위·중복/손상 차단; 3샘플 이상 추세 | Instant | OPEN |
+| R02-03 | 지표 | 실제 주기별 로컬 관측 이력 원장 | 기본 OFF·사용자 명시 실행, 시각·크기·해시·범위·중복/손상 차단; 3샘플 이상 추세 | Codex Luna Max | PASS_SCOPED |
 | R02-04 | 지표 | CPU/RAM/디스크 측정 주체 정밀 구분 | DBVORA 프로세스 CPU/RSS와 파일시스템 사용량 분리, DB 서버 메모리 추정 금지·미지원 표시 | Instant | EVIDENCE_RECHECK |
 | R02-05 | 지표 | PG 테이블/인덱스 통계 UI 및 한계 | pg_stat_user_tables 추정·heap/index 근거, 권한부족/통계지연/실측불가 UI 테스트 | Instant | OPEN |
-| R02-06 | 지표 | 지표 장기 보존·데이터 정합·추세 화면 | 실제 3+ 관측만 차트, 기간·측정 범위·시각 롤백·손상·상한·개인정보 비저장 | Instant | OPEN |
+| R02-06 | 지표 | 지표 장기 보존·데이터 정합·추세 화면 | 실제 3+ 관측만 차트, 기간·측정 범위·시각 롤백·손상·상한·개인정보 비저장 | Codex Luna Max | PASS_SCOPED |
 | R03-01 | 보관복구 | SQLite WAL 포함 일관성 스냅샷 | 원본 불변, 승인된 로컬 대상만 새로 생성, WAL 동시 쓰기·복제 오류 실패안전 | Instant | EVIDENCE_RECHECK |
 | R03-02 | 보관복구 | ZIP/ZSTD/CAS 모든 형식 독립 복원 | 동일 합성 DB의 SHA256·SQLite integrity 비교, manifest/ZIP 변조·대상 덮어쓰기 거부 | Instant | EVIDENCE_RECHECK |
 | R03-03 | 보관복구 | 실제 CAS 증분 중복제거 세대 체인 | 원본/중복/변경 4세대·missing/corrupt parent·청크 실물 검증·이전 세대 독립 복원 | Instant | EVIDENCE_RECHECK |

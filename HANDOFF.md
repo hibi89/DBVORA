@@ -1,3 +1,15 @@
+> **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
+> 1. **목표·범위**: DBVORA R01–R07 최종설계의 GitHub 기반 구현·검증을 계속한다. 크몽 등록·상용 출시·main/develop 병합은 제외.
+> 2. **이번 완료**: R01-03 PostgreSQL 읽기 전용 카탈로그 UI를 추가했다. 서버 환경변수 DBVORA_POSTGRES_DSN만 읽고, 명시적 버튼 뒤 verify-full/read-only 카탈로그를 표시한다.
+> 3. **기능/검증 SHA**: b7993452e2330fe192652285075d9aa5525fbdbe. 오류 복구 테스트 하네스의 CSP 평가 문제를 수정한 최종 검증 코드 SHA다.
+> 4. **전체 회귀**: [#43609540216](https://github.com/hibi89/DBVORA/actions/runs/43609540216) Ubuntu 741 PASS, Windows 740 PASS + POSIX 전용 SKIP 1; 필수 단계 통과.
+> 5. **브라우저/PG**: [Chromium #43609540217](https://github.com/hibi89/DBVORA/actions/runs/43609540217) 32/32 × 양 OS PASS. [PG16 TLS/UI #43609540239](https://github.com/hibi89/DBVORA/actions/runs/43609540239) 실 TLS/read-only 및 잘못된 CA 실패·재시도, 카탈로그·FK, 행/DSN 미노출, 390px PASS.
+> 6. **Blueprint**: [#43609540847](https://github.com/hibi89/DBVORA/actions/runs/43609540847) PASS. 합성 데이터 전용이며 고객 DB/외부 자격증명을 쓰지 않았다.
+> 7. **기존 기능 증거**: R02-03/R02-06 원장·재로드 후 추세와 R01-02 토폴로지 테스트는 위 정확 SHA의 전체 회귀/Chromium에서 통과한다.
+> 8. **안전 경계**: 브라우저/CLI는 DSN 입력을 받지 않고 API는 GET-only·쿼리/본문 거부. 표 행은 읽지 않으며 상세 식별자는 text nodes로 출력한다.
+> 9. **다음 작업**: R02-05 PostgreSQL 추정 행수·heap/index 통계 UI를 별도 명시 조회로 연결하고 권한 부족/통계 지연/측정 불가를 실제 PG16에서 검증한다. 이어 R03-04, R03-07, 이후 미완료 원자 작업을 진행한다.
+> 10. **공식 상태**: 전체 완성률 UNASSESSED, 과거 기술평가 95%는 비공식, [작업중]/RELEASE HOLD/크몽 등록 0. 소유자 실기기·물리 정전·권리/최종 승인 OWNER_GATE는 그대로 유지.
+
 > **[2026-11-14 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
 > 1. **목표·범위**: DBVORA R01–R07 최종 설계의 GitHub 기반 구현·검증. 크몽 등록·상용 출시·main/develop 병합은 범위 밖.
 > 2. **이번 완료**: R02-03 명시 동의 로컬 기록 CLI + 기본 OFF/GET-only 영구 원장 API, R02-06 영구 관측 UI/3+ 추세 표시 및 페이지 재로드 확인.

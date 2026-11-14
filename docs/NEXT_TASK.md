@@ -1,3 +1,10 @@
+> **[2026-11-15 KST · latest exact source/test SHA b7993452e2330fe192652285075d9aa5525fbdbe]**
+> **DONE-SCOPED** R01-03 PostgreSQL read-only UI. Exact-source evidence: full #43609540216 (Ubuntu 741 PASS; Windows 740 PASS + 1 POSIX-only skip), Chromium #43609540217 (32/32 each OS), real PG16 TLS/UI #43609540239, blueprint #43609540847; all success. Wrong CA error and retry verified in actual Chromium; no rows/DSN.
+> **NEXT-1** R02-05: add a separate explicit PostgreSQL statistics UI action/API using the existing provenance-aware connector. Show estimates/scopes honestly; do not substitute zero for permission-limited, stale, or unavailable statistics.
+> **NEXT-2** Test a least-privileged real synthetic PG16 role and real Chromium, including permission/statistics-unavailable paths; keep TLS verify-full/read-only and no eager request.
+> **NEXT-3** After R02-05, continue R03-04 daily/weekly runner and R03-07 safe restore UX, then other remaining R01–R07/G90 tasks in dependency order.
+> **NEXT-4** Update STATUS/HANDOFF/NEXT_TASK and 48-row evidence after each major exact-SHA pass. Preserve customer data/backups, use synthetic CI only, no paid infra, privilege changes, main/develop merge or release. Overall UNASSESSED, RELEASE HOLD, OWNER_GATE retained.
+
 > **[2026-11-14 KST · 최신 우선권 | Codex GPT-6 Luna Max / GitHub-only]**
 > **NEXT-1** Current exact source/test SHA `913feb41b22c8d3b5d36b9268868ba10f4f173f4`: R02-03/R02-06 `PASS_SCOPED`; full release #43606132847 Ubuntu+Windows PASS and real Chromium #43606132934 32/32 per OS PASS.
 > **NEXT-2** R01-03: add a PostgreSQL panel to the local viewer. DSN stays server-side via environment only; browser action is explicit, API remains GET-only, connector enforces `verify-full` and read-only metadata.
