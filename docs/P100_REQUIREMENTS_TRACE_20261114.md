@@ -1,3 +1,10 @@
+## [2026-11-14 최신 합성 안전성 근거 보강]
+- SHA `c9823a3d48c4c8507c8c4c61ca3328d92674b3d4` [CI Windows/Linux #43551764326](https://github.com/hibi89/DBVORA/actions/runs/43551764326) 실제 source/Actions 확인: Python669 discovered, Ubuntu669PASS/0SKIP, Windows668PASS+1 POSIX SKIP, 0 FAIL, 필수12/12 각OS PASS. 668 baseline below threshold and required source safety file absence fail-close. PG16 실제 localhost TLS/읽기전용 등 별도 5/5, Chromium localhost8/8×2 기존 근거 유효.
+- **R03 / P3:** 기존 ZIP/ZSTD, raw CAS v1, zlib CAS v2의 버전별 독립복원 외에 ENOSPC·manifest/restore publish failure 등 8개 합성 테스트, 실제 별도 프로세스 강제종료-before-publication 2개, 원장 기반 UTC daily/weekly 슬롯 7개. 원본/마지막 정상세대 보존 PASS(임시 테스트). **물리 정전/비휘발성 저장장치·온전한 자동 스케줄러, 고객 실제 DB는 NOT VERIFIED**. '주기'는 명시적 실행 API만 구현, OS Task Scheduler 설치 안함.
+- **R04:** 기존 동일 합성 SQLite 2세대 ZIP Linux31,216B/Windows31,550B, raw CAS1,177,960B, zlib CAS Linux24,637B/Windows25,046B; 21.1% Linux 예시 절감 외 일반화/실고객/클라우드 비교 금지. 실제 처리시간·IOPS 미측정.
+- **R05/R07:** CLI argparse 오류에서 사용자 입력 경로 비노출, 공개 저장소 Public, LICENSE/NOTICE/사용권 미승인, Windows2025 cloud CI와 실제 소유자 Win10 검수 구분. 최신 unsigned 소스 61파일 [#43551568838](https://github.com/hibi89/DBVORA/actions/runs/43551568838) 내부 ZIP SHA `8b53688aa371fb75b12130f9c323f035294735157555a0001789ac25be167ae1`, code 7b9ee1...; 물리 Win10/11·상업 계약·지원·가격/등록은 사용자 고유 과제.
+- **제안 가중치 R01 20 + R02 15 + R03 25 + R04 10 + R05 10 + R06 5 + R07 15 = 100**은 소유자 수용 전 '제안'이며 점수는 공식 **UNASSESSED**, 과거 95는 내부 이력이다.
+
 ## 2026-11-14 exact-SHA 보강 검증 및 최신 미완료 추적
 - 기능 소스 `9d24a58a045fd89a11d46c685ee59adec3ed63e8`, [전체 양OS #43549905413](https://github.com/hibi89/DBVORA/actions/runs/43549905413): Python651 발견, Linux651PASS/Win650PASS+1플랫폼SKIP/0FAIL, 필수12/12×2 OS. [실 PG #43545900975](https://github.com/hibi89/DBVORA/actions/runs/43545900975) PostgreSQL16 localhost verify-full TLS·읽기전용 계정·실카탈로그·HTML 5/5. 이 2건은 고객/사업자 PG QA와 구분.
 - R01(20점 제안): 실제 PG read-only TLS + Chromium localhost Windows/Linux synthetic 클릭 8×2 PASS. 실제 Win10/고객 스키마와 통합 서비스 관계는 사용자/사업자 수용 전 **PENDING**.
