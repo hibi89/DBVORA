@@ -375,6 +375,15 @@ def verify():
     except (ValueError, TypeError):
         sizes = {}
     metrics = sizes.get("metrics", {})
+    timings = sizes.get("timings_ns", {})
+    timings_ok = (
+        isinstance(timings, dict)
+        and set(timings) == {
+            "zip_write_ns", "raw_write_ns", "zlib_write_ns",
+            "zip_restore_ns", "raw_restore_ns", "zlib_restore_ns"}
+        and all(type(value) is int and 0 < value < 180_000_000_000
+                for value in timings.values())
+    )
     benchmark_ok = (
         code == 0 and sizes.get("status") == "PASS_SYNTHETIC_STORAGE_COMPARISON_ONLY"
         and type(sizes.get("checks")) is int and sizes["checks"] >= 11
@@ -385,6 +394,8 @@ def verify():
         and sizes.get("compressed_generations_restored") is True
         and sizes.get("compressed_second_reused_blocks") is True
         and sizes.get("no_universal_compression_claim") is True
+        and sizes.get("timing_scope") == "one_sample_two_generations_wall_clock_only"
+        and timings_ok
         and sizes.get("ready_for_customer_data") is False
         and isinstance(metrics, dict)
         and type(metrics.get("two_zip_archives_bytes")) is int
@@ -406,6 +417,8 @@ def verify():
         "checks": sizes.get("checks", 0) if type(sizes.get("checks")) is int else 0,
         "exit_code": code if type(code) is int else -1,
         "metrics": metrics if benchmark_ok else None,
+        "timings_ns": timings if benchmark_ok else None,
+        "timing_scope": "one_sample_two_generations_wall_clock_only" if benchmark_ok else None,
         "error_code": "NONE" if benchmark_ok else
             _safe_code(sizes.get("error_code"), "SYNTHETIC_BENCHMARK_GATE_FAILED"),
     })

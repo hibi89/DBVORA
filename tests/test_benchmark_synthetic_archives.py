@@ -17,6 +17,14 @@ class BenchmarkSyntheticArchivesTests(unittest.TestCase):
         self.assertTrue(data["compressed_second_reused_blocks"])
         self.assertTrue(data["source_unchanged_during_archiving"])
         self.assertTrue(data["no_universal_compression_claim"])
+        self.assertEqual(data["timing_scope"],
+                         "one_sample_two_generations_wall_clock_only")
+        self.assertEqual(set(data["timings_ns"]), {
+            "zip_write_ns", "raw_write_ns", "zlib_write_ns",
+            "zip_restore_ns", "raw_restore_ns", "zlib_restore_ns"})
+        for value in data["timings_ns"].values():
+            self.assertIs(type(value), int)
+            self.assertGreater(value, 0)
         self.assertFalse(data["ready_for_customer_data"])
         metrics = data["metrics"]
         self.assertGreater(metrics["two_zip_archives_bytes"], 0)

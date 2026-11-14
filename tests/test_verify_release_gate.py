@@ -66,7 +66,14 @@ class VerificationGateTests(unittest.TestCase):
                             'customer_ready': False, 'power_loss_verified': False,
                             'automatic_deletion': False}), ''),
             (0, json.dumps({'status': 'PASS_SYNTHETIC_STORAGE_COMPARISON_ONLY',
-                            'checks': 11, 'same_synthetic_workload': True,
+                            'checks': 11,
+                            'timing_scope': 'one_sample_two_generations_wall_clock_only',
+                            'timings_ns': {
+                                'zip_write_ns': 1000000, 'raw_write_ns': 1000001,
+                                'zlib_write_ns': 1000002, 'zip_restore_ns': 1000003,
+                                'raw_restore_ns': 1000004, 'zlib_restore_ns': 1000005,
+                            },
+                            'same_synthetic_workload': True,
                             'both_generations_restored': True,
                             'compressed_generations_restored': True,
                             'compressed_second_reused_blocks': True,
@@ -464,6 +471,28 @@ class VerificationGateTests(unittest.TestCase):
         self.assertEqual(result['status'], 'FAIL_CLOSED')
         self.assertIsNone(result['steps'][-1]['metrics'])
 
+
+    def test_benchmark_must_report_actual_positive_wall_clock_samples(self):
+        responses = self.responses()
+        report = json.loads(responses[10][1])
+        report['timings_ns']['zlib_restore_ns'] = -1
+        responses[10] = (0, json.dumps(report), '')
+        with patch.object(gate, '_run', side_effect=responses), patch.object(
+                gate.shutil, 'which', return_value='tool'):
+            result = gate.verify()
+        self.assertEqual(result['status'], 'FAIL_CLOSED')
+        self.assertEqual(result['steps'][-1]['status'], 'FAIL')
+        self.assertIsNone(result['steps'][-1]['timings_ns'])
+
+    def test_benchmark_does_not_accept_claimed_multi_sample_precision(self):
+        responses = self.responses()
+        report = json.loads(responses[10][1])
+        report['timing_scope'] = 'generalized_performance_guarantee'
+        responses[10] = (0, json.dumps(report), '')
+        with patch.object(gate, '_run', side_effect=responses), patch.object(
+                gate.shutil, 'which', return_value='tool'):
+            result = gate.verify()
+        self.assertEqual(result['status'], 'FAIL_CLOSED')
 
 if __name__ == '__main__':
     unittest.main()

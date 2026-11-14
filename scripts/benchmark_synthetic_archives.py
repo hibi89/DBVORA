@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 import sqlite3
 import tempfile
+import time
 
 from dbvora.archive.incremental_cas import create_incremental, restore_incremental
 from dbvora.archive.compressed_cas import create_compressed, restore_compressed
@@ -69,13 +70,17 @@ def verify():
             last_source_sha = hashlib.sha256(db.read_bytes()).hexdigest()
             last_source_mtime = db.stat().st_mtime_ns
 
+            timings = {}
+            start_ns = time.perf_counter_ns()
             z1 = make_zip_archive(first, folders["zip"])
             z2 = make_zip_archive(second, folders["zip"])
+            timings["zip_write_ns"] = time.perf_counter_ns() - start_ns
             if (z1["snapshot_sha256"] != first_sha
                     or z2["snapshot_sha256"] != second_sha):
                 raise ValueError("ZIP_SNAPSHOT_MISMATCH")
             report["checks"] += 1
 
+            start_ns = time.perf_counter_ns()
             c1 = create_incremental(first, folders["chunks"], folders["manifests"],
                                     synthetic_only=True, accept_plaintext=True)
             c2 = create_incremental(second, folders["chunks"], folders["manifests"],
@@ -84,9 +89,11 @@ def verify():
                     or c2["snapshot_sha256"] != second_sha
                     or c1["new_chunks"] < 1 or c2["reused_chunks"] < 1):
                 raise ValueError("NO_REAL_INCREMENTAL_REUSE")
+            timings["raw_write_ns"] = time.perf_counter_ns() - start_ns
             report["second_generation_reused_blocks"] = True
             report["checks"] += 1
 
+            start_ns = time.perf_counter_ns()
             compressed_first = create_compressed(
                 first, folders["compressed_chunks"], folders["compressed_manifests"],
                 synthetic_only=True, accept_plaintext=True)
@@ -97,9 +104,11 @@ def verify():
                     or compressed_second["snapshot_sha256"] != second_sha
                     or compressed_second["reused_chunks"] < 1):
                 raise ValueError("COMPRESSED_REUSE_FAILED")
+            timings["zlib_write_ns"] = time.perf_counter_ns() - start_ns
             report["compressed_second_reused_blocks"] = True
             report["checks"] += 1
 
+            start_ns = time.perf_counter_ns()
             for pair in ((z1, first_sha), (z2, second_sha)):
                 restored = restore_zip_archive(
                     pair[0]["archive_path"], folders["zip_restore"]
@@ -107,8 +116,10 @@ def verify():
                 file = Path(restored["restored_path"])
                 if hashlib.sha256(file.read_bytes()).hexdigest() != pair[1]:
                     raise ValueError("ZIP_CONTENT_MISMATCH")
+            timings["zip_restore_ns"] = time.perf_counter_ns() - start_ns
             report["checks"] += 1
 
+            start_ns = time.perf_counter_ns()
             for pair in ((c1, first_sha), (c2, second_sha)):
                 restored = restore_incremental(
                     folders["manifests"] / pair[0]["manifest_name"],
@@ -118,9 +129,11 @@ def verify():
                 file = folders["cas_restore"] / restored["restored_name"]
                 if hashlib.sha256(file.read_bytes()).hexdigest() != pair[1]:
                     raise ValueError("CAS_CONTENT_MISMATCH")
+            timings["raw_restore_ns"] = time.perf_counter_ns() - start_ns
             report["both_generations_restored"] = True
             report["checks"] += 1
 
+            start_ns = time.perf_counter_ns()
             for pair in ((compressed_first, first_sha), (compressed_second, second_sha)):
                 restored = restore_compressed(
                     folders["compressed_manifests"] / pair[0]["manifest_name"],
@@ -129,6 +142,7 @@ def verify():
                 file = folders["compressed_restore"] / restored["restored_name"]
                 if hashlib.sha256(file.read_bytes()).hexdigest() != pair[1]:
                     raise ValueError("COMPRESSED_CAS_RESTORE_FAILED")
+            timings["zlib_restore_ns"] = time.perf_counter_ns() - start_ns
             report["compressed_generations_restored"] = True
             report["checks"] += 1
 
@@ -172,6 +186,15 @@ def verify():
                 "compressed_cas_second_new_chunks": compressed_second["new_chunks"],
                 "compressed_cas_second_new_bytes": compressed_second["new_compressed_bytes"],
             }
+            if (set(timings) != {
+                    "zip_write_ns", "raw_write_ns", "zlib_write_ns",
+                    "zip_restore_ns", "raw_restore_ns", "zlib_restore_ns"}
+                    or any(type(v) is not int or v <= 0 for v in timings.values())):
+                raise ValueError("INVALID_TIMING_MEASUREMENT")
+            # One sample per operation over two restored synthetic generations.
+            # Not an SLA, not a statistically robust throughput comparison.
+            report["timings_ns"] = timings
+            report["timing_scope"] = "one_sample_two_generations_wall_clock_only"
             report["same_synthetic_workload"] = True
             report["checks"] += 1
             report["status"] = STATUS
