@@ -24,6 +24,25 @@ class WinPublishError(Exception):
     """Stable reason without paths, OS exception strings or file bytes."""
 
 
+def _windows_volume_type(directory: Path) -> str:
+    """Query the actual output drive, not just the default TEMP drive."""
+    if os.name != "nt":
+        return "NOT_WINDOWS"
+    try:
+        root = Path(directory).anchor
+        if not root:
+            return "UNAVAILABLE"
+        name = ctypes.create_unicode_buffer(40)
+        fn = ctypes.WinDLL("kernel32", use_last_error=True).GetVolumeInformationW
+        fn.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD,
+                       ctypes.POINTER(wintypes.DWORD), ctypes.POINTER(wintypes.DWORD),
+                       ctypes.POINTER(wintypes.DWORD), wintypes.LPWSTR, wintypes.DWORD]
+        fn.restype = wintypes.BOOL
+        return name.value.upper() if fn(root, None, 0, None, None, None, name, len(name)) else "UNAVAILABLE"
+    except (OSError, TypeError, ValueError, AttributeError):
+        return "UNAVAILABLE"
+
+
 def _windows_temp_filesystem() -> str:
     if os.name != "nt":
         return "NOT_WINDOWS"

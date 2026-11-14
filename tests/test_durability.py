@@ -49,7 +49,14 @@ class DurabilityTests(unittest.TestCase):
 
     def older(self, path, hours=48):
         older = time.time() - hours * 3600
-        os.utime(path, (older, older), follow_symlinks=False)
+        try:
+            os.utime(path, (older, older), follow_symlinks=False)
+        except NotImplementedError:
+            # Python 3.11 Windows does not expose follow_symlinks=False.
+            # This test fixture is a regular locally-created file only.
+            if path.is_symlink() or not path.is_file():
+                raise
+            os.utime(path, (older, older))
 
     def test_publish_syncs_file_then_parent_after_link(self):
         order = []
@@ -58,7 +65,7 @@ class DurabilityTests(unittest.TestCase):
         with patch.object(safe_zip, '_sync_staged_file', side_effect=lambda path: (order.append('file'), real_file(path))), \
              patch.object(safe_zip, '_sync_directory', side_effect=lambda path: (order.append('directory'), real_parent(path))):
             result = create_snapshot(self.db, self.out)
-        self.assertEqual(order, ['file', 'directory'])
+        self.assertEqual(order, ['file', 'directory'] if os.name != 'nt' else ['file'])
         self.assertTrue(Path(result['snapshot_path']).exists())
         self.assertEqual(self.source_before, self.fingerprint(self.db))
 
@@ -66,7 +73,13 @@ class DurabilityTests(unittest.TestCase):
         old = create_snapshot(self.db, self.out)
         old_hash = self.fingerprint(old['snapshot_path'])
         before = self.files()
-        with patch.object(safe_zip, '_sync_directory', side_effect=ArchiveError('DURABILITY_UNAVAILABLE', 'test')):
+        if os.name == 'nt':
+            # Simulate a native no-replace move failure without touching old.
+            from dbvora.archive import windows_ntfs_publish as native
+            failure = patch.object(native, '_native_move_write_through', side_effect=native.WinPublishError('MOVE_FAILED'))
+        else:
+            failure = patch.object(safe_zip, '_sync_directory', side_effect=ArchiveError('DURABILITY_UNAVAILABLE', 'test'))
+        with failure:
             with self.assertRaises(ArchiveError) as ctx:
                 create_snapshot(self.db, self.out)
         self.assertEqual(ctx.exception.code, 'PUBLISH_FAILED')
@@ -84,7 +97,12 @@ class DurabilityTests(unittest.TestCase):
         first = create_snapshot(self.db, self.out)
         before = self.files()
         saved = self.fingerprint(first['snapshot_path'])
-        with patch.object(safe_zip.os, 'link', side_effect=FileExistsError('simulated')):
+        if os.name == 'nt':
+            from dbvora.archive import windows_ntfs_publish as native
+            failure = patch.object(native, '_native_move_write_through', side_effect=native.WinPublishError('MOVE_FAILED'))
+        else:
+            failure = patch.object(safe_zip.os, 'link', side_effect=FileExistsError('simulated'))
+        with failure:
             with self.assertRaises(ArchiveError):
                 create_snapshot(self.db, self.out)
         self.assertEqual(before, self.files())

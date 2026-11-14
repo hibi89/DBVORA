@@ -124,18 +124,22 @@ def verify():
     skipped_match = SKIPPED_COUNT.search(combined_tests)
     skipped = int(skipped_match.group(1)) if skipped_match else 0
     zstd_available = shutil.which("zstd") is not None
-    allowed_skips = 0 if zstd_available else 1
+    # On Windows, the POSIX 0600 permission check is inapplicable; allow only
+    # that *named* skip with its exact reason. No other OS skip is accepted.
+    windows_posix_skip = "test_created_report_is_mode_0600_on_posix"
+    allowed_skips = (0 if zstd_available else 1) + (1 if os.name == "nt" else 0)
     skip_lines = [line for line in err.splitlines() if " ... skipped " in line]
-    # Never allow an unrelated test to be skipped under the optional ZSTD exception.
-    expected_optional_skip = (
-        len(skip_lines) == 1
-        and skip_lines[0].startswith(OPTIONAL_ZSTD_TEST + " (")
-        and OPTIONAL_ZSTD_SKIP_REASON in skip_lines[0]
-    )
-    skip_identity_ok = (
-        skipped == 0 and not skip_lines
-        or not zstd_available and skipped == 1 and expected_optional_skip
-    )
+    def expected_skip(line):
+        return (
+            (not zstd_available and line.startswith(OPTIONAL_ZSTD_TEST + " (")
+             and OPTIONAL_ZSTD_SKIP_REASON in line)
+            or (os.name == "nt" and line.startswith(windows_posix_skip + " (")
+                and "posix permission only" in line)
+        )
+    skip_identity_ok = (skipped == len(skip_lines)
+                        and skipped <= allowed_skips
+                        and all(expected_skip(line) for line in skip_lines)
+                        and len(set(line.split(" (", 1)[0] for line in skip_lines)) == len(skip_lines))
     unit_pass = (code == 0 and count >= EXPECTED_PYTHON_TESTS
                  and skipped <= allowed_skips and skip_identity_ok)
     report["steps"].append({"step": "python_unittest", "status": "PASS" if unit_pass else "FAIL",

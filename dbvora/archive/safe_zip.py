@@ -112,7 +112,8 @@ def _sync_directory(directory: Path) -> None:
 def _sync_staged_file(staged: Path) -> None:
     fd = None
     try:
-        fd = os.open(staged, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+        fd = os.open(staged, (os.O_RDWR if os.name == "nt" else os.O_RDONLY) |
+                     getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0))
         info = os.fstat(fd)
         by_name = staged.lstat()
         if (not stat.S_ISREG(info.st_mode) or info.st_nlink != 1 or
@@ -126,6 +127,40 @@ def _sync_staged_file(staged: Path) -> None:
             os.close(fd)
 
 
+def _publish_new_ntfs(staged: Path, directory: Path, final: Path) -> Path:
+    """Publish a verified new name via Win32 no-replace/write-through.
+
+    Native write-through and post-move SHA are not physical power-loss
+    certification. Unsupported volumes/OS calls must fail closed; never fall
+    back to an unchecked rename, an overwrite, or directory-fsync bypass.
+    """
+    from dbvora.archive import windows_ntfs_publish as native
+
+    if (staged.parent != directory or final.parent != directory
+            or native._windows_volume_type(directory) != "NTFS"):
+        raise ArchiveError("PUBLISH_FAILED", "Verified local NTFS output volume required.")
+    if os.path.lexists(final):
+        raise ArchiveError("PUBLISH_FAILED", "Target already exists.")
+    try:
+        before = staged.lstat()
+        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1 or staged.is_symlink():
+            raise ArchiveError("PUBLISH_FAILED", "Unsafe staging file.")
+        expected = _hash_file(staged, limit=MAX_ARCHIVE_BYTES)
+        native._native_move_write_through(staged, final)
+        # The mover does not permit REPLACE_EXISTING. Do not delete the new
+        # name on a post-publication error: another owner might own its path.
+        after = final.lstat()
+        if (not stat.S_ISREG(after.st_mode) or after.st_nlink != 1
+                or final.is_symlink() or staged.exists()
+                or (before.st_dev, before.st_ino, before.st_size) !=
+                   (after.st_dev, after.st_ino, after.st_size)
+                or _hash_file(final, limit=MAX_ARCHIVE_BYTES) != expected):
+            raise ArchiveError("PUBLISH_FAILED", "Published artifact could not be verified.")
+        return final
+    except (OSError, native.WinPublishError, ArchiveError):
+        raise ArchiveError("PUBLISH_FAILED", "Win32 publication or verification failed.") from None
+
+
 def _publish_new(staged: Path, directory: Path, suffix: str) -> Path:
     """New-name hardlink publish, after file fsync and before directory fsync.
 
@@ -134,6 +169,8 @@ def _publish_new(staged: Path, directory: Path, suffix: str) -> Path:
     """
     _sync_staged_file(staged)
     final = directory / ("dbvora-" + uuid.uuid4().hex + suffix)
+    if os.name == "nt":
+        return _publish_new_ntfs(staged, directory, final)
     linked = False
     try:
         os.link(staged, final, follow_symlinks=False)

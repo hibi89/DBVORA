@@ -134,10 +134,12 @@ class RequestLedgerTests(unittest.TestCase):
         reserve(self.folder, ID, PLAN)
         ledger_path = self.folder / LEDGER_NAME
         raw_connect = sqlite3.connect
-        def remove_before_write(uri, *args, **kwargs):
-            if isinstance(uri, str) and uri.endswith('?mode=rw'):
+        def remove_before_write(database, *args, **kwargs):
+            # sqlite3.connect has a keyword argument named uri=True; do not
+            # shadow it in this test seam, or no deletion race is exercised.
+            if isinstance(database, str) and database.endswith('?mode=rw'):
                 ledger_path.unlink()
-            return raw_connect(uri, *args, **kwargs)
+            return raw_connect(database, *args, **kwargs)
         with patch.object(request_ledger.sqlite3, 'connect', side_effect=remove_before_write):
             with self.assertRaisesRegex(LedgerError, 'LEDGER_UNAVAILABLE'):
                 record_artifact(self.folder, ID, PLAN, ARTIFACT)
