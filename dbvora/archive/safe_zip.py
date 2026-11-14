@@ -57,6 +57,78 @@ def _directory(path: str | Path) -> Path:
         raise ArchiveError("BAD_DESTINATION", "The output directory is unavailable.") from None
 
 
+def _file_identity(info) -> tuple[int, int, int, int, int, int]:
+    """Stable leaf identity; ctime catches metadata/content changes where supported."""
+    return (
+        int(info.st_dev), int(info.st_ino), int(info.st_nlink), int(info.st_size),
+        int(info.st_mtime_ns), int(info.st_ctime_ns),
+    )
+
+
+def _path_identity(path: Path, error_code: str) -> tuple[int, int, int, int, int, int]:
+    """Require a regular single-link leaf with no symlink component."""
+    message = ("A safe regular input file is required."
+               if error_code == "INVALID_SOURCE"
+               else "A safe regular archive file is required.")
+    try:
+        for item in (path, *path.parents):
+            if item.is_symlink():
+                raise ArchiveError(error_code, message)
+        info = path.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink != 1:
+            raise ArchiveError(error_code, message)
+        return _file_identity(info)
+    except ArchiveError:
+        raise
+    except OSError:
+        raise ArchiveError(error_code, message) from None
+
+
+def _assert_path_identity(path: Path, expected: tuple[int, int, int, int, int, int],
+                          error_code: str) -> None:
+    if _path_identity(path, error_code) != expected:
+        message = ("The input changed while being read."
+                   if error_code == "INVALID_SOURCE"
+                   else "The archive changed while being read.")
+        raise ArchiveError(error_code, message)
+
+
+def _open_stable_archive(path: Path):
+    """Open the selected archive once, bind ZIP reads to that handle, and reject links/races."""
+    identity = _path_identity(path, "INVALID_ARCHIVE")
+    if identity[3] > MAX_ARCHIVE_BYTES:
+        raise ArchiveError("TOO_LARGE", "The archive exceeds the prototype size limit.")
+    fd = None
+    try:
+        flags = (os.O_RDONLY | getattr(os, "O_BINARY", 0) |
+                 getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_NONBLOCK", 0))
+        fd = os.open(path, flags)
+        opened = os.fstat(fd)
+        if not stat.S_ISREG(opened.st_mode) or _file_identity(opened) != identity:
+            raise ArchiveError("INVALID_ARCHIVE", "The archive changed before it was opened.")
+        stream = os.fdopen(fd, "rb", closefd=True)
+        fd = None
+        return stream, identity
+    except ArchiveError:
+        raise
+    except OSError:
+        raise ArchiveError("INVALID_ARCHIVE", "The archive could not be opened safely.") from None
+    finally:
+        if fd is not None:
+            os.close(fd)
+
+
+def _assert_open_archive_identity(path: Path, stream, expected) -> None:
+    try:
+        if _file_identity(os.fstat(stream.fileno())) != expected:
+            raise ArchiveError("INVALID_ARCHIVE", "The archive changed while being read.")
+        _assert_path_identity(path, expected, "INVALID_ARCHIVE")
+    except ArchiveError:
+        raise
+    except (OSError, ValueError):
+        raise ArchiveError("INVALID_ARCHIVE", "The archive changed while being read.") from None
+
+
 def _hash_file(path: Path, *, limit: int = MAX_SNAPSHOT_BYTES) -> tuple[str, int]:
     hashed = hashlib.sha256()
     size = 0
@@ -289,11 +361,12 @@ def create_snapshot(source_path: str | Path, output_dir: str | Path) -> dict:
 
 
 def _unpack_verified(archive: Path, staged: Path) -> dict:
-    """Check ZIP members, manifest, byte limit, SHA and SQLite integrity."""
+    """Check one stable opened ZIP leaf, members, manifest, SHA and SQLite integrity."""
+    stream, identity = _open_stable_archive(archive)
     try:
-        if archive.stat().st_size > MAX_ARCHIVE_BYTES:
+        if os.fstat(stream.fileno()).st_size > MAX_ARCHIVE_BYTES:
             raise ArchiveError("TOO_LARGE", "The archive exceeds the prototype size limit.")
-        with zipfile.ZipFile(archive, mode="r", allowZip64=False) as zf:
+        with zipfile.ZipFile(stream, mode="r", allowZip64=False) as zf:
             members = zf.infolist()
             if [entry.filename for entry in members] != [PAYLOAD_NAME, MANIFEST_NAME]:
                 raise ArchiveError("INVALID_ARCHIVE", "Archive member layout is invalid.")
@@ -325,13 +398,16 @@ def _unpack_verified(archive: Path, staged: Path) -> dict:
                 os.fsync(out.fileno())
             if count != size or digest.hexdigest() != sha:
                 raise ArchiveError("HASH_MISMATCH", "Restored snapshot checksum mismatch.")
+        _assert_open_archive_identity(archive, stream, identity)
         _integrity_check(staged)
         return {"restored_sha256": sha, "restored_size_bytes": size, "sqlite_integrity": "ok"}
     except ArchiveError:
         raise
     except (OSError, ValueError, TypeError, UnicodeError, KeyError, RuntimeError,
-            zipfile.BadZipFile, zipfile.LargeZipFile, json.JSONDecodeError):
+            EOFError, zipfile.BadZipFile, zipfile.LargeZipFile, json.JSONDecodeError):
         raise ArchiveError("INVALID_ARCHIVE", "Archive bytes could not be verified.") from None
+    finally:
+        stream.close()
 
 
 def make_zip_archive(snapshot_path: str | Path, output_dir: str | Path) -> dict:
@@ -343,6 +419,7 @@ def make_zip_archive(snapshot_path: str | Path, output_dir: str | Path) -> dict:
         raise ArchiveError("INVALID_SOURCE", "A readable SQLite snapshot is required.") from None
     if size > MAX_SNAPSHOT_BYTES:
         raise ArchiveError("TOO_LARGE", "The snapshot exceeds the prototype size limit.")
+    snapshot_identity = _path_identity(snapshot, "INVALID_SOURCE")
     _integrity_check(snapshot)
     sha, length = _hash_file(snapshot)
     manifest = {"format": "dbvora-zip-v1", "codec": "zip-deflate", "snapshot_sha256": sha,
@@ -352,6 +429,7 @@ def make_zip_archive(snapshot_path: str | Path, output_dir: str | Path) -> dict:
         with zipfile.ZipFile(staged, "w", allowZip64=False) as zf:
             zf.write(snapshot, arcname=PAYLOAD_NAME, compress_type=zipfile.ZIP_DEFLATED, compresslevel=6)
             zf.writestr(MANIFEST_NAME, json.dumps(manifest, sort_keys=True), compress_type=zipfile.ZIP_STORED)
+        _assert_path_identity(snapshot, snapshot_identity, "INVALID_SOURCE")
         check = _unpack_verified(staged, dry_run)
         if check["restored_sha256"] != sha:
             raise ArchiveError("HASH_MISMATCH", "Archive self-verification failed.")

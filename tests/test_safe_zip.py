@@ -12,6 +12,7 @@ import unittest
 from unittest.mock import patch
 import zipfile
 
+from dbvora.archive import safe_zip as safe_zip_module
 from dbvora.archive.safe_zip import (
     ArchiveError, MAX_SNAPSHOT_BYTES, create_snapshot, make_zip_archive, restore_zip_archive,
 )
@@ -169,6 +170,59 @@ class ArchiveTests(unittest.TestCase):
         with self.assertRaises(ArchiveError) as ctx:
             create_snapshot(self.source, link)
         self.assertEqual(ctx.exception.code, 'BAD_DESTINATION')
+
+    def test_zip_creation_rejects_hardlinked_snapshot_input(self):
+        snapshot = Path(create_snapshot(self.source, self.out)["snapshot_path"])
+        alias = self.root / "snapshot-hardlink.sqlite"
+        try:
+            os.link(snapshot, alias)
+        except (OSError, NotImplementedError):
+            self.skipTest("hardlinks unavailable")
+        with self.assertRaises(ArchiveError) as ctx:
+            make_zip_archive(alias, self.out)
+        self.assertEqual(ctx.exception.code, "INVALID_SOURCE")
+        self.assertFalse(list(self.out.glob("*.zip")))
+
+    def test_zip_restore_rejects_hardlinked_archive_input(self):
+        snapshot = Path(create_snapshot(self.source, self.out)["snapshot_path"])
+        archive = Path(make_zip_archive(snapshot, self.out)["archive_path"])
+        alias = self.root / "archive-hardlink.zip"
+        try:
+            os.link(archive, alias)
+        except (OSError, NotImplementedError):
+            self.skipTest("hardlinks unavailable")
+        with self.assertRaises(ArchiveError) as ctx:
+            restore_zip_archive(alias, self.restore)
+        self.assertEqual(ctx.exception.code, "INVALID_ARCHIVE")
+        self.assertEqual(self.listed(self.restore), [])
+
+    def test_restore_rejects_same_size_mtime_path_replacement_before_open(self):
+        snapshot = Path(create_snapshot(self.source, self.out)["snapshot_path"])
+        archive = Path(make_zip_archive(snapshot, self.out)["archive_path"])
+        before = archive.stat()
+        replacement = self.root / "replacement.zip"
+        replacement.write_bytes(archive.read_bytes())
+        self.assertEqual(replacement.stat().st_size, before.st_size)
+        os.utime(replacement, ns=(before.st_atime_ns, before.st_mtime_ns))
+        self.assertEqual(replacement.stat().st_mtime_ns, before.st_mtime_ns)
+        self.assertNotEqual(replacement.stat().st_ino, before.st_ino)
+
+        real_open = safe_zip_module.os.open
+        swapped = False
+
+        def replace_before_open(path, flags, *args, **kwargs):
+            nonlocal swapped
+            if Path(path) == archive and not swapped:
+                os.replace(replacement, archive)
+                swapped = True
+            return real_open(path, flags, *args, **kwargs)
+
+        with patch.object(safe_zip_module.os, "open", side_effect=replace_before_open):
+            with self.assertRaises(ArchiveError) as ctx:
+                restore_zip_archive(archive, self.restore)
+        self.assertTrue(swapped)
+        self.assertEqual(ctx.exception.code, "INVALID_ARCHIVE")
+        self.assertEqual(self.listed(self.restore), [])
 
     def test_public_messages_no_source_paths(self):
         missing = self.root / 'private-file.sqlite'
