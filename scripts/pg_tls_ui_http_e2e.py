@@ -18,6 +18,10 @@ from urllib.request import urlopen
 
 from playwright.sync_api import sync_playwright
 
+from dbvora.connectors.postgres_reader import inspect_postgres
+from dbvora.inventory import inspect_sqlite
+from dbvora.multi_engine_report import assemble_workspace, render_report
+
 ROOT = Path(__file__).resolve().parents[1]
 CANARY = 'SYNTHETIC_ROW_MUST_NEVER_BE_EXPORTED'
 
@@ -112,6 +116,7 @@ def verify() -> dict:
         connection = sqlite3.connect(database)
         try:
             connection.execute('CREATE TABLE synthetic_ui_only (id INTEGER PRIMARY KEY)')
+            connection.execute('CREATE TABLE users (id INTEGER PRIMARY KEY, local_only TEXT)')
         finally:
             connection.close()
         port = free_port()
@@ -219,6 +224,43 @@ def verify() -> dict:
                 checks.append('mobile_390px_layout')
                 _capture_sanitized_screenshot(page, screenshot_root, 'postgres-catalog-mobile-390px.png')
                 checks.append('mobile_screenshot_after_layout_and_secret_checks')
+
+                # Exercise the complete mixed SQLite + real PostgreSQL map with
+                # a same-name synthetic collision and an explicit, unverified link.
+                sqlite_catalog = inspect_sqlite(database)
+                pg_catalog = inspect_postgres(dsn)
+                unlinked = assemble_workspace([sqlite_catalog, pg_catalog])
+                if unlinked['declared_cross_database_links'] or unlinked['cross_database_edges_verified'] != 0:
+                    raise AssertionError('SAME_NAME_RELATIONSHIP_MUST_NOT_BE_INFERRED')
+                link = {
+                    'from_db': 1, 'from_schema': None, 'from_table': 'users', 'from_column': 'id',
+                    'to_db': 2, 'to_schema': 'public', 'to_table': 'users', 'to_column': 'id',
+                }
+                mixed = assemble_workspace([sqlite_catalog, pg_catalog], declared_links=[link])
+                mixed_page = render_report(mixed)
+                if dsn in mixed_page or str(database) in mixed_page or CANARY in mixed_page:
+                    raise AssertionError('MIXED_REPORT_SECRET_ROW_OR_PATH_LEAK')
+                page.set_viewport_size({'width': 1280, 'height': 900})
+                page.set_content(mixed_page, wait_until='domcontentloaded')
+                page.locator('#cross-database-links button').wait_for(timeout=5000)
+                node_names = page.locator('#databases button.node .table-key').all_text_contents()
+                if node_names.count('users') != 1 or node_names.count('public.users') != 1:
+                    raise AssertionError('SAME_NAME_DATABASE_NODES_NOT_SCOPED')
+                if 'user-declared / unverified' not in page.locator('#cross-database-links').inner_text():
+                    raise AssertionError('CROSS_DATABASE_LINK_NOT_MARKED_UNVERIFIED')
+                page.locator('#cross-database-links button').click()
+                if page.locator('#selection').inner_text() != 'Database 2 / public.users':
+                    raise AssertionError('CROSS_DATABASE_LINK_SELECTED_WRONG_COLLIDING_TABLE')
+                if page.locator('#databases button.node[aria-pressed="true"]').count() != 1:
+                    raise AssertionError('MIXED_REPORT_SELECTION_STATE_INVALID')
+                if CANARY in page.locator('body').inner_text() or dsn in page.locator('body').inner_text():
+                    raise AssertionError('MIXED_REPORT_ROW_OR_DSN_LEAK')
+                _capture_sanitized_screenshot(page, screenshot_root, 'mixed-map-desktop.png')
+                page.set_viewport_size({'width': 390, 'height': 844})
+                if page.evaluate('document.documentElement.scrollWidth') > 390:
+                    raise AssertionError('MIXED_MAP_MOBILE_OVERFLOW')
+                _capture_sanitized_screenshot(page, screenshot_root, 'mixed-map-mobile-390px.png')
+                checks.append('real_pg16_sqlite_same_name_collision_and_explicit_unverified_link')
                 browser.close()
         finally:
             stop_server(good_server)

@@ -13,7 +13,9 @@
     "cpu_usage",
     "ram_usage",
     "databases",
-    "ready_for_customer_data"
+    "ready_for_customer_data",
+    "declared_cross_database_count",
+    "declared_cross_database_links"
   ],
   "properties": {
     "contract_version": {
@@ -286,6 +288,109 @@
     },
     "ready_for_customer_data": {
       "const": false
+    },
+    "declared_cross_database_count": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 64
+    },
+    "declared_cross_database_links": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "required": [
+          "from_db",
+          "from_db_id",
+          "from_db_label",
+          "from_schema",
+          "from_table",
+          "from_table_key",
+          "from_table_identity",
+          "from_column",
+          "to_db",
+          "to_db_id",
+          "to_db_label",
+          "to_schema",
+          "to_table",
+          "to_table_key",
+          "to_table_identity",
+          "to_column",
+          "evidence",
+          "verified"
+        ],
+        "properties": {
+          "from_db": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          },
+          "from_db_id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          },
+          "from_db_label": {
+            "type": "string"
+          },
+          "from_schema": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "from_table": {
+            "type": "string"
+          },
+          "from_table_key": {
+            "type": "string"
+          },
+          "from_table_identity": {
+            "type": "string"
+          },
+          "from_column": {
+            "type": "string"
+          },
+          "to_db": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          },
+          "to_db_id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8
+          },
+          "to_db_label": {
+            "type": "string"
+          },
+          "to_schema": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "to_table": {
+            "type": "string"
+          },
+          "to_table_key": {
+            "type": "string"
+          },
+          "to_table_identity": {
+            "type": "string"
+          },
+          "to_column": {
+            "type": "string"
+          },
+          "evidence": {
+            "const": "user_declared_unverified"
+          },
+          "verified": {
+            "const": false
+          }
+        },
+        "additionalProperties": false
+      }
     }
   },
   "additionalProperties": true

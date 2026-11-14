@@ -177,5 +177,93 @@ class MultiEngineTests(unittest.TestCase):
                 render_report(self.mix())
 
 
+    def test_same_name_collision_uses_explicit_database_and_column_identity(self):
+        with sqlite3.connect(self.file) as db:
+            db.execute('CREATE TABLE accounts (id INTEGER PRIMARY KEY)')
+        sqlite_catalog = inspect_sqlite(self.file)
+        link = {
+            'from_db': 1, 'from_schema': None, 'from_table': 'accounts', 'from_column': 'id',
+            'to_db': 2, 'to_schema': 'public', 'to_table': 'accounts', 'to_column': 'id',
+        }
+        without_declaration = assemble_workspace([sqlite_catalog, self.pg])
+        self.assertEqual(without_declaration['declared_cross_database_links'], [])
+        self.assertEqual(without_declaration['cross_database_edges_verified'], 0)
+        report = assemble_workspace([sqlite_catalog, self.pg], declared_links=[link])
+        declared = report['declared_cross_database_links']
+        self.assertEqual(len(declared), 1)
+        edge = declared[0]
+        self.assertEqual((edge['from_db_id'], edge['from_schema'], edge['from_table']),
+                         (1, None, 'accounts'))
+        self.assertEqual((edge['to_db_id'], edge['to_schema'], edge['to_table']),
+                         (2, 'public', 'accounts'))
+        self.assertNotEqual(edge['from_table_identity'], edge['to_table_identity'])
+        self.assertEqual(edge['evidence'], 'user_declared_unverified')
+        self.assertIs(edge['verified'], False)
+        self.assertEqual(report['cross_database_edges_verified'], 0)
+        page = render_report(report)
+        self.assertIn('id="cross-database-links"', page)
+        self.assertIn('Relationships are never inferred.', page)
+        payload = page.split('<script type="application/json" id="catalog">', 1)[1].split('</script>', 1)[0]
+        model = json.loads(payload)
+        self.assertEqual(model['declared_cross_database_links'][0]['to_table_identity'],
+                         edge['to_table_identity'])
+
+    def test_mixed_declared_link_rejects_ambiguous_or_unscoped_endpoints(self):
+        sqlite_catalog = self.sqlite
+        valid = {
+            'from_db': 1, 'from_schema': None, 'from_table': 'customers', 'from_column': 'id',
+            'to_db': 2, 'to_schema': 'public', 'to_table': 'accounts', 'to_column': 'id',
+        }
+        for patch in ({'from_db': 2}, {'to_db': 1}, {'from_db': True},
+                      {'to_schema': 'public'}, {'to_column': 'missing'},
+                      {'to_table': 'missing'}, {'to_schema': None}):
+            with self.subTest(patch=patch), self.assertRaises(ReportError):
+                assemble_workspace([sqlite_catalog, self.pg], declared_links=[{**valid, **patch}])
+
+    def test_mixed_declared_links_reject_duplicates_and_limit(self):
+        valid = {
+            'from_db': 1, 'from_schema': None, 'from_table': 'customers', 'from_column': 'id',
+            'to_db': 2, 'to_schema': 'public', 'to_table': 'accounts', 'to_column': 'id',
+        }
+        with self.assertRaisesRegex(ReportError, 'DUPLICATE_LINK'):
+            assemble_workspace([self.sqlite, self.pg], declared_links=[valid, valid])
+        with self.assertRaisesRegex(ReportError, 'INVALID_LINK_COUNT'):
+            assemble_workspace([self.sqlite, self.pg], declared_links=[valid] * 65)
+
+    def test_postgres_same_table_name_in_multiple_schemas_is_unambiguous(self):
+        one = {
+            'schema': 'a.b', 'name': 'c', 'size_bytes': None, 'primary_key_columns': [],
+            'columns': [{'name': 'id', 'type': 'integer'}], 'indexes': [], 'foreign_keys': [],
+        }
+        two = {
+            'schema': 'a', 'name': 'b.c', 'size_bytes': None, 'primary_key_columns': [],
+            'columns': [{'name': 'id', 'type': 'integer'}], 'indexes': [], 'foreign_keys': [],
+        }
+        pg = {'engine': 'postgresql', 'tables': [one, two]}
+        report = assemble_workspace([pg])
+        tables = report['databases'][0]['tables']
+        self.assertEqual(len({table['identity'] for table in tables}), 2)
+        self.assertNotEqual(tables[0]['key'], tables[1]['key'])
+
+
+
+    def test_render_cannot_promote_declared_link_to_verified_relationship(self):
+        link = {
+            'from_db': 1, 'from_schema': None, 'from_table': 'customers', 'from_column': 'id',
+            'to_db': 2, 'to_schema': 'public', 'to_table': 'accounts', 'to_column': 'id',
+        }
+        workspace = assemble_workspace([self.sqlite, self.pg], declared_links=[link])
+        workspace['declared_cross_database_links'][0]['verified'] = True
+        workspace['declared_cross_database_links'][0]['evidence'] = 'declared_foreign_key'
+        page = render_report(workspace)
+        payload = page.split('<script type="application/json" id="catalog">', 1)[1].split('</script>', 1)[0]
+        embedded = json.loads(payload)
+        restored = embedded['declared_cross_database_links'][0]
+        self.assertEqual(restored['evidence'], 'user_declared_unverified')
+        self.assertIs(restored['verified'], False)
+        self.assertEqual(embedded['cross_database_edges_verified'], 0)
+
+
+
 if __name__ == '__main__':
     unittest.main()

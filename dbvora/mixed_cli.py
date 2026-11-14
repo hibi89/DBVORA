@@ -18,6 +18,7 @@ from dbvora.errors import InventoryError
 from dbvora.inventory import inspect_sqlite
 from dbvora.multi_engine_report import ReportError, export_report
 from dbvora.archive.safe_zip import ArchiveError, _directory
+from dbvora.safe_metadata_file import MetadataInputError, read_local_json
 
 _ENV_NAME = re.compile(r'[A-Z][A-Z0-9_]{3,63}\Z', re.ASCII)
 
@@ -39,6 +40,8 @@ def _parser():
     p.add_argument('--include-postgres-statistics', action='store_true',
                    help='Opt-in pg_stat_user_tables row estimates and relation/index allocation')
     p.add_argument('--output-dir', required=True, help='Existing absolute directory distinct from sources')
+    p.add_argument('--links-file', default=None,
+                   help='Optional absolute UTF-8 JSON list of explicit cross-database metadata links (max 16 KiB)')
     p.add_argument('--synthetic-only', action='store_true', help='Confirm every input is synthetic test data')
     p.add_argument('--accept-unencrypted-metadata', action='store_true',
                    help='Acknowledge locally generated HTML is plaintext schema metadata')
@@ -71,6 +74,14 @@ def run(argv=None) -> dict:
         destination = _directory(output)
     except ArchiveError as exc:
         raise ReportError(exc.code) from None
+    declared_links = None
+    if args.links_file is not None:
+        try:
+            declared_links = read_local_json(args.links_file, max_bytes=16 * 1024)
+        except MetadataInputError:
+            raise ReportError('INVALID_LINKS_FILE') from None
+        if type(declared_links) is not list:
+            raise ReportError('INVALID_LINKS_FILE')
     catalogs = []
     paths = set()
     for raw in args.sqlite:
@@ -96,7 +107,7 @@ def run(argv=None) -> dict:
             catalogs.append(inspect_postgres(secret_dsn, include_statistics=True))
         else:
             catalogs.append(inspect_postgres(secret_dsn))
-    return export_report(catalogs, destination)
+    return export_report(catalogs, destination, declared_links=declared_links)
 
 
 def main(argv=None) -> int:

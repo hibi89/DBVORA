@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sqlite3
 import sys
 import tempfile
 import unittest
@@ -164,6 +165,47 @@ class MixedCliTests(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertEqual(result['error']['code'], 'DRIVER_UNAVAILABLE')
         self.assertNotIn('super-secret', json.dumps(result))
+
+
+    def test_explicit_cross_database_links_file_is_scoped_and_unverified(self):
+        with sqlite3.connect(self.source) as db:
+            db.executescript('CREATE TABLE left_table(id INTEGER PRIMARY KEY);')
+        second = self.root / 'second.sqlite'
+        with sqlite3.connect(second) as db:
+            db.executescript('CREATE TABLE right_table(id INTEGER PRIMARY KEY);')
+        manifest = self.root / 'links.json'
+        manifest.write_text(json.dumps([{
+            'from_db': 1, 'from_schema': None, 'from_table': 'left_table', 'from_column': 'id',
+            'to_db': 2, 'to_schema': None, 'to_table': 'right_table', 'to_column': 'id',
+        }]), encoding='utf-8')
+        args = self.flags + ['--sqlite', str(second), '--links-file', str(manifest)]
+        first_digest = hashlib.sha256(self.source.read_bytes()).hexdigest()
+        code, result = self.invoke(args)
+        self.assertEqual(code, 0)
+        page = (self.output / result['result']['filename']).read_text(encoding='utf-8')
+        self.assertIn('user-declared / unverified', page)
+        payload = page.split('<script type="application/json" id="catalog">', 1)[1].split('</script>', 1)[0]
+        model = json.loads(payload)
+        link = model['declared_cross_database_links'][0]
+        self.assertEqual((link['from_db'], link['from_table'], link['from_column']), (1, 'left_table', 'id'))
+        self.assertEqual((link['to_db'], link['to_table'], link['to_column']), (2, 'right_table', 'id'))
+        self.assertIs(link['verified'], False)
+        self.assertEqual(hashlib.sha256(self.source.read_bytes()).hexdigest(), first_digest)
+
+    def test_invalid_links_file_fails_without_writing(self):
+        manifest = self.root / 'bad-links.json'
+        manifest.write_text('null', encoding='utf-8')
+        code, result = self.invoke(self.flags + ['--links-file', str(manifest)])
+        self.assertEqual(code, 2)
+        self.assertEqual(result['error']['code'], 'INVALID_LINKS_FILE')
+        self.assertEqual(list(self.output.iterdir()), [])
+
+    def test_relative_links_file_is_rejected_without_path_leak(self):
+        code, result = self.invoke(self.flags + ['--links-file', 'relative-links.json'])
+        self.assertEqual(code, 2)
+        self.assertEqual(result['error']['code'], 'INVALID_LINKS_FILE')
+        self.assertEqual(list(self.output.iterdir()), [])
+
 
 
 if __name__ == '__main__':
