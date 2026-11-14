@@ -18,6 +18,7 @@ from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from tests.fixtures.make_sqlite import create_fixture
+from tests.fixtures.large_sqlite import extend_synthetic_catalog
 
 
 class GateError(ValueError):
@@ -264,6 +265,108 @@ def run(*, screenshots=None):
                     require(not errors and not bad_http, "CONSOLE_OR_ASSET_FAILURE")
                     result["checks"].append("untrusted_schema_is_text_only")
                     result["checks"].append("no_js_or_asset_errors")
+
+                    # End-to-end *physical* SQLite catalog, not client-only JS
+                    # injection. The fixture is temporary and holds no real data.
+                    last_name = extend_synthetic_catalog(db, target_tables=1000)
+                    at_limit = digest(db)
+                    t_api = time.monotonic()
+                    with urlopen(base + "/api/inventory", timeout=60) as response:
+                        require(response.status == 200, "CATALOG_1000_HTTP_FAILED")
+                        payload = response.read()
+                    api_ms = round((time.monotonic() - t_api) * 1000, 3)
+                    api_data = json.loads(payload)
+                    require(len(api_data["tables"]) == 1000
+                            and len(api_data["relationships"]) == 997
+                            and any(t["name"] == last_name for t in api_data["tables"])
+                            and "NOT_FOR_SCHEMA_OUTPUT" not in payload.decode("utf-8")
+                            and "example@invalid.test" not in payload.decode("utf-8")
+                            and at_limit == digest(db),
+                            "CATALOG_1000_API_MISMATCH")
+                    result["checks"].append("sqlite_1000_readonly_api")
+
+                    t_ready = time.monotonic()
+                    page.locator("#refresh").click()
+                    page.wait_for_function(
+                        "() => document.querySelector('#tables-count').textContent === '1000'",
+                        timeout=90000)
+                    page.wait_for_function(
+                        "() => document.querySelectorAll('#edges path').length === 997",
+                        timeout=90000)
+                    ready_ms = round((time.monotonic() - t_ready) * 1000, 3)
+                    require(page.locator("#tables button.table-node").count() == 1000
+                            and page.locator("#links-count").inner_text() == "997",
+                            "CATALOG_1000_BROWSER_MISMATCH")
+                    page.locator("#table-filter").fill(last_name.upper())
+                    require(page.locator("button.table-node:visible").count() == 1
+                            and page.locator("#edges path").count() == 0
+                            and "1 / 1000" in page.locator("#filter-status").inner_text(),
+                            "CATALOG_1000_BROWSER_FILTER")
+                    visible = page.locator("button.table-node:visible")
+                    visible.focus()
+                    visible.press("Enter")
+                    require(page.locator(".detail-heading h3").inner_text() == last_name
+                            and visible.get_attribute("aria-pressed") == "true",
+                            "CATALOG_1000_KEYBOARD_SELECT")
+                    page.locator("#table-filter").fill("NO_SUCH_SYNTHETIC_TABLE")
+                    require(page.locator("button.table-node:visible").count() == 0
+                            and page.locator("#filter-empty").is_visible(),
+                            "CATALOG_1000_ZERO_RESULTS")
+                    page.locator("#table-filter").fill("")
+                    require(page.locator("button.table-node:visible").count() == 1000
+                            and page.locator("#edges path").count() == 997
+                            and at_limit == digest(db),
+                            "CATALOG_1000_RESTORE_FILTER")
+                    result["real_sqlite_1000_metrics"] = {
+                        "tables": 1000, "declared_fk": 997,
+                        "api_payload_bytes": len(payload),
+                        "api_response_ms": api_ms,
+                        "browser_ready_ms": ready_ms}
+                    result["checks"].append("sqlite_1000_chromium_keyboard")
+
+                    # Just one extra generated table must fail closed at the
+                    # API boundary without exposing paths, rows, or SQL.
+                    excessive = extend_synthetic_catalog(db, target_tables=1001)
+                    at_excess = digest(db)
+                    try:
+                        with urlopen(base + "/api/inventory", timeout=60):
+                            raise GateError("CATALOG_1001_ACCEPTED_UNSAFELY")
+                    except HTTPError as exc:
+                        require(exc.code == 422, "CATALOG_1001_BAD_HTTP_STATUS")
+                        error_payload = exc.read().decode("utf-8")
+                    error = json.loads(error_payload)["error"]
+                    require(error["code"] == "CATALOG_LIMIT"
+                            and str(db) not in error_payload
+                            and "example@invalid.test" not in error_payload
+                            and at_excess == digest(db),
+                            "CATALOG_1001_UNSAFE_RESPONSE")
+                    page.locator("#refresh").click()
+                    page.wait_for_function(
+                        "() => document.querySelector('#error').hidden === false",
+                        timeout=30000)
+                    require("exceeds the inventory limit" in
+                            page.locator("#error").inner_text()
+                            and at_excess == digest(db),
+                            "CATALOG_1001_UI_ERROR_MISSING")
+                    result["checks"].append("sqlite_1001_api_ui_fail_closed")
+
+                    # Synthetic-only recovery: remove only the test-owned last
+                    # table; no customer backup, auto-pruning or user file touch.
+                    with closing(sqlite3.connect(db)) as con:
+                        con.execute('DROP TABLE "' + excessive + '"')
+                        con.commit()
+                    restored_fingerprint = digest(db)
+                    page.locator("#refresh").click()
+                    page.wait_for_function(
+                        "() => document.querySelector('#tables-count').textContent === '1000'"
+                        " && document.querySelector('#error').hidden",
+                        timeout=90000)
+                    require(page.locator("#edges path").count() == 997
+                            and restored_fingerprint == digest(db)
+                            and not errors and not dialogs
+                            and bad_http == [422],
+                            "CATALOG_LIMIT_RECOVERY_FAILED")
+                    result["checks"].append("sqlite_catalog_recovery_no_source_mutation")
                 finally:
                     browser.close()
             require(http_code(base + "/api/inventory", headers={
