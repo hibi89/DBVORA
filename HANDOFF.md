@@ -1,14 +1,14 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
-> 1. **목표·범위**: `hibi89/DBVORA`, `feature/p0-db-map`에서 R01–R07/G90 구현·검증 지속. 사용자 PC 작업, main/develop 병합, 상용 출시는 제외.
-> 2. **이번 완료**: R07-03 PASS_SCOPED. UI 안전·동의·복원 안내와 API 오류 복구를 한국어로 보강했고, 복원 CLI 도움말·오류 및 Windows UTF-8 검증을 정리했다.
-> 3. **기능/검증 SHA**: `8dc0a4dd9096ec9b92a683db53912c00a017f03c`.
-> 4. **전체 회귀**: [#43647307300](https://github.com/hibi89/DBVORA/actions/runs/43647307300) PASS. Ubuntu 783/783, 0 skip; Windows 782 PASS + 지정 POSIX-only 1 SKIP; 필수 12단계 모두 PASS.
-> 5. **Chromium**: [#43647307293](https://github.com/hibi89/DBVORA/actions/runs/43647307293) 35/35 × Ubuntu/Windows PASS. desktop/390px, safety guide keyboard/ARIA, 오류 스크린샷 및 복구 상태 검사 포함.
-> 6. **PostgreSQL**: [#43647307279](https://github.com/hibi89/DBVORA/actions/runs/43647307279) PASS; TLS/read-only 5 checks, UI 8 checks. DSN은 화면/로그에 노출되지 않는다.
-> 7. **Source ZIP**: [#43647307331](https://github.com/hibi89/DBVORA/actions/runs/43647307331) PASS, 75 files, self-check 9/9, inner ZIP SHA-256 `1ff2f8c7b89a394074ebe6ec2568e58ca74c99135396ba6ca0b32ddef081f382`; artifact `14134722497`, outer digest `245b32da83ce3787749faff6b719ff34b8b89faee226abc2a7ff266f9e8fd791`.
-> 8. **Windows EXE/blueprint**: [EXE #43647307329](https://github.com/hibi89/DBVORA/actions/runs/43647307329) PASS, EXE SHA-256 `d80fc2d90f7c6e0bc5fb416683e31e21038744f44fe889c4750110449a7290ff`; artifact `14134278857`, outer digest `2ac390db1ae2f06d3ed9a28fff4624e499307fd22291c1e2e06c90cdff0a87fb`. [blueprint #43647307578](https://github.com/hibi89/DBVORA/actions/runs/43647307578) PASS; 공식 점수는 UNASSESSED.
-> 9. **실패 및 보정**: 한국어 UI 문구로 바뀐 뒤 남은 영문 assertion을 정정했다. Windows CP1252 subprocess decoder 문제는 test helper의 UTF-8 명시로 해결했다. 마지막 SHA 전체 게이트는 PASS. 상세 [R07-03 증거](docs/R07_03_KOREAN_RECOVERY_UX_20261115.md).
-> 10. **다음/공식 상태**: 다음 R01-04 승인된 SQLite+PostgreSQL 교차 관계 및 동일 테이블명 충돌. R01-05/R01-06도 PASS_SCOPED. 전체 완성률 UNASSESSED / RELEASE HOLD; OWNER_GATE 유지.
+> 1. **목표·범위**: hibi89/DBVORA, feature/p0-db-map에서 R01–R07/G90 구현·검증 지속. 사용자 PC, main/develop 병합, 상용 출시는 제외.
+> 2. **이번 완료**: R01-04 PASS_SCOPED. 혼합 SQLite+PostgreSQL 서비스 지도에 명시 선언 교차 링크를 연결했고 동명 테이블 선택을 DB identity로 구분한다.
+> 3. **기능/테스트 SHA**: cd2588e126c5014d2311b15a1041350b457380e1. 이 SHA에서 전체 회귀, Chromium, 실제 PG TLS, ZIP/EXE, blueprint 실행.
+> 4. **전체 회귀**: [#43650797153](https://github.com/hibi89/DBVORA/actions/runs/43650797153) PASS. Ubuntu 791/791, 0 skip; Windows 790 PASS + 지정 POSIX-only 1 skip; OS별 필수 12/12 단계 PASS.
+> 5. **Chromium**: [#43650797152](https://github.com/hibi89/DBVORA/actions/runs/43650797152) 35/35 × Ubuntu/Windows PASS.
+> 6. **실제 PG16 TLS/UI**: [#43650797203](https://github.com/hibi89/DBVORA/actions/runs/43650797203) PASS; verified TLS/read-only 및 브라우저 9 checks. 합성 SQLite users와 PostgreSQL public.users 동명 충돌, explicit unverified link의 올바른 대상 선택, 네트워크 요청·row·DSN·경로 부재 확인.
+> 7. **source ZIP**: [#43650797187](https://github.com/hibi89/DBVORA/actions/runs/43650797187) PASS, 75 files, 9/9 self-check, inner ZIP SHA-256 1c0dd5c25267746d790397ce61a51c111bf6bd8e340317191f0ceac7e3cc333d.
+> 8. **Windows EXE/blueprint**: EXE [#43650797191](https://github.com/hibi89/DBVORA/actions/runs/43650797191) PASS, EXE SHA-256 6c0feb66d748af68c8b407da8bf5368260b79843322a8432e6019a8bf6ab56cb. Blueprint [#43650797372](https://github.com/hibi89/DBVORA/actions/runs/43650797372) PASS; 공식 완료율은 UNASSESSED.
+> 9. **실패·보정**: 초기 테스트 입력 키 오기와 Windows SQLite fixture 연결 미종료를 수정했다. 재사용 Chromium page에서 링크 버튼이 생성되지 않는 실패를 분리해 새 page로 옮겼다. 최종 SHA 전체 회귀·Chromium·PG TLS/UI가 PASS했다. 자세한 run 이력은 R01-04 증거 문서 참조.
+> 10. **다음/공식 상태**: 다음 R01-07 비동기 DB/table 전환 응답 격리. 전체 완료율 UNASSESSED / RELEASE HOLD; 실기기·물리 정전·법률·소유자 게이트 유지.
 
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only · 10항]**
 > 1. **목표·범위**: `hibi89/DBVORA`의 `feature/p0-db-map`에서 R01–R07/G90을 계속 구현·검증한다. 사용자 PC, main/develop 병합, 크몽 등록·상용 출시는 제외한다.
