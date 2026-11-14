@@ -151,6 +151,26 @@ def run(*, screenshots=None):
                             and page.locator("#edges path.active").count() == 1,
                             "TABLE_SELECTION_FAILED")
                     result["checks"].append("click_table_inspector")
+                    # On demand only: no dbstat API request during first schema load.
+                    measure = page.locator(".storage-measure")
+                    require(measure.count() == 1
+                            and "측정 전" in page.locator(".storage-status").inner_text(),
+                            "OPT_IN_MEASURE_BUTTON_MISSING")
+                    measure.click()
+                    page.wait_for_function(
+                        "() => { const s=document.querySelector('.storage-status'); "
+                        "return s && (s.textContent.includes('할당된 B-tree') || "
+                        "s.textContent.includes('측정 불가')); }", timeout=15000)
+                    measured = page.evaluate("""async () => {
+                        const r = await fetch('/api/table-storage?table=orders');
+                        return {code:r.status, data:await r.json()};
+                    }""")
+                    require(measured["code"] == 200
+                            and measured["data"]["contract"] == "dbvora.local-table-storage.v1"
+                            and "dbstat" in measured["data"]["scope"]
+                            and measured["data"]["metric"]["status"] in ("measured","unavailable"),
+                            "OPT_IN_MEASURE_CONTRACT")
+                    result["checks"].append("opt_in_local_table_btree_bytes")
                     page.locator("#table-filter").fill("ORDERS")
                     require(page.locator("button.table-node:visible").count() == 1
                             and page.locator(".detail-heading h3").inner_text() == "orders"

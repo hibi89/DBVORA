@@ -63,6 +63,47 @@ function inspect(tableName) {
   const meta = el('div', 'detail-meta');
   meta.append(badge(`${table.columns.length} COLUMNS`, 'neutral'), badge(`${table.indexes.length} INDEXES`, 'neutral'), badge(`${table.foreign_keys.length} FOREIGN KEYS`, 'neutral'));
   details.append(meta);
+  const storage = el('section', 'storage-measurement');
+  storage.append(el('h4', 'section-label', 'ALLOCATED BTREE PAGES'));
+  storage.append(el('p', 'storage-note', 'SQLite dbstat 기준 할당된 B-tree 페이지(인덱스 포함). 실제 디스크 사용량 또는 데이터 행 크기가 아닙니다.'));
+  const measure = el('button', 'storage-measure', '테이블 용량 측정');
+  measure.type = 'button';
+  const storageStatus = el('p', 'storage-status', '측정 전 · 버튼을 눌러야 조회합니다.');
+  storageStatus.setAttribute('role', 'status');
+  storageStatus.setAttribute('aria-live', 'polite');
+  measure.addEventListener('click', async () => {
+    measure.disabled = true;
+    storageStatus.textContent = '측정 중…';
+    const controller = new AbortController();
+    const deadline = setTimeout(() => controller.abort(), 8000);
+    try {
+      const response = await fetch('/api/table-storage?table=' + encodeURIComponent(table.name), {
+        cache: 'no-store', credentials: 'same-origin', signal: controller.signal
+      });
+      if (!response.ok) throw new Error('measurement_unavailable');
+      const data = await response.json();
+      const metric = data?.metric;
+      if (data?.contract !== 'dbvora.local-table-storage.v1' || data.table !== table.name
+          || typeof data.scope !== 'string' || !data.scope.includes('dbstat')) {
+        throw new Error('measurement_contract_mismatch');
+      }
+      if (metric?.status === 'measured' && Number.isSafeInteger(metric.allocated_btree_bytes)
+          && metric.allocated_btree_bytes >= 0) {
+        storageStatus.textContent = '할당된 B-tree 페이지: ' + formatBytes(metric.allocated_btree_bytes);
+      } else if (metric?.status === 'unavailable') {
+        storageStatus.textContent = '측정 불가 · dbstat 또는 용량/시간 제한';
+      } else {
+        throw new Error('measurement_invalid');
+      }
+    } catch (_error) {
+      storageStatus.textContent = '측정 실패 · DB 상태 확인 후 다시 시도하세요.';
+    } finally {
+      clearTimeout(deadline);
+      measure.disabled = false;
+    }
+  });
+  storage.append(measure, storageStatus);
+  details.append(storage);
   details.append(el('h4', 'section-label', 'COLUMNS'));
   const cols = el('div', 'columns');
   for (const field of table.columns) {

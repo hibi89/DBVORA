@@ -1,9 +1,11 @@
 """Local-only, read-only FastAPI adapter for an explicitly selected SQLite file."""
 from pathlib import Path
+import stat
 
 from dbvora.connectors.sqlite_reader import validate_path
 from dbvora.errors import InventoryError
 from dbvora.inventory import inspect_sqlite
+from dbvora.storage_metrics import collect_table_storage
 
 try:
     from fastapi import FastAPI, Request
@@ -63,6 +65,40 @@ def create_app(db_path: str | Path, port: int = 8765) -> FastAPI:
         except InventoryError as exc:
             # No source path, SQLite SQL, query strings or stack traces in error responses.
             return JSONResponse(status_code=422, content={'error': {'code': exc.code, 'message': exc.message}})
+
+    @app.get('/api/table-storage')
+    async def table_storage(request: Request):
+        """Opt-in, bounded measurement only; no DB rows or arbitrary SQL."""
+        names = request.query_params.getlist('table')
+        if (len(names) != 1 or not names[0] or len(names[0]) > 512
+                or '\x00' in names[0] or len(request.query_params) != 1):
+            return JSONResponse(status_code=422, content={
+                'error': {'code': 'INVALID_TABLE', 'message': 'Select a valid table.'}})
+        name = names[0]
+        try:
+            initial = selected.lstat()
+            inventory = inspect_sqlite(selected)
+            table = next((item for item in inventory['tables'] if item['name'] == name), None)
+            if table is None:
+                return JSONResponse(status_code=404, content={
+                    'error': {'code': 'TABLE_NOT_FOUND', 'message': 'Table not in the current inventory.'}})
+            measured = collect_table_storage(selected, inventory['size_bytes'], [table])
+            final = selected.lstat()
+            identity = lambda item: (item.st_dev, item.st_ino, item.st_ctime_ns,
+                                     item.st_size, item.st_mtime_ns)
+            if (not stat.S_ISREG(initial.st_mode) or not stat.S_ISREG(final.st_mode)
+                    or identity(initial) != identity(final)):
+                raise InventoryError('CHANGED_DURING_READ', 'Database changed during inspection.')
+        except OSError:
+            return JSONResponse(status_code=422, content={
+                'error': {'code': 'CHANGED_DURING_READ', 'message': 'Database changed during inspection.'}})
+        except InventoryError as exc:
+            return JSONResponse(status_code=422, content={'error': {
+                'code': exc.code, 'message': exc.message}})
+        metric = measured['tables'].get(name, {'status': 'unavailable',
+                                                'reason': measured.get('reason', 'btree_not_measurable')})
+        return JSONResponse({'contract': 'dbvora.local-table-storage.v1',
+                             'table': name, 'scope': measured['scope'], 'metric': metric})
 
     @app.get('/health')
     async def health():

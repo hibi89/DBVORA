@@ -2,9 +2,11 @@
 import hashlib
 from contextlib import closing
 from pathlib import Path
+import os
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from dbvora.api import create_app
@@ -36,6 +38,58 @@ class ApiTests(unittest.TestCase):
         self.assertNotIn(str(self.db), res.text)
         self.assertNotIn('NOT_FOR_SCHEMA_OUTPUT', res.text)
         self.assertNotIn('example@invalid.test', res.text)
+
+    def test_table_storage_is_explicit_bounded_and_does_not_mutate_source(self):
+        before = self.fingerprint()
+        # Normal inventory fetch must not start a dbstat scan.
+        with patch('dbvora.api.collect_table_storage') as scanner:
+            self.assertEqual(self.client.get('/api/inventory').status_code, 200)
+            scanner.assert_not_called()
+        response = self.client.get('/api/table-storage', params={'table': 'orders'})
+        self.assertEqual(response.status_code, 200)
+        record = response.json()
+        self.assertEqual(record['contract'], 'dbvora.local-table-storage.v1')
+        self.assertEqual(record['table'], 'orders')
+        self.assertIn('dbstat', record['scope'])
+        self.assertIn(record['metric']['status'], ('measured', 'unavailable'))
+        if record['metric']['status'] == 'measured':
+            self.assertGreaterEqual(record['metric']['allocated_btree_bytes'], 0)
+            self.assertEqual(record['metric']['source'], 'sqlite_dbstat_aggregate')
+        self.assertEqual(before, self.fingerprint())
+        self.assertNotIn(str(self.db), response.text)
+        self.assertNotIn('NOT_FOR_SCHEMA_OUTPUT', response.text)
+
+    def test_table_storage_rejects_unknown_invalid_and_remote_requests(self):
+        for url in ('/api/table-storage', '/api/table-storage?table=',
+                    '/api/table-storage?table=orders&table=customers',
+                    '/api/table-storage?table=orders&db=other',
+                    '/api/table-storage?table=%00evil'):
+            with self.subTest(url=url):
+                res = self.client.get(url)
+                self.assertEqual(res.status_code, 422)
+                self.assertEqual(res.json()['error']['code'], 'INVALID_TABLE')
+        missing = self.client.get('/api/table-storage', params={'table': 'private_unknown'})
+        self.assertEqual(missing.status_code, 404)
+        self.assertEqual(missing.json()['error']['code'], 'TABLE_NOT_FOUND')
+        self.assertEqual(self.client.get('/api/table-storage?table=orders',
+                                         headers={'Host': 'attacker.example'}).status_code, 403)
+        self.assertEqual(self.client.post('/api/table-storage?table=orders').status_code, 405)
+
+    def test_table_storage_detects_same_mtime_file_replacement_after_scan(self):
+        before = self.fingerprint()
+        other = Path(self.tmp.name) / 'replacement.sqlite'
+        other.write_bytes(self.db.read_bytes())
+        def replace_and_report(path, main_size, tables):
+            previous = self.db.stat()
+            os.replace(other, self.db)  # Test-owned temporary SQLite only.
+            os.utime(self.db, ns=(previous.st_atime_ns, previous.st_mtime_ns))
+            return {'scope': 'logical_btree_pages_dbstat_including_indexes_wal_pages_possible',
+                    'tables': {'orders': {'status': 'measured', 'allocated_btree_bytes': 4096}}}
+        with patch('dbvora.api.collect_table_storage', side_effect=replace_and_report):
+            response = self.client.get('/api/table-storage', params={'table': 'orders'})
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.json()['error']['code'], 'CHANGED_DURING_READ')
+        self.assertEqual(before, self.fingerprint())
 
     def test_page_js_css_served_with_no_cache_and_csp(self):
         for path in ('/', '/assets/app.js', '/assets/style.css'):

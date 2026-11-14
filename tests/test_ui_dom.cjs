@@ -29,11 +29,20 @@ const data = {engine:'sqlite',db_id:'abc12345678901234567890',size_bytes:12345, 
   ]};
 const listeners = [];
 let failNextFetch = false;
+let storageFetches = 0;
 const sandbox = {
   document:doc, window:{addEventListener(name, fn){ listeners.push({name, fn}); }}, ResizeObserver:class {observe(){} disconnect(){}},
   requestAnimationFrame: fn => fn(),
-  fetch: async () => {
+  fetch: async (url) => {
     if (failNextFetch) { failNextFetch = false; throw new TypeError('Failed to fetch'); }
+    if (url.startsWith('/api/table-storage?')) {
+      storageFetches++;
+      return {ok:true,json: async () => ({
+        contract: 'dbvora.local-table-storage.v1', table: new URL(url, 'http://127.0.0.1').searchParams.get('table'),
+        scope: 'logical_btree_pages_dbstat_including_indexes_wal_pages_possible',
+        metric: {status:'measured', allocated_btree_bytes:8192, source:'sqlite_dbstat_aggregate'}
+      })};
+    }
     return {ok:true,json: async () => data};
   },
   setTimeout, clearTimeout, AbortController,
@@ -49,6 +58,17 @@ setImmediate(async () => {
     assert.equal(ids['links-count'].textContent, '1');
     assert.equal(ids.edges.children.length, 1);
     assert.ok(ids.detail.textContent.includes('customers'));
+    assert.equal(storageFetches, 0, 'dbstat must never scan automatically');
+    const getMeasure = () => ids.detail.children.flatMap(root => {
+      const items = [];
+      const walk = node => { if (node.className.includes('storage-measure')) items.push(node);
+                             node.children.forEach(walk); };
+      walk(root); return items;
+    })[0];
+    assert.ok(getMeasure(), 'inspector must expose opt-in measurement');
+    await getMeasure().events.click();
+    assert.equal(storageFetches, 1, 'explicit click starts one local measurement');
+    assert.ok(ids.detail.textContent.includes('8 KB'), 'display measured allocated btree pages');
     ids.tables.children[1].events.click();
     assert.ok(ids.detail.textContent.includes('customer_id'));
     ids.tables.children[2].events.click();
