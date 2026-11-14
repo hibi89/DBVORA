@@ -1,3 +1,15 @@
+> **[2026-11-14 KST · P3 manifest descriptor identity guard · source `0caf6080eceb8fd725926621ed478b2a2e8f348a`]**
+> 1. **목표/요구/기술:** 기존 DBVORA REQ 7항/P0–P4, SQLite/PG read-only→로컬 구조도·ZIP/ZSTD/CAS 무손실 보관, Python3.11+Windows/Linux. 사용자 백엔드·프론트엔드 100% 목표, 크몽 등록 별도.
+> 2. **기능/설계:** zlib CAS v2 복원 manifest 읽기를 `_read_manifest_unchanged` 한정 FD로 전환: open 전/후 파일ID/mtime/ctime·크기·단일링크 확인, `O_NOFOLLOW` 사용 가능 OS에서 활성화, 512KB 초과 거부. A 기존 `read_bytes`는 파일 교체 race와 size/mtime 동일 공격에 취약; B FD identity 확인은 표준 라이브러리·추가요금/권한0, 재사용 가능한 안전 계약 → B.
+> 3. **테스트:** exact SHA [CI #43562802300](https://github.com/hibi89/DBVORA/actions/runs/43562802300) Ubuntu699/699 PASS, Windows698PASS+POSIX1SKIP/0FAIL, mandatory12/12×2. 합성 임시 manifest 동일-size/mtime 교체 시 복원 거부, 출력0, 원본 체크섬·mtime 불변. `python -m scripts.verify_release_gate`. 이전 JS/Chromium d52 SHA 9/9×2 SUCCESS 유효(새 커밋 웹 변경0).
+> 4. **완료/대기:** P3 경로 바꿔치기 방어 검증 완료. **전체 P100 공식 UNASSESSED**, 역사 내부95, `[작업중]`, RELEASE HOLD, 실 크몽 등록0. 실 구매자/물리정전/라이선스는 대기.
+> 5. **실패/원인/재시도 금지:** 이번 SHA 실패 CI0. 이전 clock tick/NTFS Windows test 이력은 재시도 금지 대상. 새로운 path replacement는 합성 테스트에서 의도적으로 `MANIFEST_CHANGED`를 일으키며 예상된 안전 거부; 장애 아님.
+> 6. **저장소/브랜치/SHA/코드:** `hibi89/DBVORA@feature/p0-db-map` source `0caf6080eceb8fd725926621ed478b2a2e8f348a`; `dbvora/archive/compressed_cas.py`, `tests/test_compressed_cas_failures.py`, [이 문서](docs/P3_SECURE_MANIFEST_DESCRIPTOR_READ_20261114.md). 문서 HEAD는 코드 source SHA와 별도 확인.
+> 7. **운영/Production:** GitHub 무료 Windows2025/Ubuntu24.04 Python3.11, full release `PASS_SYNTHETIC_ENVIRONMENT_ONLY`; Vercel/Production 미적용, unsigned preview와 상업 release 구분.
+> 8. **원본/복구/인증:** 기존 백업·고객DB·main/develop·비밀키·실 경로·GitHub 권한 수정0. 소스 변경 전 복구 커밋 `12e3ee78eb61e50874b0346fc57679721d383ee3`. force-push 없음.
+> 9. **다음 작업/승인:** 지속적인 복구체인·다중 세대/경합 및 UI 사용성 합성 검증 계속. 사용자 외출 중 PC 작업 요청 없이 모바일 `ㄱ` 재개. 고객실DB·물리 정전·법적권리/크몽 등록·100점 수용은 별도 승인 없이는 실행 금지.
+> 10. **확인일시·검증범위:** 2026-11-14 KST, exact source SHA 699 tests discovered, Ubuntu/Windows CI 2/2 pass와 단계별 12/12 로그 직접 조회. 실제 고객/물리 전원차단/사용자 새 UI 구매자 검수 NOT VERIFIED.
+>
 > **[2026-11-14 KST · DBVORA frontend table-search handoff · verified code `d52b75d90f1674e2357458c7bfbc22c4f2edb569`]**
 > 1. **목표·기술·확정 요구:** 기존 `REQUIREMENTS.md` R01~R07/P0~P4 그대로, Python3.11/SQLite·선택 PG read-only, 로컬 HTTP HTML/JS, 오프라인 ZIP/ZSTD/CAS. 사용자 목표 백엔드+프론트엔드 100%, 크몽 등록 제외.
 > 2. **완료 기능·결정:** 브라우저 로드된 *스키마 이름*에만 클라이언트 필터(서버 재검색보다 개인정보/비용/유지보수에 유리); 검색·건수·0건 안내·첫 가시 노드 인스펙터·필터된 FK 선 숨김·새로고침 상태 유지. 실제 고객 행·외부 네트워크 추가0.
