@@ -1,3 +1,14 @@
+## 2026-11-14 exact-SHA 보강 검증 및 최신 미완료 추적
+- 기능 소스 `9d24a58a045fd89a11d46c685ee59adec3ed63e8`, [전체 양OS #43549905413](https://github.com/hibi89/DBVORA/actions/runs/43549905413): Python651 발견, Linux651PASS/Win650PASS+1플랫폼SKIP/0FAIL, 필수12/12×2 OS. [실 PG #43545900975](https://github.com/hibi89/DBVORA/actions/runs/43545900975) PostgreSQL16 localhost verify-full TLS·읽기전용 계정·실카탈로그·HTML 5/5. 이 2건은 고객/사업자 PG QA와 구분.
+- R01(20점 제안): 실제 PG read-only TLS + Chromium localhost Windows/Linux synthetic 클릭 8×2 PASS. 실제 Win10/고객 스키마와 통합 서비스 관계는 사용자/사업자 수용 전 **PENDING**.
+- R02(15점 제안): SQLite 파일/dbstat·2시점 변경 및 PostgreSQL pg_stat_user_tables 추정/heap/index 실측을 명확히 구분, CPU/RAM 미지원 수치는 표시하지 않음. 장기 리소스 관찰·실사용 환경 **PENDING**.
+- R03(25점 제안): 기존 ZIP/ZSTD 원본 무손실 독립 복원과 raw CAS v1, 별도 compressed zlib CAS v2 **실제 임시 디스크 두 세대+독립 복원/오류 거부 12체크**, 일자별 원장 예약(실 OS 스케줄러 미설치); 물리 정전·디스크 고장·보존정책/자동 삭제/고객 복구 **PENDING**.
+- R04(10점 제안): 동일 *합성* SQLite 2세대 ZIP2 총31,216B Linux(Windows31,550B), raw CAS1,177,960B, zlib CAS v2 24,637B Linux(Windows25,046B) 실측; zlib 절감 Linux6579B·Windows6504B, 데이터·압축률의 일반화 금지. 실제 고객 데이터 동의 없는 벤치·비교와 운영비 대조 **PENDING**.
+- R05(10점 제안): TLS verify-full 실제 CA 거부, PG role no write, no customer row extraction, localhost guard·new-only/한정 복원 PASS. 공개소스 사용권/NOTICE·서명/물리 보안·장기 배포 권한 **PENDING**.
+- R06(5점 제안): DBVORA standalone offline HTML/CLI 동작, 실제 HAE/LA/SOVIA 연계 종단검증은 원요구상 초기 판매 비필수 가능하나 전체 최종설계 수용에는 **PENDING**으로 보존.
+- R07(15점 제안): Windows2025 unsigned synthetic EXE 실제 실행 [#43546585469](https://github.com/hibi89/DBVORA/actions/runs/43546585469), 61소스 파일/해시 검증 [latest preview](https://github.com/hibi89/DBVORA/actions/runs/43549905406), **Win10 실제 QA·타사 권리/지원/환불·서명 여부·가격/크몽 게시0** PENDING.
+- **제안 가중치 합100은 사용자 승인 전임**; 검증 항목만을 임의 분수/성공률로 바꿔 공식 점수 산정하지 않음. 공통 정본에 따라 **UNASSESSED**, 이전 내부95 이력·[작업중]·RELEASE HOLD 유지.
+
 # DBVORA 사용자 최종설계 요구 전체 추적 및 P100 승인 전 제안 — 2026-11-14
 
 **공식 점수: UNASSESSED.** 아래 100점 배분은 사용자가 새로 승인한 최종 가중치가 아닌 **기술 책임자 제안**이다. 전체 요구는 `REQUIREMENTS.md`(2026-10-26 원본, 7개 상위 요구) 및 `AGENTS.md`의 2026-11-13 OWNER-FINAL-BLUEPRINT-100 기준 그대로다. 100점 점수는 확정·검증된 수용조건으로만 합산 가능; 소규모 단위/합성 CI/과거 내부95를 공식 점수로 오인하지 않는다.

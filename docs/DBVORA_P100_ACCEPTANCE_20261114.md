@@ -1,3 +1,9 @@
+## 2026-11-14 최종 자동검증 최신 정정 (과거 아래 기록 보존)
+- `hibi89/DBVORA@feature/p0-db-map` 기능 SHA `9d24a58a045fd89a11d46c685ee59adec3ed63e8` [전체 GitHub Actions #43549905413](https://github.com/hibi89/DBVORA/actions/runs/43549905413) **Windows2025/Linux Ubuntu24.04 2/2 SUCCESS**. Python **651개 발견**(Linux651PASS/0SKIP, Windows650PASS/1POSIX SKIP), **12/12 mandatory gate/OS**: ZIP/ZSTD, snapshot/receipt, trusted ZIP, recovery, PG synthetic, raw+zlib CAS CLI 12개 체크, 3방식 2세대 실측·모든 형식의 독립 복원 11개 체크.
+- 진짜 localhost PostgreSQL16 생성 후 verify-full CA 및 read-only, 실제 catalog FK/stats/HTML, 인증서 거부 5/5 [#43545900975](https://github.com/hibi89/DBVORA/actions/runs/43545900975); 고객 PG 미테스트. Chromium 실제 Windows/Linux localhost synthetic 8/8×2 [#43544065399](https://github.com/hibi89/DBVORA/actions/runs/43544065399).
+- 소유자 최신 GitHub developer unsigned ZIP: 61 소스파일, 내부 ZIP SHA `b86b65c666af8d5bd0262bbec37bf8cf465391d8f22b518f976efc3d28bc7183`, [#43549905406](https://github.com/hibi89/DBVORA/actions/runs/43549905406), 실행파일 실 Windows synthetic-only [#43546585469](https://github.com/hibi89/DBVORA/actions/runs/43546585469). 물리 사용자 Win10/11·정전/암호화·고객 데이터·실제 판매권/최종 사용자 승인 **미검증**.
+- 공식 최종설계 **UNASSESSED**(이전 내부95 기술범위 기록), [작업중], RELEASE HOLD, 크몽 미등록. 제안 100점 R01–R07은 **승인된 가중치 아님**. 13:00 KST 한 번만 사용자 할 일 안내.
+
 # DBVORA P100 정식 최종설계 수용·검증 계획 — 2026-11-14 KST
 
 ## 이번 사용자 지시와 점수 구분
