@@ -1,4 +1,16 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only]**
+> 1. **목표/범위**: `hibi89/DBVORA`, `feature/p0-db-map`에서 R01–R07/G90 구현·검증을 계속한다. 모든 변경과 검증 기록은 GitHub branch/Actions에 저장한다. 사용자 PC 작업, main/develop 병합, 유료·상용 출시는 제외한다.
+> 2. **이번 완료**: R03-02 PASS_SCOPED. ZIP, ZSTD, raw CAS v1, compressed CAS v2 각각 합성 SQLite 스냅샷을 독립 복원하며 SHA-256과 SQLite integrity를 확인한다.
+> 3. **기능/테스트 SHA**: `49ab1080dc8a7a28f0e1435233f51d1caff0f87a`. R03-01 WAL concurrent-writer 회귀 테스트도 포함한다.
+> 4. **전체 회귀**: [#43679171661](https://github.com/hibi89/DBVORA/actions/runs/43679171661) PASS_SYNTHETIC_ENVIRONMENT_ONLY. Ubuntu 798/798·0 skip; Windows 797 PASS + 지정 POSIX-only 1 SKIP; 필수 12/12 단계 양 OS 통과.
+> 5. **교차 형식 검증**: 전체 게이트 내 `synthetic_archive_size_comparison` 29 checks/OS PASS. 4가지 형식 각 3 trials × 2 generations, 모든 restore SHA 검증 true; ZSTD available, raw/compressed CAS generation 2 chunk reuse PASS. 각 restore API는 새 파일 게시 전 SQLite integrity를 검사한다.
+> 6. **패키지/설계 게이트**: ZIP [#43679171633](https://github.com/hibi89/DBVORA/actions/runs/43679171633) 75 files/self-check 9/9; unsigned EXE [#43679171613](https://github.com/hibi89/DBVORA/actions/runs/43679171613); blueprint [#43679171766](https://github.com/hibi89/DBVORA/actions/runs/43679171766) PASS.
+> 7. **상세 증거**: [docs/R03_02_ARCHIVE_FORMAT_RESTORE_20261115.md](docs/R03_02_ARCHIVE_FORMAT_RESTORE_20261115.md).
+> 8. **제한**: 합성 fixture/GitHub runner 한정; 실기기·정전 내구성·고객 workload·상용 준비도를 증명하지 않는다. 전체 공식 완료 UNASSESSED / RELEASE HOLD, OWNER_GATE 유지.
+> 9. **다음 작업**: R03-03 CAS generation chain/manifest linkage와 손상·동시 경합 실패 안전을 정확 SHA로 재검증.
+> 10. **다음 흐름**: 이어서 R03-04/05/06/07/08/09와 나머지 R01–R07/G90을 P100 dependency 순서로 진행한다.
+
+> **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only]**
 > 1. **목표/범위**: `hibi89/DBVORA`, `feature/p0-db-map`의 R01–R07/G90 구현·검증을 계속한다. 사용자 PC/local source 작업, main/develop 병합, 유료·상용 출시는 제외한다.
 > 2. **이번 완료**: R03-01 PASS_SCOPED. SQLite online backup API가 활성 WAL 쓰기 트랜잭션 중 미커밋 데이터를 제외하고 일관 스냅샷을 만들며, 원본 DB SHA/mtime을 보존함을 합성 회귀 검사로 추가했다.
 > 3. **기능/테스트 SHA**: `49ab1080dc8a7a28f0e1435233f51d1caff0f87a`. 기존 백업 구현은 유지했고 `tests/test_safe_zip.py`의 WAL 동시쓰기 검사를 보강했다.
