@@ -23,6 +23,22 @@ class ProcessResourcesTests(unittest.TestCase):
         sum(x * x for x in range(40000))
         second = p.observe(self.root)
         self.assertEqual(second["contract"], p.CONTRACT)
+        self.assertEqual(
+            second["process_cpu_scope"],
+            "cumulative_current_python_process_cpu_not_cpu_percent")
+        self.assertEqual(
+            second["ram"]["scope"], "current_python_process_not_database_server")
+        self.assertEqual(
+            second["disk"]["source"], "shutil_disk_usage_explicit_local_volume")
+        self.assertEqual(
+            second["disk"]["scope"],
+            "containing_volume_not_database_file_or_server")
+        if second["ram"]["status"] == "measured":
+            self.assertIn(second["ram"]["source"], (
+                "linux_proc_self_statm_resident_bytes",
+                "windows_psapi_getprocessmemoryinfo_working_set"))
+        else:
+            self.assertEqual(second["ram"]["source"], "unavailable")
         self.assertGreaterEqual(second["process_cpu_time_ns"], first["process_cpu_time_ns"])
         self.assertGreaterEqual(second["sample_monotonic_ns"], first["sample_monotonic_ns"])
         self.assertIsNone(second["database_server_cpu_percent"])
@@ -161,7 +177,13 @@ class ProcessResourcesTests(unittest.TestCase):
                 p.shutil, "disk_usage", side_effect=OSError("synthetic")):
             r = p.observe(self.root)
         self.assertEqual(r["ram"]["status"], "unavailable")
+        self.assertIsNone(r["ram"]["resident_bytes"])
+        self.assertEqual(r["ram"]["source"], "unavailable")
         self.assertEqual(r["disk"]["status"], "unavailable")
+        self.assertEqual(
+            r["disk"]["scope"], "containing_volume_not_database_file_or_server")
+        self.assertNotIn("free_bytes", r["disk"])
+        self.assertNotIn("total_bytes", r["disk"])
         self.assertIsNone(r["database_server_ram_bytes"])
 
     def test_bad_cli_path_and_option_do_not_echo_secret(self):
