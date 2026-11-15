@@ -1,4 +1,15 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only]**
+> 1. **목표/범위**: `hibi89/DBVORA`, `feature/p0-db-map`의 R01–R07/G90 구현·검증을 계속한다. 사용자 PC/local source 작업, main/develop 병합, 유료·상용 출시는 제외한다.
+> 2. **이번 완료**: R03-01 PASS_SCOPED. SQLite online backup API가 활성 WAL 쓰기 트랜잭션 중 미커밋 데이터를 제외하고 일관 스냅샷을 만들며, 원본 DB SHA/mtime을 보존함을 합성 회귀 검사로 추가했다.
+> 3. **기능/테스트 SHA**: `49ab1080dc8a7a28f0e1435233f51d1caff0f87a`. 기존 백업 구현은 유지했고 `tests/test_safe_zip.py`의 WAL 동시쓰기 검사를 보강했다.
+> 4. **전체 회귀**: [#43679171661](https://github.com/hibi89/DBVORA/actions/runs/43679171661) PASS_SYNTHETIC_ENVIRONMENT_ONLY. Ubuntu 798/798·0 skip; Windows 797 PASS + 지정 POSIX-only 1 SKIP; 필수 12/12 단계 양 OS 통과.
+> 5. **패키지/설계 게이트**: unsigned ZIP [#43679171633](https://github.com/hibi89/DBVORA/actions/runs/43679171633) (75 files, self-check 9/9), unsigned Windows EXE [#43679171613](https://github.com/hibi89/DBVORA/actions/runs/43679171613), blueprint [#43679171766](https://github.com/hibi89/DBVORA/actions/runs/43679171766) PASS.
+> 6. **상세 증거**: [docs/R03_01_WAL_CONCURRENT_SNAPSHOT_20261115.md](docs/R03_01_WAL_CONCURRENT_SNAPSHOT_20261115.md).
+> 7. **제한**: 합성 DB와 GitHub runners 전용. 물리 정전·owner device·실제 고객 workload·상용 환경을 증명하지 않는다.
+> 8. **다음 작업**: R03-02 ZIP/ZSTD/raw CAS/compressed CAS 독립 복원과 내용 SHA·SQLite integrity 검증. 이후 R03-03.
+> 9. **공식 상태**: 전체 UNASSESSED / RELEASE HOLD; OWNER_GATE 유지.
+
+> **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only]**
 > 1. **목표/범위**: `hibi89/DBVORA`, `feature/p0-db-map`에서 R01–R07/G90 최종 설계를 이어 구현·검증한다. 사용자 PC 접근, main/develop 병합, 유료·상용 출시는 범위 밖이다.
 > 2. **이번 완료**: R02-04 PASS_SCOPED. CPU/RAM은 현재 Python 프로세스, 디스크 값은 명시 local directory가 포함된 host volume으로 귀속한다. DB 서버 CPU/RAM은 추정 없이 unavailable이다.
 > 3. **기능/테스트 SHA**: `d8a61d583e930755513c05d40b82f21da9270240`. 변경은 provenance 라벨과 unavailable 수치 누락을 고정하는 테스트 추가다.
