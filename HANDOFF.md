@@ -1,4 +1,16 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only]**
+> 1. **목표/범위**: `hibi89/DBVORA`, `feature/p0-db-map`에서 R01–R07/G90 최종 설계를 이어 구현·검증한다. 사용자 PC 접근, main/develop 병합, 유료·상용 출시는 범위 밖이다.
+> 2. **이번 완료**: R02-04 PASS_SCOPED. CPU/RAM은 현재 Python 프로세스, 디스크 값은 명시 local directory가 포함된 host volume으로 귀속한다. DB 서버 CPU/RAM은 추정 없이 unavailable이다.
+> 3. **기능/테스트 SHA**: `d8a61d583e930755513c05d40b82f21da9270240`. 변경은 provenance 라벨과 unavailable 수치 누락을 고정하는 테스트 추가다.
+> 4. **전체 회귀**: [#43658719628](https://github.com/hibi89/DBVORA/actions/runs/43658719628) PASS. Ubuntu 797/797, 0 skip; Windows 797 발견, 796 PASS + 지정 POSIX-only 1 SKIP; 필수 release-gate 단계 양 OS 통과.
+> 5. **패키지**: 합성 전용 unsigned ZIP [#43658719559](https://github.com/hibi89/DBVORA/actions/runs/43658719559) PASS (75 files, self-check 9/9); unsigned Windows EXE [#43658719555](https://github.com/hibi89/DBVORA/actions/runs/43658719555) PASS.
+> 6. **Blueprint**: [#43658719927](https://github.com/hibi89/DBVORA/actions/runs/43658719927) PASS.
+> 7. **상세 증거**: [docs/R02_04_LOCAL_RESOURCE_PROVENANCE_20261115.md](docs/R02_04_LOCAL_RESOURCE_PROVENANCE_20261115.md).
+> 8. **검증 제한**: GitHub Ubuntu/Windows runner의 로컬 측정만 확인했다. DB 서버 CPU/RAM, per-process disk I/O, 실제 운영 workload, 고객 데이터 준비도는 검증하지 않았다.
+> 9. **다음 작업**: R03-01 SQLite WAL-consistent snapshot, 원본 불변성, 동시 writer/copy 오류 시 fail-safe를 기존 합성 fault 검증으로 다시 확인한다. 이후 R03-02.
+> 10. **공식 상태**: 전체 완료 UNASSESSED / RELEASE HOLD, OWNER_GATE 유지.
+
+> **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only]**
 > 1. **목표/범위**: `hibi89/DBVORA`, `feature/p0-db-map`의 R01–R07/G90 최종 설계를 GitHub에서 계속 구현·검증한다. 사용자 PC, main/develop 병합, 유료·상용 출시 제외.
 > 2. **이번 완료**: R02-02 PASS_SCOPED. 동일·역순 관측 응답은 비교 불가·이력 무증가로 처리되고, 정상 다음 관측에서 이전 기준 크기가 유지됨을 두 합성 DB의 Chromium UI로 확인했다. 역순 단위 검사도 추가했다.
 > 3. **기능/소스·테스트 SHA**: `ac087f39ed33cd990b0c8f6c042b005bdc6d6819`; app implementation code remains `1eb5284cf0ddc0ba6411324902efc4f4d8c917e9`.
