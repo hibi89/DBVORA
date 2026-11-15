@@ -11,7 +11,11 @@ from unittest.mock import patch
 
 from dbvora import workspace_html
 from dbvora.errors import InventoryError
-from dbvora.storage_metrics import MAX_DBSTAT_MAIN_BYTES, collect_table_storage
+from dbvora.storage_metrics import (
+    MAX_DBSTAT_MAIN_BYTES,
+    _DBSTAT_TIME_BUDGET_SECONDS,
+    collect_table_storage,
+)
 from dbvora.workspace import inspect_workspace
 from dbvora.workspace_observations import (ObservationError, compare_growth,
                                            from_workspace, read_observation,
@@ -67,6 +71,106 @@ class WorkspaceStorageTests(unittest.TestCase):
         connection.assert_not_called()
         self.assertEqual(data["status"], "unavailable")
         self.assertEqual(data["reason"], "main_file_exceeds_scan_limit")
+
+    def test_exact_main_file_limit_and_in_budget_scan_are_measured(self):
+        class Cursor:
+            def __init__(self, rows):
+                self.rows = rows
+
+            def fetchall(self):
+                return self.rows
+
+        class FakeConnection:
+            def __init__(self):
+                self.progress_steps = []
+                self.progress_callback = None
+                self.progress_result = None
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def set_progress_handler(self, callback, steps):
+                self.progress_steps.append(steps)
+                if callback is not None:
+                    self.progress_callback = callback
+
+            def execute(self, sql):
+                if "FROM dbstat" in sql:
+                    self.progress_result = self.progress_callback()
+                    if self.progress_result:
+                        raise sqlite3.OperationalError("interrupted")
+                    return Cursor([("inventory", 4096)])
+                return Cursor([("table", "inventory", "inventory")])
+
+        connection = FakeConnection()
+        with patch("dbvora.storage_metrics.read_only_connection",
+                   return_value=connection) as open_db:
+            with patch("dbvora.storage_metrics.time.monotonic",
+                       side_effect=[10.0, 10.5]):
+                result = collect_table_storage(
+                    self.a, MAX_DBSTAT_MAIN_BYTES, [{"name": "inventory"}]
+                )
+
+        open_db.assert_called_once_with(self.a)
+        self.assertEqual(connection.progress_steps, [1000, 0])
+        self.assertEqual(connection.progress_result, 0)
+        self.assertEqual(result["scan_cap_main_file_bytes"], MAX_DBSTAT_MAIN_BYTES)
+        self.assertEqual(result["tables"]["inventory"]["status"], "measured")
+        self.assertEqual(result["tables"]["inventory"]["allocated_btree_bytes"], 4096)
+
+    def test_dbstat_watchdog_aborts_after_point_seventy_five_seconds(self):
+        class Cursor:
+            def __init__(self, rows):
+                self.rows = rows
+
+            def fetchall(self):
+                return self.rows
+
+        class FakeConnection:
+            def __init__(self):
+                self.progress_steps = []
+                self.progress_callback = None
+                self.progress_result = None
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def set_progress_handler(self, callback, steps):
+                self.progress_steps.append(steps)
+                if callback is not None:
+                    self.progress_callback = callback
+
+            def execute(self, sql):
+                if "FROM dbstat" in sql:
+                    self.progress_result = self.progress_callback()
+                    if self.progress_result:
+                        raise sqlite3.OperationalError("interrupted")
+                    return Cursor([("inventory", 4096)])
+                return Cursor([("table", "inventory", "inventory")])
+
+        self.assertEqual(_DBSTAT_TIME_BUDGET_SECONDS, 0.75)
+        connection = FakeConnection()
+        elapsed = _DBSTAT_TIME_BUDGET_SECONDS + 0.001
+        with patch("dbvora.storage_metrics.read_only_connection",
+                   return_value=connection):
+            with patch("dbvora.storage_metrics.time.monotonic",
+                       side_effect=[10.0, 10.0 + elapsed]) as monotonic:
+                result = collect_table_storage(
+                    self.a, 2048, [{"name": "inventory"}]
+                )
+
+        self.assertEqual(monotonic.call_count, 2)
+        self.assertEqual(connection.progress_steps, [1000, 0])
+        self.assertEqual(connection.progress_result, 1)
+        self.assertEqual(result["status"], "unavailable")
+        self.assertEqual(result["reason"], "dbstat_unavailable_or_limited")
+        self.assertEqual(result["tables"], {})
 
     def test_missing_dbstat_marks_unavailable_without_rows(self):
         with patch("dbvora.storage_metrics.read_only_connection", side_effect=sqlite3.OperationalError("unsupported")):
