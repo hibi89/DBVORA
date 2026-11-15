@@ -1045,6 +1045,77 @@ def run(*, screenshots=None):
                             multi_page.locator('#growth-status').inner_text(),
                             'MULTI_GROWTH_DB_ISOLATION')
                     result['checks'].append('multi_live_two_snapshot_main_file_growth')
+                    # R02-02: equal and reversed server timestamps cannot add
+                    # samples or roll back the selected database baseline.
+                    accepted_inventory = []
+                    def capture_accepted_inventory(route):
+                        response = route.fetch()
+                        accepted_inventory.append(response.json())
+                        route.fulfill(response=response)
+
+                    multi_page.route('**/api/inventory', capture_accepted_inventory)
+                    multi_page.locator('#refresh').click()
+                    multi_page.wait_for_function(
+                        "() => !document.querySelector('#refresh').disabled"
+                        " && document.querySelector('#error').hidden",
+                        timeout=30000)
+                    multi_page.unroute('**/api/inventory', capture_accepted_inventory)
+                    require(len(accepted_inventory) == 1
+                            and len(accepted_inventory[0].get('databases', [])) == 2,
+                            'MULTI_GROWTH_ACCEPTED_SAMPLE_CAPTURE')
+                    baseline_history_count = multi_page.locator(
+                        '#growth-samples .growth-sample').count()
+                    equal_time_inventory = json.loads(json.dumps(accepted_inventory[0]))
+                    for database in equal_time_inventory['databases']:
+                        database['size_bytes'] += 4096
+
+                    def replay_equal_time_inventory(route):
+                        route.fulfill(status=200, content_type='application/json',
+                                      body=json.dumps(equal_time_inventory))
+
+                    multi_page.route('**/api/inventory', replay_equal_time_inventory)
+                    multi_page.locator('#refresh').click()
+                    multi_page.wait_for_function(
+                        "() => !document.querySelector('#refresh').disabled",
+                        timeout=30000)
+                    multi_page.unroute('**/api/inventory', replay_equal_time_inventory)
+                    require('비교 불가' in multi_page.locator('#growth-status').inner_text()
+                            and multi_page.locator(
+                                '#growth-samples .growth-sample').count() == baseline_history_count,
+                            'MULTI_GROWTH_EQUAL_TIME_REJECTED')
+
+                    reversed_inventory = json.loads(json.dumps(accepted_inventory[0]))
+                    for database in reversed_inventory['databases']:
+                        database['observed_at'] = '2000-01-01T00:00:00+00:00'
+                        database['size_bytes'] += 8192
+
+                    def replay_reversed_inventory(route):
+                        route.fulfill(status=200, content_type='application/json',
+                                      body=json.dumps(reversed_inventory))
+
+                    multi_page.route('**/api/inventory', replay_reversed_inventory)
+                    multi_page.locator('#refresh').click()
+                    multi_page.wait_for_function(
+                        "() => !document.querySelector('#refresh').disabled",
+                        timeout=30000)
+                    multi_page.unroute('**/api/inventory', replay_reversed_inventory)
+                    require('비교 불가' in multi_page.locator('#growth-status').inner_text()
+                            and multi_page.locator(
+                                '#growth-samples .growth-sample').count() == baseline_history_count,
+                            'MULTI_GROWTH_REVERSED_TIME_REJECTED')
+
+                    multi_page.locator('#refresh').click()
+                    multi_page.wait_for_function(
+                        "() => !document.querySelector('#refresh').disabled"
+                        " && document.querySelector('#error').hidden",
+                        timeout=30000)
+                    require('비교 불가' not in multi_page.locator('#growth-status').inner_text()
+                            and '직전 측정 대비' in multi_page.locator(
+                                '#growth-status').inner_text()
+                            and multi_page.locator(
+                                '#growth-samples .growth-sample').count() == baseline_history_count + 1,
+                            'MULTI_GROWTH_RECOVERS_AFTER_VALID_SAMPLE')
+                    result['checks'].append('multi_growth_equal_reverse_time_rejected')
                     multi_page.set_viewport_size({'width': 390, 'height': 844})
                     multi_page.wait_for_timeout(200)
                     require(not multi_page.evaluate(
