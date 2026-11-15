@@ -1,3 +1,9 @@
+> **[2026-11-15 KST · 최신 진행]** R03-01 PASS_SCOPED at source/test SHA `49ab1080dc8a7a28f0e1435233f51d1caff0f87a`. Online SQLite backup passed active-WAL-writer consistency, integrity, and source SHA/mtime preservation checks. Full [#43679171661](https://github.com/hibi89/DBVORA/actions/runs/43679171661), ZIP [#43679171633](https://github.com/hibi89/DBVORA/actions/runs/43679171633), EXE [#43679171613](https://github.com/hibi89/DBVORA/actions/runs/43679171613), and blueprint [#43679171766](https://github.com/hibi89/DBVORA/actions/runs/43679171766) PASS. Evidence: [docs/R03_01_WAL_CONCURRENT_SNAPSHOT_20261115.md](docs/R03_01_WAL_CONCURRENT_SNAPSHOT_20261115.md).
+>
+> **NEXT-1 R03-02 EVIDENCE_RECHECK:** independently restore ZIP, ZSTD, raw CAS and compressed CAS artifacts; compare output SHA-256 and SQLite integrity with synthetic source at exact SHA.
+> **NEXT-2 R03-03 EVIDENCE_RECHECK:** verify CAS generation chains, manifest linkage and safe failure behavior.
+> Overall completion remains UNASSESSED / RELEASE HOLD; OWNER_GATE retained.
+
 > **[2026-11-15 KST · 최신 진행]** R02-04 PASS_SCOPED at source/test SHA `d8a61d583e930755513c05d40b82f21da9270240`. Exact-SHA full gate [#43658719628](https://github.com/hibi89/DBVORA/actions/runs/43658719628), ZIP [#43658719559](https://github.com/hibi89/DBVORA/actions/runs/43658719559), EXE [#43658719555](https://github.com/hibi89/DBVORA/actions/runs/43658719555), and blueprint [#43658719927](https://github.com/hibi89/DBVORA/actions/runs/43658719927) PASS. Evidence: [docs/R02_04_LOCAL_RESOURCE_PROVENANCE_20261115.md](docs/R02_04_LOCAL_RESOURCE_PROVENANCE_20261115.md).
 >
 > **NEXT-1 R03-01 EVIDENCE_RECHECK:** verify SQLite WAL-consistent snapshot, source immutability, and concurrent-writer/copy-error fail-safe coverage using synthetic fixtures and existing Actions.
