@@ -1,26 +1,14 @@
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only]**
 > 1. **목표/범위**: `hibi89/DBVORA`, `feature/p0-db-map`의 R01–R07/G90 최종 설계를 GitHub에서 계속 구현·검증한다. 사용자 PC, main/develop 병합, 유료·상용 출시 제외.
-> 2. **이번 완료**: R02-01 PASS_SCOPED. SQLite `dbstat` exact-cap/in-budget boundary와 deterministic watchdog abort를 검증했다. 구현 코드는 변경하지 않고 synthetic acceptance tests를 추가했다.
-> 3. **기능/소스·테스트 SHA**: `7597a9ab0d7ea6e8e84f4184e8d55bbbbf5f358`; app implementation remains `1eb5284cf0ddc0ba6411324902efc4f4d8c917e9`.
-> 4. **전체 회귀**: [#43656462650](https://github.com/hibi89/DBVORA/actions/runs/43656462650) PASS_SYNTHETIC_ENVIRONMENT_ONLY. Ubuntu 796/796·0 SKIP, Windows 795 PASS + 지정 POSIX-only 1 SKIP, 필수 12/12 단계 양 OS.
-> 5. **Chromium/PostgreSQL**: unchanged implementation SHA `1eb5284cf0ddc0ba6411324902efc4f4d8c917e9`에서 [Chromium [#43655575969](https://github.com/hibi89/DBVORA/actions/runs/43655575969)](https://github.com/hibi89/DBVORA/actions/runs/43655575969) 36/36 × 양 OS, [PG16 verified TLS/UI [#43655576024](https://github.com/hibi89/DBVORA/actions/runs/43655576024)](https://github.com/hibi89/DBVORA/actions/runs/43655576024) TLS 5 + UI 10 PASS. 이번 SHA의 diff는 test-only다.
-> 6. **패키징**: ZIP [#43656462699](https://github.com/hibi89/DBVORA/actions/runs/43656462699) PASS, 75 files/self-check 9/9, source ZIP SHA-256 `d3836d9e6894e79d219a4cbbbf555e8c83b0e8ae3a92e2c779e3aee9500885e5`; EXE [#43656462693](https://github.com/hibi89/DBVORA/actions/runs/43656462693) PASS, SHA-256 `5c2a7baf32c3512042d61ec94c25aab03eb27d91ebbe7665c10b99b8df898fbe`. Unsigned/synthetic only.
-> 7. **Blueprint/증거**: [#43656462917](https://github.com/hibi89/DBVORA/actions/runs/43656462917) PASS. 상세: [R02-01 증거](docs/R02_01_DBSTAT_BOUNDARY_20261115.md).
-> 8. **한계**: watchdog 시간은 주입한 단조시계와 fake SQLite interruption으로 검사했다. 64 MiB는 경계 인자로 확인했으며 실제 64 MiB 파일이나 고객 DB를 사용하지 않았다. main/WAL/SHM 총 물리용량 측정이 아니다.
-> 9. **다음 작업**: R02-02에서 같은 DB의 시간순/동일/역순 응답, DB 전환 시 비교 표본 격리를 테스트한다. 이후 R02-04 증거 재확인.
+> 2. **이번 완료**: R02-02 PASS_SCOPED. 동일·역순 관측 응답은 비교 불가·이력 무증가로 처리되고, 정상 다음 관측에서 이전 기준 크기가 유지됨을 두 합성 DB의 Chromium UI로 확인했다. 역순 단위 검사도 추가했다.
+> 3. **기능/소스·테스트 SHA**: `ac087f39ed33cd990b0c8f6c042b005bdc6d6819`; app implementation code remains `1eb5284cf0ddc0ba6411324902efc4f4d8c917e9`.
+> 4. **전체 회귀**: [#43657990671](https://github.com/hibi89/DBVORA/actions/runs/43657990671) PASS_SYNTHETIC_ENVIRONMENT_ONLY. Ubuntu 797/797·0 SKIP, Windows 796 PASS + 지정 POSIX-only 1 SKIP, 필수 12/12 단계 양 OS.
+> 5. **Chromium**: [#43657990663](https://github.com/hibi89/DBVORA/actions/runs/43657990663) PASS, 37/37 checks each on Ubuntu and Windows, including equal/reversed timestamp rejection and exact 0 B baseline recovery.
+> 6. **PostgreSQL**: [#43657990651](https://github.com/hibi89/DBVORA/actions/runs/43657990651) PASS, verified TLS 5 checks + UI 10 checks.
+> 7. **Blueprint**: [#43657990886](https://github.com/hibi89/DBVORA/actions/runs/43657990886) PASS. 상세: [R02-02 증거](docs/R02_02_GROWTH_TIMESTAMP_UI_20261115.md).
+> 8. **제한**: 합성 SQLite 및 재생한 합성 응답만 사용했다. 실제 DB 증가율·고객 workload·실기기·물리 정전/복원 증거가 아니다.
+> 9. **다음 작업**: R02-04의 프로세스 CPU/RSS와 filesystem 측정 경계 및 unavailable 경로를 재확인한다.
 > 10. **공식 상태**: 전체 완료 UNASSESSED / RELEASE HOLD, OWNER_GATE 유지.
-> **[2026-11-15 KST | 이전 인수인계 · R01-03 완료 시점 · GitHub-only]**
-> 1. **목표/범위**: `hibi89/DBVORA`, `feature/p0-db-map`의 R01–R07/G90 최종 설계 구현·검증. 사용자 PC 작업, main/develop 병합, 유료 출시·상용 배포는 범위 밖.
-> 2. **이번 완료**: R01-03 PASS_SCOPED; R01-02 토폴로지와 R02-05 PG 통계 UI도 현재 SHA의 2OS Chromium/PG16 검증을 재확인했다.
-> 3. **최종 소스/테스트 SHA**: `41aa567f0504ace5109afaa3dbe6dcc63aa7f34e`. 변경은 PostgreSQL SQLSTATE 42501의 안전 분류, 카탈로그·통계 API 오류 매핑, 한국어 복구 메시지, 합성 API/브라우저 테스트다.
-> 4. **전체 회귀**: [#43654447078](https://github.com/hibi89/DBVORA/actions/runs/43654447078) PASS. Ubuntu 793/793, 0 skip; Windows 792 PASS + 지정 POSIX-only 1 SKIP; 필수 단계 12/12 양 OS.
-> 5. **Chromium**: [#43654447035](https://github.com/hibi89/DBVORA/actions/runs/43654447035) PASS, 36/36 Ubuntu와 36/36 Windows.
-> 6. **PostgreSQL**: [#43654447096](https://github.com/hibi89/DBVORA/actions/runs/43654447096) PASS: verified TLS/read-only 5 checks, PG UI 10 checks. 한 번의 합성 권한 오류 뒤 동일 실 PG16/TLS 연결로 복구했다.
-> 7. **패키징**: ZIP [#43654447028](https://github.com/hibi89/DBVORA/actions/runs/43654447028) PASS, 75 files, SHA-256 `b065f8bef8c81af6174ce8fd21e5acddba3a05df1625ce616e98f83678f22080`; EXE [#43654447043](https://github.com/hibi89/DBVORA/actions/runs/43654447043) PASS, SHA-256 `2cb874493a84c59a7e2608ab64e2f0d31b12c10a891cfaa7041a5e292fee7470`. 둘 다 unsigned·synthetic only.
-> 8. **Blueprint/증거**: [#43654447279](https://github.com/hibi89/DBVORA/actions/runs/43654447279) PASS. 상세 및 artifact digest는 [R01-03 증거](docs/R01_03_POSTGRES_PERMISSION_RECOVERY_20261115.md)에 기록.
-> 9. **제한**: 권한 오류는 API 경계에서 한 번 합성 주입했고 실제 PG 권한/GRANT는 변경하지 않았다. 실고객 자료, 실기기, 물리 정전, 법률·상업 승인 증거가 아니다.
-> 10. **당시 다음/공식 상태**: R01-01이 다음이었고 현재 PASS_SCOPED다. 최신 다음 작업은 R02-01 EVIDENCE_RECHECK. 총괄 UNASSESSED / RELEASE HOLD, OWNER_GATE 유지.
-
 > **[2026-11-15 KST | 이전 인수인계 · R01-07 완료 시점 · 10항]**
 > 1. **목표/범위**: `hibi89/DBVORA`, `feature/p0-db-map`의 R01–R07/G90 최종 설계 구현·검증을 계속한다. 사용자 PC, main/develop 병합, 상용출시는 제외.
 > 2. **이번 완료**: R01-07 PASS_SCOPED. 늦은/중단/실패한 테이블 용량 응답이 새 DB·테이블 선택을 덮지 않으며, 다중 DB 화면의 필터는 DB별로 보존된다.
