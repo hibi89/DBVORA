@@ -1,3 +1,15 @@
+> **[2026-11-15 KST | Codex 중단 후 High 1차 감사 인수인계 · 10항]**
+> 1. 목표: `hibi89/DBVORA@feature/p0-db-map` 사용자 확정 R01–R07 100% 독립검수; 코드·사용자 원본 변경 없이 증거 감사. 판매/배포 금지.
+> 2. 이번 변경: [독립 감사 문서](docs/HIGH_INDEPENDENT_REVIEW_20261115.md) 추가, 상태/인수인계 정합화. 백엔드·프론트 신규 코드0.
+> 3. 실제 검증: 최종 기능 SHA `49ab1080dc8a7a28f0e1435233f51d1caff0f87a`; [release #43679171661](https://github.com/hibi89/DBVORA/actions/runs/43679171661) Ubuntu 798 PASS/0 SKIP, Windows 797 PASS/1 POSIX-only SKIP, 12/12 필수; 이전 정확 SHA Chromium #43657990663 양 OS SUCCESS, PG TLS/UI #43657990651 SUCCESS. 본 감사 신규 테스트0/FAIL0/실기기 미검증.
+> 4. 상태: 48작업표 = PASS_SCOPED33/OPEN5/RECHECK2/HIGH_GATE1/OWNER_GATE6/OWNER_SCOPE_GATE1. R03-03·G90-01~03 잔여, High H01–H12 초도 검수 PARTIAL, 공식 UNASSESSED/RELEASE HOLD.
+> 5. 발견: R03-03 manifest parent-link 계약 없음(4세대 독립 복원과 구분); OS 예약 실행은 synthetic CLI에 그침; 상업권/LICENSE/NOTICE 미확정. 버전형 호환 추가 vs 사용자 수용범위 승인 두 대안을 상세 감사 문서에 기록. 실패한 새 CI 없음.
+> 6. 기준: 감사 착수 HEAD `5e170375321703ad715a6411eedea2480c48f956`, 기능 SHA `49ab1080...`; 이번 문서 커밋 `b69b382798c7859c24b7654d7d8e77bb20a536e6`. 최신 HEAD는 매회 재조회.
+> 7. Production/Vercel N/A; GitHub Actions Ubuntu/Windows/Chromium/PG16 synthetic; 판매 실행 명령/운영 설정 불변.
+> 8. 합성 데이터만; 고객 DB/비밀키 전송·원본/백업 overwrite 0, 기존 소스/권한/리포지토리 공개 설정 변경0. 현재 GitHub 조회상 repo Public; 비공개 전환은 사용자 승인 사항.
+> 9. 다음: R03-03 부모 체인 요구 수용/호환 설계→정확 SHA 회귀, G90 evidence freeze, 코드스캐닝·라이선스/스크린샷 검수; 실물 Windows/물리정전/법무 승인 Owner gate. 최초 PASS를 최종 판매 합격으로 승격 금지.
+> 10. 기준 2026-11-15 KST; 감사 범위 GitHub 브랜치·커밋 비교, 주요 소스, Actions job logs, 48 ID·H01–H12 중간 대조. 중단 상태 유지.
+
 > **[2026-11-15 KST | 최신 인수인계 · Codex GPT-6 Luna Max / GitHub-only]**
 > 1. **목표/범위**: `hibi89/DBVORA`, `feature/p0-db-map`에서 R01–R07/G90 구현·검증을 계속한다. 모든 변경과 검증 기록은 GitHub branch/Actions에 저장한다. 사용자 PC 작업, main/develop 병합, 유료·상용 출시는 제외한다.
 > 2. **이번 완료**: R03-02 PASS_SCOPED. ZIP, ZSTD, raw CAS v1, compressed CAS v2 각각 합성 SQLite 스냅샷을 독립 복원하며 SHA-256과 SQLite integrity를 확인한다.
