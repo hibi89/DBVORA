@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import sqlite3
 import tempfile
+import threading
 import warnings
 import unittest
 from unittest.mock import patch
@@ -78,6 +79,67 @@ class ArchiveTests(unittest.TestCase):
             with closing(sqlite3.connect(snap['snapshot_path'])) as separate:
                 self.assertEqual(separate.execute('SELECT content FROM events WHERE id=900').fetchone(), ('committed',))
                 self.assertEqual(separate.execute('PRAGMA integrity_check').fetchone(), ('ok',))
+
+    def test_wal_snapshot_excludes_uncommitted_concurrent_writer_and_preserves_source(self):
+        with closing(sqlite3.connect(self.source, timeout=2.0)) as live:
+            mode = live.execute('PRAGMA journal_mode=WAL').fetchone()[0]
+            self.assertEqual(mode.lower(), 'wal')
+            live.execute(
+                "INSERT INTO events (id, category, content) VALUES (900, 'wal', 'committed')"
+            )
+            live.commit()
+            self.assertTrue(self.source.with_suffix('.sqlite-wal').exists())
+            before = self.source_identity()
+
+            writer_ready = threading.Event()
+            release_writer = threading.Event()
+            writer_errors = []
+
+            def hold_uncommitted_wal_write():
+                try:
+                    with closing(sqlite3.connect(self.source, timeout=2.0)) as writer:
+                        writer.execute("BEGIN IMMEDIATE")
+                        writer.execute(
+                            "INSERT INTO events (id, category, content) "
+                            "VALUES (901, 'wal', 'uncommitted')"
+                        )
+                        writer_ready.set()
+                        if not release_writer.wait(timeout=5.0):
+                            raise AssertionError("writer release timed out")
+                        writer.rollback()
+                except BaseException as exc:
+                    writer_errors.append(exc)
+                    writer_ready.set()
+
+            worker = threading.Thread(target=hold_uncommitted_wal_write, daemon=True)
+            worker.start()
+            try:
+                self.assertTrue(writer_ready.wait(timeout=5.0))
+                self.assertEqual(writer_errors, [])
+                snap = create_snapshot(self.source, self.out)
+            finally:
+                release_writer.set()
+                worker.join(timeout=5.0)
+
+            self.assertFalse(worker.is_alive())
+            self.assertEqual(writer_errors, [])
+            self.assertEqual(before, self.source_identity())
+            with closing(sqlite3.connect(snap['snapshot_path'])) as separate:
+                self.assertEqual(
+                    separate.execute(
+                        "SELECT content FROM events WHERE id=900"
+                    ).fetchone(),
+                    ('committed',),
+                )
+                self.assertIsNone(
+                    separate.execute(
+                        "SELECT content FROM events WHERE id=901"
+                    ).fetchone()
+                )
+                self.assertEqual(
+                    separate.execute('PRAGMA integrity_check').fetchone(),
+                    ('ok',),
+                )
 
     def test_two_snapshots_and_multiple_restores_never_overwrite(self):
         a = create_snapshot(self.source, self.out)
