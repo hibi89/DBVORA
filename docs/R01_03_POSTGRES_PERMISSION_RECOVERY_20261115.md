@@ -28,3 +28,7 @@ The PG UI acceptance reported `permission_error_safe_retry_recovery`, `no_rows_o
 All test records and fixtures were synthetic. The permission error is injected once by the acceptance harness at the API boundary; production database privileges are not modified. These GitHub-hosted checks do not establish customer-data readiness, owner-device acceptance, Windows NTFS power-loss durability, commercial rights, or final release approval. Overall completion remains **UNASSESSED / RELEASE HOLD**.
 
 Next matrix item: **R01-01 EVIDENCE_RECHECK** (single/multi-database boundaries and metadata provenance).
+
+## Revalidation at the later R01-01 source/test SHA
+
+The permission recovery code was unchanged at SHA `1eb5284cf0ddc0ba6411324902efc4f4d8c917e9` and remained covered by the exact-SHA [PG16 TLS/UI run #43655576024](https://github.com/hibi89/DBVORA/actions/runs/43655576024): 5 TLS checks plus 10 browser checks, including `permission_error_safe_retry_recovery` and `no_rows_or_dsn_in_browser`. The same SHA passed the [full Ubuntu/Windows gate #43655575943](https://github.com/hibi89/DBVORA/actions/runs/43655575943) and [Chromium #43655575969](https://github.com/hibi89/DBVORA/actions/runs/43655575969). The R01-01 eight-database evidence is recorded separately in [R01_01_MULTI_DB_BOUNDARY_20261115.md](R01_01_MULTI_DB_BOUNDARY_20261115.md).

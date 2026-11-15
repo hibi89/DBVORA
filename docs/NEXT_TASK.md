@@ -1,8 +1,15 @@
+> **[2026-11-15 KST · 최신 소스/테스트 SHA 1eb5284cf0ddc0ba6411324902efc4f4d8c917e9]**
+> **DONE-SCOPED R01-01.** Added exact eight-source synthetic API acceptance for distinct database IDs, database-local FK scope, eighth-database table-storage routing, unchanged source SHA/mtime, and no source paths or rows. Existing lower bound, duplicate, over-eight, PostgreSQL read-only/TLS and collision tests pass in the same full gate.
+> Full [#43655575943](https://github.com/hibi89/DBVORA/actions/runs/43655575943) PASS: Ubuntu 794/794, Windows 793 PASS + one named POSIX-only SKIP; mandatory 12/12 steps each OS. Chromium [#43655575969](https://github.com/hibi89/DBVORA/actions/runs/43655575969) 36/36 each OS; PG TLS/UI [#43655576024](https://github.com/hibi89/DBVORA/actions/runs/43655576024) 5 TLS + 10 UI checks PASS. ZIP [#43655575933](https://github.com/hibi89/DBVORA/actions/runs/43655575933), EXE [#43655576003](https://github.com/hibi89/DBVORA/actions/runs/43655576003), blueprint [#43655576143](https://github.com/hibi89/DBVORA/actions/runs/43655576143) PASS.
+> Evidence: [R01_01_MULTI_DB_BOUNDARY_20261115.md](R01_01_MULTI_DB_BOUNDARY_20261115.md). R01-03 permission recovery revalidation: [R01_03_POSTGRES_PERMISSION_RECOVERY_20261115.md](R01_03_POSTGRES_PERMISSION_RECOVERY_20261115.md).
+> **NEXT-1 R02-01 EVIDENCE_RECHECK:** SQLite main/WAL/SHM and dbstat scope, opt-in limits, file identity replacement, and unsupported-case behavior.
+> Overall UNASSESSED / RELEASE HOLD; owner-device, physical, legal and commercial gates remain open.
+
 > **[2026-11-15 KST · 최신 소스/테스트 SHA 41aa567f0504ace5109afaa3dbe6dcc63aa7f34e]**
 > **DONE-SCOPED R01-03.** PostgreSQL SQLSTATE 42501 is mapped to a fixed safe permission error for catalog/statistics APIs, with Korean recovery text and retry. The acceptance harness injects one synthetic API-boundary permission error, checks that DSN/path/rows are absent, then confirms recovery on real PostgreSQL 16 over verified TLS.
 > Full [#43654447078](https://github.com/hibi89/DBVORA/actions/runs/43654447078) PASS: Ubuntu 793/793, Windows 792 PASS + one named POSIX-only SKIP; mandatory 12/12 steps on each OS. Chromium [#43654447035](https://github.com/hibi89/DBVORA/actions/runs/43654447035) 36/36 on each OS; PG TLS/UI [#43654447096](https://github.com/hibi89/DBVORA/actions/runs/43654447096) 5 TLS + 10 browser checks PASS. ZIP [#43654447028](https://github.com/hibi89/DBVORA/actions/runs/43654447028), EXE [#43654447043](https://github.com/hibi89/DBVORA/actions/runs/43654447043), blueprint [#43654447279](https://github.com/hibi89/DBVORA/actions/runs/43654447279) PASS.
 > Evidence: [R01_03_POSTGRES_PERMISSION_RECOVERY_20261115.md](R01_03_POSTGRES_PERMISSION_RECOVERY_20261115.md).
-> **NEXT-1 R01-01 EVIDENCE_RECHECK:** single/multi SQLite and PostgreSQL boundaries, metadata provenance, stable database identity, and truthful FK scope.
+> At that time NEXT-1 was R01-01; it is now PASS_SCOPED at the newer SHA above.
 > Overall UNASSESSED / RELEASE HOLD; owner-device, physical, legal and commercial gates remain open.
 
 > **[2026-11-15 KST · 최종 R01-07 source/test SHA 6913bcbf68ef2133e9cc7f9ad8090efae1bd5fda]**
