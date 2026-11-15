@@ -1110,7 +1110,7 @@ def run(*, screenshots=None):
                         " && document.querySelector('#error').hidden",
                         timeout=30000)
                     require('비교 불가' not in multi_page.locator('#growth-status').inner_text()
-                            and '직전 측정 대비' in multi_page.locator(
+                            and '직전 측정 대비 변화 없음 (0 B)' in multi_page.locator(
                                 '#growth-status').inner_text()
                             and multi_page.locator(
                                 '#growth-samples .growth-sample').count() == baseline_history_count + 1,
