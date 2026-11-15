@@ -217,6 +217,24 @@ class WorkspaceStorageTests(unittest.TestCase):
         growth = compare_growth(snapshot, snapshot)
         self.assertEqual(next(iter(growth.values()))["reason"], "non_increasing_observation_time")
 
+    def test_reverse_time_is_unavailable_without_negative_growth(self):
+        previous = from_workspace(self.inspect())
+        baseline_time = datetime.now(timezone.utc).replace(microsecond=0)
+        for database in previous["databases"]:
+            database["observed_at"] = baseline_time.isoformat()
+
+        current = from_workspace(self.inspect())
+        earlier_time = baseline_time - timedelta(seconds=1)
+        for database in current["databases"]:
+            database["observed_at"] = earlier_time.isoformat()
+
+        growth = compare_growth(previous, current)
+        for database in current["databases"]:
+            result = growth[database["db_id"]]
+            self.assertEqual(result["status"], "unavailable")
+            self.assertEqual(result["reason"], "non_increasing_observation_time")
+            self.assertNotIn("delta_main_file_bytes", result)
+
     def test_missing_db_fingerprint_has_no_fabricated_growth(self):
         old = from_workspace(self.inspect())
         old["databases"][0]["db_id"] = "a" * 24
