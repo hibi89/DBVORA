@@ -1,3 +1,5 @@
+> **[HANDOFF-STARTUP-V2 | ACTIVE | 2026-11-16]** **먼저** `DBVORA@feature/p0-db-map` 역할/최신 HEAD와 `AGENTS.md` 상단 [OWNER-DEV-EXECUTION-V2](https://github.com/hibi89/hackathon-command-center-2026/blob/kmong-productization/docs/strategy/OWNER_DEV_EXECUTION_CANONICAL_20261116.md)의 적용 범위를 확정한 후 HANDOFF 최신 진행·차단/STATUS/REQUIREMENTS/확정 최종설계/실제 소스를 교차 검증하라. 오래된 HANDOFF 모델 담당·4슬롯 잠금·P85/95 지시는 역사일 뿐 현재 실행순서가 아니다. **웹 Sol High 최초 설계 → 웹 Sol Instant 주력 구현 → 구현 후보 후 전체 CI·수정(위험검사 유지) → Codex Sol Max/Astra Max 독립검수 → High 최종인수 → 사용자 GO 뒤 Luna Extra High 상품등록**.  원본/기능·데이터/보안·권리·검증 공식률/RELEASE HOLD 불변. 본 공시는 코드 검증 성공을 의미하지 않는다.
+
 > **[2026-11-15 KST | Codex 중단 후 High 1차 감사 인수인계 · 10항]**
 > 1. 목표: `hibi89/DBVORA@feature/p0-db-map` 사용자 확정 R01–R07 100% 독립검수; 코드·사용자 원본 변경 없이 증거 감사. 판매/배포 금지.
 > 2. 이번 변경: [독립 감사 문서](docs/HIGH_INDEPENDENT_REVIEW_20261115.md) 추가, 상태/인수인계 정합화. 백엔드·프론트 신규 코드0.
